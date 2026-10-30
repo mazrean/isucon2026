@@ -1,0 +1,5 @@
+[tools]
+"github:microsoft/apm" = "latest"
+gh = "latest"
+uv = "latest"
+"github:rtk-ai/rtk" = "latest"

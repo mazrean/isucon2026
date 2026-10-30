@@ -1,0 +1,13 @@
+name: isucon2026
+version: 0.1.0
+description: ISUCON 2026 contest workspace driven by Claude Code.
+
+targets:
+  - claude
+
+dependencies:
+  apm:
+    - mazrean/apm-package/isucon
+    # contest-day agent manual + transferable infra levers (not yet in apm-package/isucon)
+    - mazrean/agent-skills/skills/running-isucon-as-an-agent
+    - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx

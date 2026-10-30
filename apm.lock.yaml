@@ -1,0 +1,1714 @@
+lockfile_version: '1'
+apm_version: 0.33.0
+dependencies:
+- repo_url: mazrean/agent-skills
+  name: running-isucon-as-an-agent
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/running-isucon-as-an-agent
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/running-isucon-as-an-agent
+  - .claude/skills/running-isucon-as-an-agent/SKILL.md
+  - .claude/skills/running-isucon-as-an-agent/references/BENCH-LOOP.md
+  - .claude/skills/running-isucon-as-an-agent/references/HARNESS-SETUP.md
+  - .claude/skills/running-isucon-as-an-agent/references/OBSERVED-BARRIERS.md
+  - .claude/skills/running-isucon-as-an-agent/references/PORTAL-BENCH.md
+  - .claude/skills/running-isucon-as-an-agent/scripts/contest-stop-hook.sh
+  deployed_file_hashes:
+    .claude/skills/running-isucon-as-an-agent/SKILL.md: sha256:0a54a3d5a32e693c7c2a293ec425ce1e9dc8b7424a65b15cd1eeff46214f9952
+    .claude/skills/running-isucon-as-an-agent/references/BENCH-LOOP.md: sha256:ab86968582e20396f9483e794c3548194f8f811276bae4bcb7902c4c7c794460
+    .claude/skills/running-isucon-as-an-agent/references/HARNESS-SETUP.md: sha256:b4935c885a643001774079569b0c8dcc0d62864dfae198915ccd64b29b08aa38
+    .claude/skills/running-isucon-as-an-agent/references/OBSERVED-BARRIERS.md: sha256:148e3dafc76c2a40a467ff9733debdde15ea8a7cb48e241cc2bcab64944da575
+    .claude/skills/running-isucon-as-an-agent/references/PORTAL-BENCH.md: sha256:a0879a37e7e32705b70b57a2b7186ab3a5ab099991055ae8e318f1a916ed6d45
+    .claude/skills/running-isucon-as-an-agent/scripts/contest-stop-hook.sh: sha256:d156eeb1972a6cab91fe2db2ab44f9c60e396182a7a7d268038340fd6aabf834
+  content_hash: sha256:d513ab5ff661e1b5bd20fb8bf1706a5be2d60cc74f5d1dcdae8311148837c780
+- repo_url: mazrean/agent-skills
+  name: tuning-isucon-linux-and-nginx
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/tuning-isucon-linux-and-nginx
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/tuning-isucon-linux-and-nginx
+  - .claude/skills/tuning-isucon-linux-and-nginx/SKILL.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/0001-ena-xdp-shared-tx-batched-doorbell.patch
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/build.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/config-6.17.13-isucon
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/install.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/net/99-isucon-sysctl.conf
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/net/isucon-net-tune.service
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/net/isucon-tls-lb.service
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/net/net-tune.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/net/node-metrics.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/net/tls-lb.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/.gitignore
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/build.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/nginx-awslc.conf
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/awslc-sock-no-soerror.patch.py
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/awslc-sock-short-read-flag.patch.py
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-incoming-cpu.patch.py
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-ssl-recv-short-read.patch.py
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-upstream-cached-no-soerror.patch.py
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/xdp/xdp-lb.c
+  - .claude/skills/tuning-isucon-linux-and-nginx/assets/xdp/xdp-lb.sh
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/APP-PATTERNS.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/DEAD-ENDS.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/KERNEL-XDP.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/MEASUREMENT.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/NET-TUNE.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/NGINX-AWSLC.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/NGINX.md
+  - .claude/skills/tuning-isucon-linux-and-nginx/references/TLS-LB.md
+  deployed_file_hashes:
+    .claude/skills/tuning-isucon-linux-and-nginx/SKILL.md: sha256:44e01aa99f39133060a42fe07c7715ea6f49386bf80b26ecac67a3a4351d2ff4
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/0001-ena-xdp-shared-tx-batched-doorbell.patch: sha256:fca90be12e7119bcd74b2226c5c4841f1b671550e7e0e9f46c21a36ccc44f9e9
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/build.sh: sha256:b0681f4fbd70db87ff3e40200d173b2b82580560ea1b8d9ce0ee796ce8fa26db
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/config-6.17.13-isucon: sha256:e60c6127a1ca08b49f42a280e02ad85c656db1d30be82989abe1573c1be60987
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/install.sh: sha256:a041738db641c068f79c0565d66578ac313779ac39ea3021350a8462021e3617
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/net/99-isucon-sysctl.conf: sha256:0dbae0c127dcdbdc9d54393c2dca91cb2f6dddcfbff7f728095109071cded48c
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/net/isucon-net-tune.service: sha256:aa9f682ddb9962211aace7f27f3bea5f16724adced25d0d354aaa0efecaea55a
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/net/isucon-tls-lb.service: sha256:6a3a76b2ff47f224ece8fd184dec2a64c897210ffb8e75e13ddc3fbcd8e4b36a
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/net/net-tune.sh: sha256:3379d43be299a62ddf8874c37045401dfdc2166cf2a90c5c7997416a28ceac46
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/net/node-metrics.sh: sha256:e7fc551e50725c8c5671e1a21a6bbc8a26775019dd5a24b54b03fa51f3cc81d9
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/net/tls-lb.sh: sha256:f430aa4e8c268ea5ee2d03704ee50e8793f558842b41bd231d663c90a3b12dcb
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/.gitignore: sha256:a5d80035094e18565174a7b927f6f0647613b86186af6a98a16bbd1a7c98a315
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/build.sh: sha256:d5d7e8eca3b026b2abf00e5b139cc8fc67050df83488eb190ea9efecf9eae7cb
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/nginx-awslc.conf: sha256:3666e092de84ad59411e5bc052cdb3e256ac5492fe3eaea43561bb86723cc9dc
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/awslc-sock-no-soerror.patch.py: sha256:2f6752c869591a147dde12ee673e812c6ed51f0be9e78fe3d51a7ad332d6b834
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/awslc-sock-short-read-flag.patch.py: sha256:be205a351bce5bf0a10c36c8fb46746f536566253f12f1c1d84a94c1c8d6e873
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-incoming-cpu.patch.py: sha256:a3506f6d6bb0aac3d29ce5bf5e31d2bec9029611ef91bfb6e87c2e6835d2464c
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-ssl-recv-short-read.patch.py: sha256:0d6da9be27ff010f735a7f8a1c45f92b514c5dc975dcc5b45f4109690d6c6178
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-upstream-cached-no-soerror.patch.py: sha256:b5ca5f08f9ce957cc3b5e8c9cab111f2d8b96890b27ee55d19b89324128e739f
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/xdp/xdp-lb.c: sha256:0a79556505ff917c4f0cd92003ce477ff23910689a064877363065adc9f0f209
+    .claude/skills/tuning-isucon-linux-and-nginx/assets/xdp/xdp-lb.sh: sha256:1d86a5422afc55a0d745e20eed29f6f5cff20ab3c021ea46c40dad2fd119a757
+    .claude/skills/tuning-isucon-linux-and-nginx/references/APP-PATTERNS.md: sha256:34974bc48f64d72ebb30c48bf4f5821be506802315b756ead09d0485f5eb0f48
+    .claude/skills/tuning-isucon-linux-and-nginx/references/DEAD-ENDS.md: sha256:ef1e44df44ba593e1091bdaf0df6546da3ada4c751c0c45f44b4c83a2f78cd0f
+    .claude/skills/tuning-isucon-linux-and-nginx/references/KERNEL-XDP.md: sha256:37119727680ebd4e28e3eee69ff61e13031e940a84ed08ec47d8ae85d6b3fcad
+    .claude/skills/tuning-isucon-linux-and-nginx/references/MEASUREMENT.md: sha256:97ad5fdd2a4d14f7a8bc57fa7b835f603f8707c845d6558ea97c70f666c4e659
+    .claude/skills/tuning-isucon-linux-and-nginx/references/NET-TUNE.md: sha256:a8769ed54f899982876a3b22cbed0bf3f5c0c6e31f661588489b90d0de28ed25
+    .claude/skills/tuning-isucon-linux-and-nginx/references/NGINX-AWSLC.md: sha256:861b242b370e0e1aa80f864d5a4930e2bc93188d0b5dc848d5be25e953ed33dd
+    .claude/skills/tuning-isucon-linux-and-nginx/references/NGINX.md: sha256:578a8850d48b236f02f317e43d95fc1636ac30ae1956d88e4bde7576e94d9080
+    .claude/skills/tuning-isucon-linux-and-nginx/references/TLS-LB.md: sha256:2248dcec7f067e817660361e78e6a3180d819aa7e5dbaa99a39388f4f3d369d9
+  content_hash: sha256:d7424bd897ef74c55365472fb0f8f8d3e489747bbc6ff93996386f862955b24d
+- repo_url: mazrean/apm-package
+  name: apm-package-isucon
+  host: github.com
+  resolved_commit: 3b0b544fa31a79a642f407763c3f5d14ff8ca646
+  version: 0.1.1
+  virtual_path: isucon
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/isucon-conventions.md
+  - .claude/skills/apm-dependency-isucon
+  - .claude/skills/apm-dependency-isucon/SKILL.md
+  deployed_file_hashes:
+    .claude/rules/isucon-conventions.md: sha256:f94ecd2ae86722e149dc432d5c9b164a4ec9b2f39b00fea9325c6fbc76f40d9f
+    .claude/skills/apm-dependency-isucon/SKILL.md: sha256:abc565b0b82ba9343c2229b1c104c268cce450994647be17fea8624be242902b
+  content_hash: sha256:147873fa39e92129faf7c6113b7aea4861ac3fddbc5ce622cb2112e268b8e0ff
+- repo_url: mazrean/agent-skills
+  name: deploying-with-isucon-ansible
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/deploying-with-isucon-ansible
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/deploying-with-isucon-ansible
+  - .claude/skills/deploying-with-isucon-ansible/SKILL.md
+  deployed_file_hashes:
+    .claude/skills/deploying-with-isucon-ansible/SKILL.md: sha256:9c4681347dc42d46d6d7c4e43f74a5c945c6a0ea2282b620fcb86e823d4b57a6
+  content_hash: sha256:f4a944544e3e268f36d360bf68a3eb57418e036041c90572e420ba2c66ab6c06
+- repo_url: mazrean/agent-skills
+  name: designing-isucon-architecture
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/designing-isucon-architecture
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/designing-isucon-architecture
+  - .claude/skills/designing-isucon-architecture/SKILL.md
+  - .claude/skills/designing-isucon-architecture/references/CONSTRAINT-MATRIX.md
+  - .claude/skills/designing-isucon-architecture/references/DESIGN-DIMENSIONS.md
+  - .claude/skills/designing-isucon-architecture/references/DISCOVERY-CHECKLIST.md
+  - .claude/skills/designing-isucon-architecture/references/EXAMPLE-DESIGNS.md
+  - .claude/skills/designing-isucon-architecture/references/OUTPUT-SKILL-TEMPLATE.md
+  deployed_file_hashes:
+    .claude/skills/designing-isucon-architecture/SKILL.md: sha256:ff7879de35716bad9ad05df0efed6ff83d80d3bbc3548a19457871e21e97a144
+    .claude/skills/designing-isucon-architecture/references/CONSTRAINT-MATRIX.md: sha256:31c5daec8d4ecd2b000133f0f47bc920f1afcffe242b54ebd37d0aaa52862f85
+    .claude/skills/designing-isucon-architecture/references/DESIGN-DIMENSIONS.md: sha256:68d7c1bbe244f17d49f96807818dbfd7eea497fd051016776f654ba9a3fda23f
+    .claude/skills/designing-isucon-architecture/references/DISCOVERY-CHECKLIST.md: sha256:583263cf47ae76c012d04921b501cbfee9da477785e3f5c13a8d9224c8c5c8e8
+    .claude/skills/designing-isucon-architecture/references/EXAMPLE-DESIGNS.md: sha256:caddfa20d9d18a63612068d5f8df3edede9deb036f5e8ced323770589e068dfc
+    .claude/skills/designing-isucon-architecture/references/OUTPUT-SKILL-TEMPLATE.md: sha256:6313ba0f6a1b2c4ec21b3ae62a1111cf9d4fc098fb9de89fd95bcf95b321a059
+  content_hash: sha256:81d1c2fb53cbdb30b7d7d2b64ed8aa6ec7beaea786c409d9e00378e66e33ae48
+- repo_url: mazrean/agent-skills
+  name: operating-isucon-servers-via-ssh
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/operating-isucon-servers-via-ssh
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/operating-isucon-servers-via-ssh
+  - .claude/skills/operating-isucon-servers-via-ssh/SKILL.md
+  - .claude/skills/operating-isucon-servers-via-ssh/references/SSH-SETUP.md
+  - .claude/skills/operating-isucon-servers-via-ssh/references/USE-CASES.md
+  deployed_file_hashes:
+    .claude/skills/operating-isucon-servers-via-ssh/SKILL.md: sha256:f13f3f816ff21f29a0973f47529514b556746150df3279f41e2f7c71a17b2ed8
+    .claude/skills/operating-isucon-servers-via-ssh/references/SSH-SETUP.md: sha256:401f03e5e8442c007a57e3a146274452e748f6553e674691a7757918dcc6f713
+    .claude/skills/operating-isucon-servers-via-ssh/references/USE-CASES.md: sha256:63355cf0735ac92ff484f8a3a69b9e910daaeaba8fcf0446505c0f604b56c60d
+  content_hash: sha256:7d0331aa71fe4893cabc6fe32ccc73c8d1c2aa8d59f687ef732d48c3ce811f69
+- repo_url: mazrean/agent-skills
+  name: porting-isucon-rust-to-go
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/porting-isucon-rust-to-go
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/porting-isucon-rust-to-go
+  - .claude/skills/porting-isucon-rust-to-go/SKILL.md
+  - .claude/skills/porting-isucon-rust-to-go/references/CONSTRAINTS.md
+  - .claude/skills/porting-isucon-rust-to-go/references/ECHO-BASE.md
+  - .claude/skills/porting-isucon-rust-to-go/references/ENDPOINT-ANALYSIS.md
+  - .claude/skills/porting-isucon-rust-to-go/references/PORTING-AGENT-TEMPLATE.md
+  - .claude/skills/porting-isucon-rust-to-go/references/TYPE-MAPPING.md
+  deployed_file_hashes:
+    .claude/skills/porting-isucon-rust-to-go/SKILL.md: sha256:e9ac9d2a950b003a55892e96532d8eb9e3cb13630533a519f974a93172d43a33
+    .claude/skills/porting-isucon-rust-to-go/references/CONSTRAINTS.md: sha256:acf9af57517b6728b4e5961b9a238b6087ce9af571723d1553c92dc6a846275b
+    .claude/skills/porting-isucon-rust-to-go/references/ECHO-BASE.md: sha256:8cde7b6f8083e26bbb616a90851807cbd154edecc6e78324ed25589fe5ef1d5f
+    .claude/skills/porting-isucon-rust-to-go/references/ENDPOINT-ANALYSIS.md: sha256:733a2ea54d0e50b5ac25ced3ad721cb3e9853a4d5b04fd86de534d11387162b5
+    .claude/skills/porting-isucon-rust-to-go/references/PORTING-AGENT-TEMPLATE.md: sha256:f30b99d754a2189f7a15102099c990c0bf4640f328c5eced368d60a0ad411aa4
+    .claude/skills/porting-isucon-rust-to-go/references/TYPE-MAPPING.md: sha256:a5a16c55e4e017269ee3be90769e22b00e4e3831e2658000d493776cd9007b67
+  content_hash: sha256:3ac9b920171b0fe3fe8a018dc5ab41655437ad73bb3d59c31625a37a27286131
+- repo_url: mazrean/agent-skills
+  name: using-grafana-mcp
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/using-grafana-mcp
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/using-grafana-mcp
+  - .claude/skills/using-grafana-mcp/SKILL.md
+  - .claude/skills/using-grafana-mcp/references/DASHBOARDS-AND-EDIT.md
+  - .claude/skills/using-grafana-mcp/references/QUERY-PATTERNS.md
+  - .claude/skills/using-grafana-mcp/references/TOOL-REFERENCE.md
+  deployed_file_hashes:
+    .claude/skills/using-grafana-mcp/SKILL.md: sha256:a67060fb959565e31f0ebe5a433d093b3148d470fbea033dc434a43ec08e923a
+    .claude/skills/using-grafana-mcp/references/DASHBOARDS-AND-EDIT.md: sha256:0394df2b97455fcb4dfe835ba06dff89089b8e970e59311057f2c68ade779fda
+    .claude/skills/using-grafana-mcp/references/QUERY-PATTERNS.md: sha256:d382b6214af3863b00ba94e900cc278528c831d03566249be537e98481685419
+    .claude/skills/using-grafana-mcp/references/TOOL-REFERENCE.md: sha256:621e1311e5daae8b6721f20f3e9e9b3d39c39f1b4aff673215420994aef35e48
+  content_hash: sha256:7426ad700b27bf653f2e9629ada649a77fd068442adc14e11ca884f9521c04d5
+- repo_url: mazrean/agent-skills
+  name: winning-isucon
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/winning-isucon
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/winning-isucon
+  - .claude/skills/winning-isucon/SKILL.md
+  - .claude/skills/winning-isucon/assets/Makefile.template
+  - .claude/skills/winning-isucon/assets/my.cnf.template
+  - .claude/skills/winning-isucon/assets/nginx.conf.template
+  - .claude/skills/winning-isucon/references/COMMON-PITFALLS.md
+  - .claude/skills/winning-isucon/references/INITIAL-SETUP.md
+  - .claude/skills/winning-isucon/references/MEASUREMENT.md
+  - .claude/skills/winning-isucon/references/OPTIMIZATION-PATTERNS.md
+  - .claude/skills/winning-isucon/references/RULES.md
+  - .claude/skills/winning-isucon/references/TOP-TEAM-STRATEGIES.md
+  deployed_file_hashes:
+    .claude/skills/winning-isucon/SKILL.md: sha256:50399c297442c64af0719d19fdfa937ac3c6fb87f4d4e12c7190e607333b2c3e
+    .claude/skills/winning-isucon/assets/Makefile.template: sha256:62877eed84a54a61ceef40fd56cb0f51faa6ba7e024ec38b20c4b3ac8626949c
+    .claude/skills/winning-isucon/assets/my.cnf.template: sha256:8f78e9a27e35ff7a798e4da8bb2f909b959cb94b21eb039704691cde0e60157d
+    .claude/skills/winning-isucon/assets/nginx.conf.template: sha256:8be42c4af832624d0bff308dd291bce850a77195e5b8a89f86527f1720e892d3
+    .claude/skills/winning-isucon/references/COMMON-PITFALLS.md: sha256:acb94902428204bec89e013f9cce91ce74d495c319b8424c77f01219d942c3fc
+    .claude/skills/winning-isucon/references/INITIAL-SETUP.md: sha256:50c8e36d27f560d46386553030932c63db40808602a1b00933b6def5f8424eb3
+    .claude/skills/winning-isucon/references/MEASUREMENT.md: sha256:32fcd8d53ed9db33ec1dcf81f1403709ca1699ad761b59330d637c647d9e53c0
+    .claude/skills/winning-isucon/references/OPTIMIZATION-PATTERNS.md: sha256:ecd88d3b1d859d1c09963e11473b2be77d2661ed427045548fd92bf6c808e6f3
+    .claude/skills/winning-isucon/references/RULES.md: sha256:d1afe85e091f420405d3aa28061c70186213a106273fea1f26dc0cf46a6437e9
+    .claude/skills/winning-isucon/references/TOP-TEAM-STRATEGIES.md: sha256:57a9429bf8f7efd3062883f441cade9b3c59c7d4539d25645267162a3b936a9b
+  content_hash: sha256:8c0549776e18bcc896f4f1d665f24373a27387cbd76eb8f5455e294516894357
+- repo_url: mazrean/agent-skills
+  name: writing-isucon-arch-subagent-tasks
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/writing-isucon-arch-subagent-tasks
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/writing-isucon-arch-subagent-tasks
+  - .claude/skills/writing-isucon-arch-subagent-tasks/SKILL.md
+  - .claude/skills/writing-isucon-arch-subagent-tasks/references/DISPATCH-COMMAND.md
+  - .claude/skills/writing-isucon-arch-subagent-tasks/references/EXAMPLES.md
+  - .claude/skills/writing-isucon-arch-subagent-tasks/references/SUBAGENT-TEMPLATE.md
+  - .claude/skills/writing-isucon-arch-subagent-tasks/references/TASK-DECOMPOSITION.md
+  deployed_file_hashes:
+    .claude/skills/writing-isucon-arch-subagent-tasks/SKILL.md: sha256:7a3427551f136dcba418e420c3b989dd2d572d325846eb6f2a1dc8ae62e1822d
+    .claude/skills/writing-isucon-arch-subagent-tasks/references/DISPATCH-COMMAND.md: sha256:f69b4ea856e085fa4ce388685b1f82877c143b07b214c2e14e8dd556d2cdfd10
+    .claude/skills/writing-isucon-arch-subagent-tasks/references/EXAMPLES.md: sha256:4c30f89d91d15785a2267abe35b76bbb749dcace2775f79cfc4d08d5746c2f67
+    .claude/skills/writing-isucon-arch-subagent-tasks/references/SUBAGENT-TEMPLATE.md: sha256:42a4f2c52c14615fe33490a9a42e2a029f4cad48b0f853226242bfc4ea1408a3
+    .claude/skills/writing-isucon-arch-subagent-tasks/references/TASK-DECOMPOSITION.md: sha256:d14dc184aea22046052c79ffd8f630863c1662160c0e523b51e7bd2549f7db3b
+  content_hash: sha256:3c0b1f7eb76df480ba54d4efe0455d96fa4e8a0bff11518b51c48b9cbd070517
+- repo_url: mazrean/apm-package
+  name: apm-package-common
+  host: github.com
+  resolved_commit: 3b0b544fa31a79a642f407763c3f5d14ff8ca646
+  version: 0.4.1
+  virtual_path: common
+  is_virtual: true
+  depth: 2
+  resolved_by: mazrean/apm-package
+  package_type: apm_package
+  deployed_files:
+  - .claude/rules/conventions.md
+  - .claude/skills/apm-dependency-common
+  - .claude/skills/apm-dependency-common/SKILL.md
+  deployed_file_hashes:
+    .claude/rules/conventions.md: sha256:cebf2a94fc0a65856634a5bc75eeab3462072ab3554a0ebee8c79ae80028f8a1
+    .claude/skills/apm-dependency-common/SKILL.md: sha256:21c762b5deba6f5d88606fb1b7f496651fec7b4bf1e03707947ee3d07993aa1c
+  content_hash: sha256:570dcfcac2795d241d8f64a10beff6222c32f812d7f294dbf2e66a917ff08036
+- repo_url: anthropics/skills
+  name: skill-creator
+  host: github.com
+  resolved_commit: ca45fc496a3436251f191354091d557da31c15b5
+  version: unknown
+  virtual_path: skills/skill-creator
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/skill-creator
+  - .claude/skills/skill-creator/LICENSE.txt
+  - .claude/skills/skill-creator/SKILL.md
+  - .claude/skills/skill-creator/agents/analyzer.md
+  - .claude/skills/skill-creator/agents/comparator.md
+  - .claude/skills/skill-creator/agents/grader.md
+  - .claude/skills/skill-creator/assets/eval_review.html
+  - .claude/skills/skill-creator/eval-viewer/generate_review.py
+  - .claude/skills/skill-creator/eval-viewer/viewer.html
+  - .claude/skills/skill-creator/references/schemas.md
+  - .claude/skills/skill-creator/scripts/__init__.py
+  - .claude/skills/skill-creator/scripts/aggregate_benchmark.py
+  - .claude/skills/skill-creator/scripts/generate_report.py
+  - .claude/skills/skill-creator/scripts/improve_description.py
+  - .claude/skills/skill-creator/scripts/package_skill.py
+  - .claude/skills/skill-creator/scripts/quick_validate.py
+  - .claude/skills/skill-creator/scripts/run_eval.py
+  - .claude/skills/skill-creator/scripts/run_loop.py
+  - .claude/skills/skill-creator/scripts/utils.py
+  deployed_file_hashes:
+    .claude/skills/skill-creator/LICENSE.txt: sha256:bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362
+    .claude/skills/skill-creator/SKILL.md: sha256:dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf
+    .claude/skills/skill-creator/agents/analyzer.md: sha256:bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a
+    .claude/skills/skill-creator/agents/comparator.md: sha256:fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e
+    .claude/skills/skill-creator/agents/grader.md: sha256:57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a
+    .claude/skills/skill-creator/assets/eval_review.html: sha256:ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452
+    .claude/skills/skill-creator/eval-viewer/generate_review.py: sha256:fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb
+    .claude/skills/skill-creator/eval-viewer/viewer.html: sha256:a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa
+    .claude/skills/skill-creator/references/schemas.md: sha256:8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f
+    .claude/skills/skill-creator/scripts/__init__.py: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    .claude/skills/skill-creator/scripts/aggregate_benchmark.py: sha256:123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa
+    .claude/skills/skill-creator/scripts/generate_report.py: sha256:13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453
+    .claude/skills/skill-creator/scripts/improve_description.py: sha256:87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80
+    .claude/skills/skill-creator/scripts/package_skill.py: sha256:1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f
+    .claude/skills/skill-creator/scripts/quick_validate.py: sha256:67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365
+    .claude/skills/skill-creator/scripts/run_eval.py: sha256:43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f
+    .claude/skills/skill-creator/scripts/run_loop.py: sha256:7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21
+    .claude/skills/skill-creator/scripts/utils.py: sha256:3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1
+  content_hash: sha256:b2bfe91d69ca99994c0566baede889e7d2b9bb8791c6b6106c5d387392f717f6
+- repo_url: mazrean/agent-skills
+  name: committing-code
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/committing-code
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/committing-code
+  - .claude/skills/committing-code/SKILL.md
+  - .claude/skills/committing-code/references/ATOMIC-COMMITS.md
+  - .claude/skills/committing-code/references/CONVENTIONAL-COMMITS.md
+  deployed_file_hashes:
+    .claude/skills/committing-code/SKILL.md: sha256:92491a597541830ac5abdd3db820aade31869a6ee86ad8c1a6f423ed419f5622
+    .claude/skills/committing-code/references/ATOMIC-COMMITS.md: sha256:805a44f9109098762d11ce8ad50fa48f211a5751e12b75ccab04d0a6b00e6674
+    .claude/skills/committing-code/references/CONVENTIONAL-COMMITS.md: sha256:3b25441bdf16a619ffa82c19e0c4ca579e71cf446d91a9b485e14ff662641cc5
+  content_hash: sha256:9f70f6c02839defb887c6eb2ab1e16291b2ccb076f7b3b72dfb4aad6e33b9a07
+- repo_url: mazrean/agent-skills
+  name: creating-test-cases
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/creating-test-cases
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/creating-test-cases
+  - .claude/skills/creating-test-cases/SKILL.md
+  - .claude/skills/creating-test-cases/references/BUG-PATTERNS.md
+  - .claude/skills/creating-test-cases/references/GO-TESTING.md
+  - .claude/skills/creating-test-cases/references/HEURISTICS.md
+  - .claude/skills/creating-test-cases/references/TECHNIQUES.md
+  deployed_file_hashes:
+    .claude/skills/creating-test-cases/SKILL.md: sha256:ab2e83be598b38021eec9022e6a75ebf6c66d69acba1b02f61ad57e1ec425e51
+    .claude/skills/creating-test-cases/references/BUG-PATTERNS.md: sha256:21e704358181300a4a916a08febd6c5aeef94d39442f783b3d13ac58e3adadfe
+    .claude/skills/creating-test-cases/references/GO-TESTING.md: sha256:18687859fc9e49410f4745f8353dc4df5d6157924015ee454563208283eb0f60
+    .claude/skills/creating-test-cases/references/HEURISTICS.md: sha256:9cc3e1823ef5ff67915cb8fdb1eefe3c88a4ed5f8f581df60512f606c88dcd3e
+    .claude/skills/creating-test-cases/references/TECHNIQUES.md: sha256:e955f4b962d9c486450b489ff8db4c6dc719a3bddd13dbc1f06707b547fcd3a6
+  content_hash: sha256:54e50900780740d562ca0259168bca6765f0bf8e4b3e996bc653570175b03c08
+- repo_url: mazrean/agent-skills
+  name: writing-feature-spec
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/writing-feature-spec
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/writing-feature-spec
+  - .claude/skills/writing-feature-spec/SKILL.md
+  - .claude/skills/writing-feature-spec/references/CONTEXT-LAYERS.md
+  - .claude/skills/writing-feature-spec/references/EXAMPLES.md
+  deployed_file_hashes:
+    .claude/skills/writing-feature-spec/SKILL.md: sha256:c67d82e5f5a9eec14af5387debdbecc271a1310678206d54f526186b114f8be4
+    .claude/skills/writing-feature-spec/references/CONTEXT-LAYERS.md: sha256:97fa4095b0fbc93b39d2b0ac19a5e33ce294ce15420bc6c9cf4e88471933573c
+    .claude/skills/writing-feature-spec/references/EXAMPLES.md: sha256:b16f1c5f6ff87795fcf005175fd7e6274c5646d8db579e05b4f95ee735549e03
+  content_hash: sha256:74815020a22377e6a804aab5c89f1f9eca8f9e17ebd40115ddefeda87f3d3813
+- repo_url: mazrean/agent-skills
+  name: writing-implementation-tasks
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/writing-implementation-tasks
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/writing-implementation-tasks
+  - .claude/skills/writing-implementation-tasks/SKILL.md
+  - .claude/skills/writing-implementation-tasks/references/CONTEXT-LAYERS.md
+  - .claude/skills/writing-implementation-tasks/references/EXAMPLES.md
+  deployed_file_hashes:
+    .claude/skills/writing-implementation-tasks/SKILL.md: sha256:24837d8c6cb00840bb4ef3e6981a4709d62926beef3e3d433bf1e68ff0d5d15e
+    .claude/skills/writing-implementation-tasks/references/CONTEXT-LAYERS.md: sha256:8c123bbc9ebdc6231ec07c3a8eec376b97bb5e27bfab21c762a84a3020024081
+    .claude/skills/writing-implementation-tasks/references/EXAMPLES.md: sha256:ae60af1cc1853145eafd41a4357134acb9e7712421277a4a0287bf5533b1394e
+  content_hash: sha256:5acb35ae2203e63f132d9a9262d0b055ab1ed97592dabe46b14a3a98f2f28b94
+- repo_url: mazrean/agent-skills
+  name: writing-project-constitution
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/writing-project-constitution
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/writing-project-constitution
+  - .claude/skills/writing-project-constitution/SKILL.md
+  - .claude/skills/writing-project-constitution/references/CROSS-AGENT.md
+  - .claude/skills/writing-project-constitution/references/EXAMPLES.md
+  deployed_file_hashes:
+    .claude/skills/writing-project-constitution/SKILL.md: sha256:7ac50a98473520c32c5ad0b8491def7d9114f310ef186cf9f943daac9f49dcd1
+    .claude/skills/writing-project-constitution/references/CROSS-AGENT.md: sha256:0e48b2280abca82f7499d6fb2b4b5f04ca6021f3ba7753f4e5005a23c9334de4
+    .claude/skills/writing-project-constitution/references/EXAMPLES.md: sha256:3729bab2c06c4675de615cb40512d2e9cc94d6fb49ae0e7e5912ee8b01f3d56a
+  content_hash: sha256:fec82725044dc8cbe5814237a1b967122416560cc7f95a15d9ad7439779f8895
+- repo_url: mazrean/agent-skills
+  name: writing-technical-design
+  host: github.com
+  resolved_commit: d715690f46102b91d2db03eb01926560c03c336f
+  version: unknown
+  virtual_path: skills/writing-technical-design
+  is_virtual: true
+  depth: 3
+  resolved_by: mazrean/apm-package
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/writing-technical-design
+  - .claude/skills/writing-technical-design/SKILL.md
+  - .claude/skills/writing-technical-design/references/COMPONENT-SKILLS.md
+  - .claude/skills/writing-technical-design/references/CONTEXT-LAYERS.md
+  - .claude/skills/writing-technical-design/references/DEEP-RESEARCH.md
+  - .claude/skills/writing-technical-design/references/EXAMPLES.md
+  deployed_file_hashes:
+    .claude/skills/writing-technical-design/SKILL.md: sha256:71de6bb966093f7c5d0e7b3322988d9a1a7685b5ee6d76b9f7a24caf35c21da6
+    .claude/skills/writing-technical-design/references/COMPONENT-SKILLS.md: sha256:0298cdd041bd26ee4b62bf4e80ffbb72f400d6d661add03cbcbed4d14dab5b62
+    .claude/skills/writing-technical-design/references/CONTEXT-LAYERS.md: sha256:984808e18f8a684c3e244399442a419add3a6f848eb821a90a9f15782094410e
+    .claude/skills/writing-technical-design/references/DEEP-RESEARCH.md: sha256:aa19472c31ca4d2609aab22e43e1154fb157f241f677ff722ce8f93086728faf
+    .claude/skills/writing-technical-design/references/EXAMPLES.md: sha256:414a3f03431008220736544fd4f9e7e072ac3bc74fdbf1408eb4f281fe82acb2
+  content_hash: sha256:e3307d513bcec3ee9d23273dafadae0d0b28c1954bae3640885b4608ae193501
+deployments:
+- kind: project-relative
+  target: claude
+  value: .claude/rules/conventions.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/apm-package/common
+  active_owner: mazrean/apm-package/common
+  content_hash: sha256:cebf2a94fc0a65856634a5bc75eeab3462072ab3554a0ebee8c79ae80028f8a1
+- kind: project-relative
+  target: claude
+  value: .claude/rules/isucon-conventions.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/apm-package/isucon
+  active_owner: mazrean/apm-package/isucon
+  content_hash: sha256:f94ecd2ae86722e149dc432d5c9b164a4ec9b2f39b00fea9325c6fbc76f40d9f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/apm-dependency-common
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/apm-package/common
+  active_owner: mazrean/apm-package/common
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/apm-dependency-common/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/apm-package/common
+  active_owner: mazrean/apm-package/common
+  content_hash: sha256:21c762b5deba6f5d88606fb1b7f496651fec7b4bf1e03707947ee3d07993aa1c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/apm-dependency-isucon
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/apm-package/isucon
+  active_owner: mazrean/apm-package/isucon
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/apm-dependency-isucon/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/apm-package/isucon
+  active_owner: mazrean/apm-package/isucon
+  content_hash: sha256:abc565b0b82ba9343c2229b1c104c268cce450994647be17fea8624be242902b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-code
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/committing-code
+  active_owner: mazrean/agent-skills/skills/committing-code
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-code/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/committing-code
+  active_owner: mazrean/agent-skills/skills/committing-code
+  content_hash: sha256:92491a597541830ac5abdd3db820aade31869a6ee86ad8c1a6f423ed419f5622
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-code/references/ATOMIC-COMMITS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/committing-code
+  active_owner: mazrean/agent-skills/skills/committing-code
+  content_hash: sha256:805a44f9109098762d11ce8ad50fa48f211a5751e12b75ccab04d0a6b00e6674
+- kind: project-relative
+  target: claude
+  value: .claude/skills/committing-code/references/CONVENTIONAL-COMMITS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/committing-code
+  active_owner: mazrean/agent-skills/skills/committing-code
+  content_hash: sha256:3b25441bdf16a619ffa82c19e0c4ca579e71cf446d91a9b485e14ff662641cc5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/creating-test-cases
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/creating-test-cases
+  active_owner: mazrean/agent-skills/skills/creating-test-cases
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/creating-test-cases/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/creating-test-cases
+  active_owner: mazrean/agent-skills/skills/creating-test-cases
+  content_hash: sha256:ab2e83be598b38021eec9022e6a75ebf6c66d69acba1b02f61ad57e1ec425e51
+- kind: project-relative
+  target: claude
+  value: .claude/skills/creating-test-cases/references/BUG-PATTERNS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/creating-test-cases
+  active_owner: mazrean/agent-skills/skills/creating-test-cases
+  content_hash: sha256:21e704358181300a4a916a08febd6c5aeef94d39442f783b3d13ac58e3adadfe
+- kind: project-relative
+  target: claude
+  value: .claude/skills/creating-test-cases/references/GO-TESTING.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/creating-test-cases
+  active_owner: mazrean/agent-skills/skills/creating-test-cases
+  content_hash: sha256:18687859fc9e49410f4745f8353dc4df5d6157924015ee454563208283eb0f60
+- kind: project-relative
+  target: claude
+  value: .claude/skills/creating-test-cases/references/HEURISTICS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/creating-test-cases
+  active_owner: mazrean/agent-skills/skills/creating-test-cases
+  content_hash: sha256:9cc3e1823ef5ff67915cb8fdb1eefe3c88a4ed5f8f581df60512f606c88dcd3e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/creating-test-cases/references/TECHNIQUES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/creating-test-cases
+  active_owner: mazrean/agent-skills/skills/creating-test-cases
+  content_hash: sha256:e955f4b962d9c486450b489ff8db4c6dc719a3bddd13dbc1f06707b547fcd3a6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/deploying-with-isucon-ansible
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/deploying-with-isucon-ansible
+  active_owner: mazrean/agent-skills/skills/deploying-with-isucon-ansible
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/deploying-with-isucon-ansible/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/deploying-with-isucon-ansible
+  active_owner: mazrean/agent-skills/skills/deploying-with-isucon-ansible
+  content_hash: sha256:9c4681347dc42d46d6d7c4e43f74a5c945c6a0ea2282b620fcb86e823d4b57a6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: sha256:ff7879de35716bad9ad05df0efed6ff83d80d3bbc3548a19457871e21e97a144
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture/references/CONSTRAINT-MATRIX.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: sha256:31c5daec8d4ecd2b000133f0f47bc920f1afcffe242b54ebd37d0aaa52862f85
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture/references/DESIGN-DIMENSIONS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: sha256:68d7c1bbe244f17d49f96807818dbfd7eea497fd051016776f654ba9a3fda23f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture/references/DISCOVERY-CHECKLIST.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: sha256:583263cf47ae76c012d04921b501cbfee9da477785e3f5c13a8d9224c8c5c8e8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture/references/EXAMPLE-DESIGNS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: sha256:caddfa20d9d18a63612068d5f8df3edede9deb036f5e8ced323770589e068dfc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/designing-isucon-architecture/references/OUTPUT-SKILL-TEMPLATE.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/designing-isucon-architecture
+  active_owner: mazrean/agent-skills/skills/designing-isucon-architecture
+  content_hash: sha256:6313ba0f6a1b2c4ec21b3ae62a1111cf9d4fc098fb9de89fd95bcf95b321a059
+- kind: project-relative
+  target: claude
+  value: .claude/skills/operating-isucon-servers-via-ssh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  active_owner: mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/operating-isucon-servers-via-ssh/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  active_owner: mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  content_hash: sha256:f13f3f816ff21f29a0973f47529514b556746150df3279f41e2f7c71a17b2ed8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/operating-isucon-servers-via-ssh/references/SSH-SETUP.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  active_owner: mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  content_hash: sha256:401f03e5e8442c007a57e3a146274452e748f6553e674691a7757918dcc6f713
+- kind: project-relative
+  target: claude
+  value: .claude/skills/operating-isucon-servers-via-ssh/references/USE-CASES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  active_owner: mazrean/agent-skills/skills/operating-isucon-servers-via-ssh
+  content_hash: sha256:63355cf0735ac92ff484f8a3a69b9e910daaeaba8fcf0446505c0f604b56c60d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: sha256:e9ac9d2a950b003a55892e96532d8eb9e3cb13630533a519f974a93172d43a33
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go/references/CONSTRAINTS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: sha256:acf9af57517b6728b4e5961b9a238b6087ce9af571723d1553c92dc6a846275b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go/references/ECHO-BASE.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: sha256:8cde7b6f8083e26bbb616a90851807cbd154edecc6e78324ed25589fe5ef1d5f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go/references/ENDPOINT-ANALYSIS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: sha256:733a2ea54d0e50b5ac25ced3ad721cb3e9853a4d5b04fd86de534d11387162b5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go/references/PORTING-AGENT-TEMPLATE.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: sha256:f30b99d754a2189f7a15102099c990c0bf4640f328c5eced368d60a0ad411aa4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/porting-isucon-rust-to-go/references/TYPE-MAPPING.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  active_owner: mazrean/agent-skills/skills/porting-isucon-rust-to-go
+  content_hash: sha256:a5a16c55e4e017269ee3be90769e22b00e4e3831e2658000d493776cd9007b67
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: sha256:0a54a3d5a32e693c7c2a293ec425ce1e9dc8b7424a65b15cd1eeff46214f9952
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent/references/BENCH-LOOP.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: sha256:ab86968582e20396f9483e794c3548194f8f811276bae4bcb7902c4c7c794460
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent/references/HARNESS-SETUP.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: sha256:b4935c885a643001774079569b0c8dcc0d62864dfae198915ccd64b29b08aa38
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent/references/OBSERVED-BARRIERS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: sha256:148e3dafc76c2a40a467ff9733debdde15ea8a7cb48e241cc2bcab64944da575
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent/references/PORTAL-BENCH.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: sha256:a0879a37e7e32705b70b57a2b7186ab3a5ab099991055ae8e318f1a916ed6d45
+- kind: project-relative
+  target: claude
+  value: .claude/skills/running-isucon-as-an-agent/scripts/contest-stop-hook.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/running-isucon-as-an-agent
+  active_owner: mazrean/agent-skills/skills/running-isucon-as-an-agent
+  content_hash: sha256:d156eeb1972a6cab91fe2db2ab44f9c60e396182a7a7d268038340fd6aabf834
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/LICENSE.txt
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/agents/analyzer.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/agents/comparator.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/agents/grader.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/assets/eval_review.html
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/eval-viewer/generate_review.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/eval-viewer/viewer.html
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/references/schemas.md
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/__init__.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/aggregate_benchmark.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/generate_report.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/improve_description.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/package_skill.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/quick_validate.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/run_eval.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/run_loop.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21
+- kind: project-relative
+  target: claude
+  value: .claude/skills/skill-creator/scripts/utils.py
+  runtime: null
+  scope: project
+  owners:
+  - anthropics/skills/skills/skill-creator
+  active_owner: anthropics/skills/skills/skill-creator
+  content_hash: sha256:3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:44e01aa99f39133060a42fe07c7715ea6f49386bf80b26ecac67a3a4351d2ff4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/0001-ena-xdp-shared-tx-batched-doorbell.patch
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:fca90be12e7119bcd74b2226c5c4841f1b671550e7e0e9f46c21a36ccc44f9e9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/build.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:b0681f4fbd70db87ff3e40200d173b2b82580560ea1b8d9ce0ee796ce8fa26db
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/config-6.17.13-isucon
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:e60c6127a1ca08b49f42a280e02ad85c656db1d30be82989abe1573c1be60987
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/kernel/install.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:a041738db641c068f79c0565d66578ac313779ac39ea3021350a8462021e3617
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/net/99-isucon-sysctl.conf
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:0dbae0c127dcdbdc9d54393c2dca91cb2f6dddcfbff7f728095109071cded48c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/net/isucon-net-tune.service
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:aa9f682ddb9962211aace7f27f3bea5f16724adced25d0d354aaa0efecaea55a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/net/isucon-tls-lb.service
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:6a3a76b2ff47f224ece8fd184dec2a64c897210ffb8e75e13ddc3fbcd8e4b36a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/net/net-tune.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:3379d43be299a62ddf8874c37045401dfdc2166cf2a90c5c7997416a28ceac46
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/net/node-metrics.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:e7fc551e50725c8c5671e1a21a6bbc8a26775019dd5a24b54b03fa51f3cc81d9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/net/tls-lb.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:f430aa4e8c268ea5ee2d03704ee50e8793f558842b41bd231d663c90a3b12dcb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/.gitignore
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:a5d80035094e18565174a7b927f6f0647613b86186af6a98a16bbd1a7c98a315
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/build.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:d5d7e8eca3b026b2abf00e5b139cc8fc67050df83488eb190ea9efecf9eae7cb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/nginx-awslc.conf
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:3666e092de84ad59411e5bc052cdb3e256ac5492fe3eaea43561bb86723cc9dc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/awslc-sock-no-soerror.patch.py
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:2f6752c869591a147dde12ee673e812c6ed51f0be9e78fe3d51a7ad332d6b834
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/awslc-sock-short-read-flag.patch.py
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:be205a351bce5bf0a10c36c8fb46746f536566253f12f1c1d84a94c1c8d6e873
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-incoming-cpu.patch.py
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:a3506f6d6bb0aac3d29ce5bf5e31d2bec9029611ef91bfb6e87c2e6835d2464c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-ssl-recv-short-read.patch.py
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:0d6da9be27ff010f735a7f8a1c45f92b514c5dc975dcc5b45f4109690d6c6178
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/nginx-awslc/patches/nginx-upstream-cached-no-soerror.patch.py
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:b5ca5f08f9ce957cc3b5e8c9cab111f2d8b96890b27ee55d19b89324128e739f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/xdp/xdp-lb.c
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:0a79556505ff917c4f0cd92003ce477ff23910689a064877363065adc9f0f209
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/assets/xdp/xdp-lb.sh
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:1d86a5422afc55a0d745e20eed29f6f5cff20ab3c021ea46c40dad2fd119a757
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/APP-PATTERNS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:34974bc48f64d72ebb30c48bf4f5821be506802315b756ead09d0485f5eb0f48
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/DEAD-ENDS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:ef1e44df44ba593e1091bdaf0df6546da3ada4c751c0c45f44b4c83a2f78cd0f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/KERNEL-XDP.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:37119727680ebd4e28e3eee69ff61e13031e940a84ed08ec47d8ae85d6b3fcad
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/MEASUREMENT.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:97ad5fdd2a4d14f7a8bc57fa7b835f603f8707c845d6558ea97c70f666c4e659
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/NET-TUNE.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:a8769ed54f899982876a3b22cbed0bf3f5c0c6e31f661588489b90d0de28ed25
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/NGINX-AWSLC.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:861b242b370e0e1aa80f864d5a4930e2bc93188d0b5dc848d5be25e953ed33dd
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/NGINX.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:578a8850d48b236f02f317e43d95fc1636ac30ae1956d88e4bde7576e94d9080
+- kind: project-relative
+  target: claude
+  value: .claude/skills/tuning-isucon-linux-and-nginx/references/TLS-LB.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  active_owner: mazrean/agent-skills/skills/tuning-isucon-linux-and-nginx
+  content_hash: sha256:2248dcec7f067e817660361e78e6a3180d819aa7e5dbaa99a39388f4f3d369d9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-grafana-mcp
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/using-grafana-mcp
+  active_owner: mazrean/agent-skills/skills/using-grafana-mcp
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-grafana-mcp/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/using-grafana-mcp
+  active_owner: mazrean/agent-skills/skills/using-grafana-mcp
+  content_hash: sha256:a67060fb959565e31f0ebe5a433d093b3148d470fbea033dc434a43ec08e923a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-grafana-mcp/references/DASHBOARDS-AND-EDIT.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/using-grafana-mcp
+  active_owner: mazrean/agent-skills/skills/using-grafana-mcp
+  content_hash: sha256:0394df2b97455fcb4dfe835ba06dff89089b8e970e59311057f2c68ade779fda
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-grafana-mcp/references/QUERY-PATTERNS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/using-grafana-mcp
+  active_owner: mazrean/agent-skills/skills/using-grafana-mcp
+  content_hash: sha256:d382b6214af3863b00ba94e900cc278528c831d03566249be537e98481685419
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-grafana-mcp/references/TOOL-REFERENCE.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/using-grafana-mcp
+  active_owner: mazrean/agent-skills/skills/using-grafana-mcp
+  content_hash: sha256:621e1311e5daae8b6721f20f3e9e9b3d39c39f1b4aff673215420994aef35e48
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:50399c297442c64af0719d19fdfa937ac3c6fb87f4d4e12c7190e607333b2c3e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/assets/Makefile.template
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:62877eed84a54a61ceef40fd56cb0f51faa6ba7e024ec38b20c4b3ac8626949c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/assets/my.cnf.template
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:8f78e9a27e35ff7a798e4da8bb2f909b959cb94b21eb039704691cde0e60157d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/assets/nginx.conf.template
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:8be42c4af832624d0bff308dd291bce850a77195e5b8a89f86527f1720e892d3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/references/COMMON-PITFALLS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:acb94902428204bec89e013f9cce91ce74d495c319b8424c77f01219d942c3fc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/references/INITIAL-SETUP.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:50c8e36d27f560d46386553030932c63db40808602a1b00933b6def5f8424eb3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/references/MEASUREMENT.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:32fcd8d53ed9db33ec1dcf81f1403709ca1699ad761b59330d637c647d9e53c0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/references/OPTIMIZATION-PATTERNS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:ecd88d3b1d859d1c09963e11473b2be77d2661ed427045548fd92bf6c808e6f3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/references/RULES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:d1afe85e091f420405d3aa28061c70186213a106273fea1f26dc0cf46a6437e9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/winning-isucon/references/TOP-TEAM-STRATEGIES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/winning-isucon
+  active_owner: mazrean/agent-skills/skills/winning-isucon
+  content_hash: sha256:57a9429bf8f7efd3062883f441cade9b3c59c7d4539d25645267162a3b936a9b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-feature-spec
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-feature-spec
+  active_owner: mazrean/agent-skills/skills/writing-feature-spec
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-feature-spec/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-feature-spec
+  active_owner: mazrean/agent-skills/skills/writing-feature-spec
+  content_hash: sha256:c67d82e5f5a9eec14af5387debdbecc271a1310678206d54f526186b114f8be4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-feature-spec/references/CONTEXT-LAYERS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-feature-spec
+  active_owner: mazrean/agent-skills/skills/writing-feature-spec
+  content_hash: sha256:97fa4095b0fbc93b39d2b0ac19a5e33ce294ce15420bc6c9cf4e88471933573c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-feature-spec/references/EXAMPLES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-feature-spec
+  active_owner: mazrean/agent-skills/skills/writing-feature-spec
+  content_hash: sha256:b16f1c5f6ff87795fcf005175fd7e6274c5646d8db579e05b4f95ee735549e03
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-implementation-tasks
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-implementation-tasks
+  active_owner: mazrean/agent-skills/skills/writing-implementation-tasks
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-implementation-tasks/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-implementation-tasks
+  active_owner: mazrean/agent-skills/skills/writing-implementation-tasks
+  content_hash: sha256:24837d8c6cb00840bb4ef3e6981a4709d62926beef3e3d433bf1e68ff0d5d15e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-implementation-tasks/references/CONTEXT-LAYERS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-implementation-tasks
+  active_owner: mazrean/agent-skills/skills/writing-implementation-tasks
+  content_hash: sha256:8c123bbc9ebdc6231ec07c3a8eec376b97bb5e27bfab21c762a84a3020024081
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-implementation-tasks/references/EXAMPLES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-implementation-tasks
+  active_owner: mazrean/agent-skills/skills/writing-implementation-tasks
+  content_hash: sha256:ae60af1cc1853145eafd41a4357134acb9e7712421277a4a0287bf5533b1394e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-isucon-arch-subagent-tasks
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  active_owner: mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-isucon-arch-subagent-tasks/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  active_owner: mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  content_hash: sha256:7a3427551f136dcba418e420c3b989dd2d572d325846eb6f2a1dc8ae62e1822d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-isucon-arch-subagent-tasks/references/DISPATCH-COMMAND.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  active_owner: mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  content_hash: sha256:f69b4ea856e085fa4ce388685b1f82877c143b07b214c2e14e8dd556d2cdfd10
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-isucon-arch-subagent-tasks/references/EXAMPLES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  active_owner: mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  content_hash: sha256:4c30f89d91d15785a2267abe35b76bbb749dcace2775f79cfc4d08d5746c2f67
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-isucon-arch-subagent-tasks/references/SUBAGENT-TEMPLATE.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  active_owner: mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  content_hash: sha256:42a4f2c52c14615fe33490a9a42e2a029f4cad48b0f853226242bfc4ea1408a3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-isucon-arch-subagent-tasks/references/TASK-DECOMPOSITION.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  active_owner: mazrean/agent-skills/skills/writing-isucon-arch-subagent-tasks
+  content_hash: sha256:d14dc184aea22046052c79ffd8f630863c1662160c0e523b51e7bd2549f7db3b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-project-constitution
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-project-constitution
+  active_owner: mazrean/agent-skills/skills/writing-project-constitution
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-project-constitution/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-project-constitution
+  active_owner: mazrean/agent-skills/skills/writing-project-constitution
+  content_hash: sha256:7ac50a98473520c32c5ad0b8491def7d9114f310ef186cf9f943daac9f49dcd1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-project-constitution/references/CROSS-AGENT.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-project-constitution
+  active_owner: mazrean/agent-skills/skills/writing-project-constitution
+  content_hash: sha256:0e48b2280abca82f7499d6fb2b4b5f04ca6021f3ba7753f4e5005a23c9334de4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-project-constitution/references/EXAMPLES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-project-constitution
+  active_owner: mazrean/agent-skills/skills/writing-project-constitution
+  content_hash: sha256:3729bab2c06c4675de615cb40512d2e9cc94d6fb49ae0e7e5912ee8b01f3d56a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-technical-design
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-technical-design
+  active_owner: mazrean/agent-skills/skills/writing-technical-design
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-technical-design/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-technical-design
+  active_owner: mazrean/agent-skills/skills/writing-technical-design
+  content_hash: sha256:71de6bb966093f7c5d0e7b3322988d9a1a7685b5ee6d76b9f7a24caf35c21da6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-technical-design/references/COMPONENT-SKILLS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-technical-design
+  active_owner: mazrean/agent-skills/skills/writing-technical-design
+  content_hash: sha256:0298cdd041bd26ee4b62bf4e80ffbb72f400d6d661add03cbcbed4d14dab5b62
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-technical-design/references/CONTEXT-LAYERS.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-technical-design
+  active_owner: mazrean/agent-skills/skills/writing-technical-design
+  content_hash: sha256:984808e18f8a684c3e244399442a419add3a6f848eb821a90a9f15782094410e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-technical-design/references/DEEP-RESEARCH.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-technical-design
+  active_owner: mazrean/agent-skills/skills/writing-technical-design
+  content_hash: sha256:aa19472c31ca4d2609aab22e43e1154fb157f241f677ff722ce8f93086728faf
+- kind: project-relative
+  target: claude
+  value: .claude/skills/writing-technical-design/references/EXAMPLES.md
+  runtime: null
+  scope: project
+  owners:
+  - mazrean/agent-skills/skills/writing-technical-design
+  active_owner: mazrean/agent-skills/skills/writing-technical-design
+  content_hash: sha256:414a3f03431008220736544fd4f9e7e072ac3bc74fdbf1408eb4f281fe82acb2
+- kind: uri
+  target: mcp
+  value: grafana
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: serena
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+mcp_servers:
+- grafana
+- serena
+mcp_configs:
+  grafana:
+    name: grafana
+    transport: http
+    registry: false
+    url: http://localhost:8000/mcp
+  serena:
+    name: serena
+    transport: stdio
+    args:
+    - --from
+    - git+https://github.com/oraios/serena
+    - serena
+    - start-mcp-server
+    - --context
+    - ide-assistant
+    - --project
+    - .
+    registry: false
+    command: uvx
+mcp_target_servers:
+  claude:
+  - grafana
+  - serena
+mcp_config_provenance:
+  grafana: apm-package-isucon
+  serena: apm-package-isucon

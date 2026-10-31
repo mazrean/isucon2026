@@ -275,3 +275,4 @@ END: 2026-10-31 18:00 JST
 | eu/am 全日 | 書き込みの転送 1 RTT + d4 以降の asia1 の待ち、読みの WM 待ち 1 RTT | 転送の書き込みの 1 RTT 超えの削減と push の尾 (転送担当)、自分の投稿を地域内で確定 (REGION_POST 担当)、login/logout を地域内で確定 (LOCAL_SESSION、未ベンチ) |
 | 全地域 GP | asia: 投稿の列、eu/am: JC=1 + 枠 2 でほぼ 100% (15345) | 上と同じ |
 | 検証役 | Memories・export・画像 | MEMORIES_CACHE (既定)、画像の sendfile と export のメモリ化 (検証役担当) |
+- 凍結 (16:30) の時に: deploy.sh の `PPROF-127.0.0.1:6060` の既定を空に変える (今は担当が pprof を使うので on のまま)。

@@ -79,7 +79,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-192.168.4.10}"'
       setenv ISUREAL_NODE_NAME '"$h"'
       setenv PGSSLMODE '"${PGSSL:-allow}"'
-      setenv ISUREAL_PPROF_ADDR 127.0.0.1:6060
+      setenv ISUREAL_PPROF_ADDR '"${PPROF-127.0.0.1:6060}"'
       setenv ISUREAL_MEM '"$MEM"'
       setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
       setenv ISUREAL_MEM_WM_HB '"$MEM_WM_HB"'

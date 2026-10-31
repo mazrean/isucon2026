@@ -1,0 +1,35 @@
+time=2026-10-31T03:35:09.393Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:35:12.621Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:35:15.399Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:35:18.475Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T03:35:21.694Z level=INFO msg="europe 2 日目: 17 人"
+time=2026-10-31T03:35:24.394Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T03:35:27.661Z level=INFO msg="asia 3 日目: 143 人"
+time=2026-10-31T03:35:30.449Z level=INFO msg="europe 3 日目: 46 人"
+time=2026-10-31T03:35:30.929Z level=INFO msg="user moved" user=kune.5722 from=asia to=europe
+time=2026-10-31T03:35:33.457Z level=INFO msg="america 3 日目: 41 人"
+time=2026-10-31T03:35:34.051Z level=INFO msg="user moved" user=yusol5832 from=asia to=america
+time=2026-10-31T03:35:36.412Z level=INFO msg="asia 4 日目: 373 人"
+time=2026-10-31T03:35:39.706Z level=INFO msg="europe 4 日目: 128 人"
+time=2026-10-31T03:35:42.597Z level=INFO msg="user moved" user=yake6897 from=asia to=europe
+time=2026-10-31T03:35:42.976Z level=INFO msg="america 4 日目: 109 人"
+time=2026-10-31T03:35:43.114Z level=INFO msg="user moved" user=chiyuan.7181 from=asia to=europe
+time=2026-10-31T03:35:43.791Z level=INFO msg="user moved" user=hikaka.7151 from=asia to=europe
+time=2026-10-31T03:35:44.980Z level=INFO msg="user moved" user=ruhema_7760 from=asia to=europe
+time=2026-10-31T03:35:45.488Z level=INFO msg="asia 5 日目: 944 人"
+time=2026-10-31T03:35:50.333Z level=INFO msg="europe 5 日目: 192 人"
+time=2026-10-31T03:35:50.654Z level=INFO msg="user moved" user=tsuul-8038 from=europe to=america
+time=2026-10-31T03:35:51.617Z level=INFO msg="user moved" user=shinimu_9051 from=america to=asia
+time=2026-10-31T03:35:53.557Z level=INFO msg="america 5 日目: 111 人"
+time=2026-10-31T03:36:01.197Z level=INFO msg="america 最終日（グランプリ）: 111 人"
+time=2026-10-31T03:36:02.025Z level=INFO msg="europe 最終日（グランプリ）: 191 人"
+time=2026-10-31T03:36:05.777Z level=INFO msg="asia 最終日（グランプリ）: 944 人"
+time=2026-10-31T03:36:09.424Z level=INFO msg="グランプリ: アジア 199 人, ヨーロッパ 171 人, アメリカ 103 人"
+{
+  "pass": true,
+  "score": 113783,
+  "messages": []
+}
+
+reason= 実行終了
+job=8713 state=4 pass=true スコア=113783 種別エラー数=map[]

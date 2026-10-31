@@ -33,9 +33,9 @@ SECRET=$(cat "$SECRET_FILE")
 FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
 FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
-MEM_WM=${MEM_WM:-0}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
+MEM_WM=${MEM_WM:-1}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
 PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
-MEMORIES_PAR=${MEMORIES_PAR:-0}   # 1 = Memories run posts/RealMojis/comments queries at once (1 DB round trip instead of 3)
+MEMORIES_PAR=${MEMORIES_PAR:-1}   # 1 = Memories run posts/RealMojis/comments queries at once (1 DB round trip instead of 3)
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 FWD_PRIORITY=${FWD_PRIORITY:-0}   # 1 = asia1 runs forwarded (eu/am) writes first; local writes go through a semaphore (webapp/go/priority.go)

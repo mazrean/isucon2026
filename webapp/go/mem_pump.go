@@ -236,13 +236,14 @@ type memPollRow struct {
 	Tbl sql.NullString `db:"tbl"`
 	Op  sql.NullString `db:"op"`
 	Row []byte         `db:"row"`
+	Xid sql.NullString `db:"xid"`
 }
 
 // fetchChanges は prev スナップショット以降にコミットされた変更と、新しいスナップショットを返す (単一文 = 単一スナップショット)。
 func fetchChanges(ctx context.Context, db *sqlx.DB, prev string) ([]memChange, string, error) {
 	var rows []memPollRow
 	if err := db.SelectContext(ctx, &rows, `
-  SELECT s.cur::text AS cur, c.seq, c.tbl, c.op, c.row
+  SELECT s.cur::text AS cur, c.seq, c.tbl, c.op, c.row, c.xid::text AS xid
   FROM (SELECT pg_current_snapshot() AS cur) s
   LEFT JOIN mem_changelog c ON c.xid >= pg_snapshot_xmin($1::pg_snapshot) AND NOT pg_visible_in_snapshot(c.xid, $1::pg_snapshot)
   ORDER BY c.seq
@@ -257,7 +258,11 @@ func fetchChanges(ctx context.Context, db *sqlx.DB, prev string) ([]memChange, s
 		if !r.Seq.Valid {
 			continue
 		}
-		changes = append(changes, memChange{Seq: r.Seq.Int64, Tbl: r.Tbl.String, Op: r.Op.String, Row: r.Row})
+		ch := memChange{Seq: r.Seq.Int64, Tbl: r.Tbl.String, Op: r.Op.String, Row: r.Row}
+		if memApplyChunk > 0 {
+			ch.Xid = r.Xid.String
+		}
+		changes = append(changes, ch)
 	}
 	return changes, rows[0].Cur, nil
 }

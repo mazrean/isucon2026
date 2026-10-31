@@ -783,7 +783,7 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 				continue // ロックを手放している間に、先行の push がこのバッチまで適用した
 			}
 		}
-		if err := r.m.applyBatch(b.Changes); err != nil {
+		if err := r.m.applyBatchChunked(b.Changes, memApplyChunk); err != nil {
 			slog.Error("mem: apply failed", "error", err)
 			r.m.ready.Store(false)
 			go r.invalidate()
@@ -866,7 +866,7 @@ func (r *memReceiver) fillGap(epoch string, to int64) error {
 		if mb.Seq != r.seq+1 {
 			return fmt.Errorf("mem: pulled batch %d does not follow %d", mb.Seq, r.seq)
 		}
-		if err := r.m.applyBatch(mb.Changes); err != nil {
+		if err := r.m.applyBatchChunked(mb.Changes, memApplyChunk); err != nil {
 			return err
 		}
 		r.seq = mb.Seq

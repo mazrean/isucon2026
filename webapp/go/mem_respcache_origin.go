@@ -1,6 +1,7 @@
 package isureal
 
 import (
+	"bytes"
 	"crypto/subtle"
 	"io"
 	"net/http"
@@ -77,6 +78,11 @@ func fetchOrigin(c *echo.Context) (memOriginResp, bool) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil || resp.StatusCode >= 500 {
+		return r, false
+	}
+	// the origin did not accept the request's region (fwd headers / source address not trusted):
+	// a Memories / export of the viewer's own data never answers that, so compute locally instead.
+	if resp.StatusCode == http.StatusForbidden && bytes.Contains(body, []byte("region_mismatch")) {
 		return r, false
 	}
 	r.code, r.hdr, r.body = resp.StatusCode, resp.Header, body

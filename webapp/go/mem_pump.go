@@ -467,6 +467,7 @@ func loadMemFromDB(ctx context.Context, db *sqlx.DB) (*memData, string, error) {
 			minDate = &v
 		}
 	}
+	minDate = d.hotLoadFrom(ctx, db, minDate) // ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go)
 	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow

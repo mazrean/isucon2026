@@ -162,6 +162,8 @@ if true; then
   # forward target when FWD_TARGET=192.168.4.10; no nginx there
   scp -q "$OUT/isureal" asia2:/tmp/isureal.new
   scp -q etc/systemd/isureal-go.service.d/20-stop.conf asia2:/tmp/20-stop.conf
+  scp -q etc/systemd/isureal-go.service.d/40-oom-asia2.conf asia2:/tmp/40-oom.conf
+  scp -q etc/systemd/postgresql.service.d/50-oom.conf asia2:/tmp/50-pgoom.conf
   jc_scp asia2
   scp -q etc/pg/primary-cpu.conf asia2:/tmp/zz-cpu.conf
   scp -q etc/pg/primary-fpw-off.conf asia2:/tmp/zz-fpw.conf
@@ -179,7 +181,9 @@ if true; then
     grep -q "^ISUREAL_LOCALIMG=" /home/isucon/env.sh && sed -i "s|^ISUREAL_LOCALIMG=.*|ISUREAL_LOCALIMG='"$LOCALIMG"'|" /home/isucon/env.sh || echo "ISUREAL_LOCALIMG='"$LOCALIMG"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_ASIA_LOCALIMG=" /home/isucon/env.sh && sed -i "s|^ISUREAL_ASIA_LOCALIMG=.*|ISUREAL_ASIA_LOCALIMG=0|" /home/isucon/env.sh || echo "ISUREAL_ASIA_LOCALIMG=0" >> /home/isucon/env.sh
     grep -q "^ISUREAL_PREVALIDATE=" /home/isucon/env.sh && sed -i "s|^ISUREAL_PREVALIDATE=.*|ISUREAL_PREVALIDATE='"$PREVALIDATE"'|" /home/isucon/env.sh || echo "ISUREAL_PREVALIDATE='"$PREVALIDATE"'" >> /home/isucon/env.sh
-    sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
+    sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf
+    sudo install -D -m 644 /tmp/40-oom.conf /etc/systemd/system/isureal-go.service.d/40-oom.conf
+    sudo install -D -m 644 /tmp/50-pgoom.conf /etc/systemd/system/postgresql@16-main.service.d/50-oom.conf && sudo systemctl daemon-reload
     '"$JC_REMOTE"'
     install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
     sudo systemctl enable isureal-go >/dev/null 2>&1; sudo systemctl restart isureal-go

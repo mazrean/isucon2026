@@ -644,6 +644,7 @@ type memReceiver struct {
 	wmPending []memWMMsg
 	// MEM_FULL の冷たい読みの待ち (mem_full.go): 適用済みの pump の seq (-1 = 未同期) と store の seq
 	appliedPump, appliedStore atomic.Int64
+	loadCancel                context.CancelFunc // MEM_FULL: 今の世代のホット外のロードを止める (mu 下)
 	coldNotify                memNotify
 }
 
@@ -665,6 +666,10 @@ func (r *memReceiver) invalidate() uint64 {
 	r.appliedPump.Store(-1)
 	r.appliedStore.Store(0)
 	r.gen++
+	if r.loadCancel != nil {
+		r.loadCancel() // MEM_FULL: 古い世代の SQL / 構築を止める
+		r.loadCancel = nil
+	}
 	g := r.gen
 	r.mu.Unlock()
 	r.rsMu.Lock()
@@ -732,7 +737,21 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 		return err
 	}
 	if memFull {
-		if err := memLoadCold(d); err != nil {
+		r.mu.Lock()
+		if r.gen != g {
+			r.mu.Unlock()
+			return nil // 途中で無効化された → ループが再試行する
+		}
+		lctx, lcancel := context.WithTimeout(context.Background(), 180*time.Second)
+		r.loadCancel = lcancel
+		r.mu.Unlock()
+		err := memLoadCold(lctx, d)
+		slog.Info("mem-full: cold load returned", "gen", g, "error", err, "ctx", lctx.Err())
+		lcancel()
+		if err != nil {
+			if lctx.Err() == context.Canceled {
+				return nil // 無効化で止めた: 最新の世代をループがやり直す
+			}
 			return err
 		}
 	}

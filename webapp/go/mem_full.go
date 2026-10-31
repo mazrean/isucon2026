@@ -2,9 +2,12 @@ package isureal
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
+	"runtime"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -175,56 +178,220 @@ func memFullMinDate(d *memData, minDate *time.Time) *time.Time {
 }
 
 // memLoadCold: peer のダンプにホット外の投稿/コメント/RealMoji を自分の PG から足す。
-func memLoadCold(d *memData) error {
+// 行はストリームで読み (一括スライスを作らない。StructScan の反射は 1 行 ~8µs かかるので列を直接 Scan)、新しく足した投稿の索引 (投稿期間ごとの投稿、投稿ごとのコメント/RealMoji)
+// には append だけして、最後に一度だけ整列する。ctx は世代ごと (invalidate で取り消される)。
+func memLoadCold(ctx context.Context, d *memData) error {
 	if memFullDB == nil {
 		return nil
 	}
 	start := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
-	defer cancel()
+	var gc0 runtime.MemStats
+	runtime.ReadMemStats(&gc0)
 	before := "infinity"
 	if d.hotKnown {
 		before = d.hotFrom.Format(time.DateOnly)
 	}
-	var posts []memPostRow
-	if err := memFullDB.SelectContext(ctx, &posts, `
+	var tSQL, tScan, tApply time.Duration
+	stream := func(q string, scan func(*sqlx.Rows) error) (int, error) {
+		t0 := time.Now()
+		rows, err := memFullDB.QueryxContext(ctx, q, before)
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+		n := 0
+		first := true
+		for rows.Next() {
+			if first {
+				tSQL += time.Since(t0) // 最初の行まで = SQL の実行
+				first = false
+			}
+			if err := scan(rows); err != nil {
+				return n, err
+			}
+			n++
+		}
+		if first {
+			tSQL += time.Since(t0)
+		}
+		return n, rows.Err()
+	}
+	fresh := map[*memPost]struct{}{}     // このロードで足した投稿 (コメント/RealMoji は append だけ)
+	touched := map[*memWindow]struct{}{} // 投稿を append した投稿期間
+	nPosts, err := stream(`
    SELECT p.id, p.author_id, p.posting_window_id, p.image_id, p.caption, p.visibility,
           p.location_kind, p.latitude, p.longitude, p.locality, p.posted_at, p.deleted_at
    FROM posts p JOIN posting_windows w ON w.id = p.posting_window_id
-   WHERE w.local_date < $1::date`, before); err != nil {
+   WHERE w.local_date < $1::date`, func(rows *sqlx.Rows) error {
+		var r memPostRow
+		t0 := time.Now()
+		if err := rows.Scan(&r.ID, &r.AuthorID, &r.PostingWindowID, &r.ImageID, &r.Caption, &r.Visibility, &r.LocationKind, &r.Latitude, &r.Longitude, &r.Locality, &r.PostedAt, &r.DeletedAt); err != nil {
+			return err
+		}
+		t1 := time.Now()
+		tScan += t1.Sub(t0)
+		if d.posts[r.ID] == nil { // ダンプ (pump のメモリ) にあるものはそちらが新しい
+			w := d.windows[r.PostingWindowID]
+			if w == nil {
+				d.applyPost(r)
+			} else {
+				author := d.user(r.AuthorID)
+				p := &memPost{Post: Post{
+					ID: r.ID, AuthorID: r.AuthorID, PostingWindowID: r.PostingWindowID, ImageID: r.ImageID,
+					Caption: r.Caption, Visibility: r.Visibility,
+					PostLocation: PostLocation{Kind: r.LocationKind, Latitude: r.Latitude, Longitude: r.Longitude, Locality: r.Locality},
+					PostedAt:     memLocal(r.PostedAt),
+				}, deleted: r.DeletedAt != nil, author: author, window: w}
+				d.posts[r.ID] = p
+				w.posts = append(w.posts, p)
+				author.posts = append(author.posts, p)
+				touched[w] = struct{}{}
+				fresh[p] = struct{}{}
+			}
+		}
+		tApply += time.Since(t1)
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	for _, r := range posts {
-		if d.posts[r.ID] != nil {
-			continue // ダンプ (pump のメモリ) の方が新しい
-		}
-		d.applyPost(r)
-	}
-	nPosts := len(posts)
-	posts = nil
-	var comments []memCommentRow
-	if err := memFullDB.SelectContext(ctx, &comments, `
+	nComments, err := stream(`
    SELECT c.id, c.post_id, c.author_id, c.body, c.created_at, c.deleted_at
    FROM comments c JOIN posts p ON p.id = c.post_id JOIN posting_windows w ON w.id = p.posting_window_id
-   WHERE w.local_date < $1::date AND c.deleted_at IS NULL`, before); err != nil {
+   WHERE w.local_date < $1::date AND c.deleted_at IS NULL`, func(rows *sqlx.Rows) error {
+		var r memCommentRow
+		t0 := time.Now()
+		if err := rows.Scan(&r.ID, &r.PostID, &r.AuthorID, &r.Body, &r.CreatedAt, &r.DeletedAt); err != nil {
+			return err
+		}
+		t1 := time.Now()
+		tScan += t1.Sub(t0)
+		if p := d.posts[r.PostID]; p != nil {
+			if _, ok := fresh[p]; ok {
+				p.comments = append(p.comments, &memComment{ID: r.ID, PostID: r.PostID, author: d.user(r.AuthorID), Body: r.Body, CreatedAt: memLocal(r.CreatedAt)})
+			} else {
+				d.applyComment(r)
+			}
+		}
+		tApply += time.Since(t1)
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	for _, r := range comments {
-		d.applyComment(r)
-	}
-	nComments := len(comments)
-	comments = nil
-	var realmojis []memRealMojiRow
-	if err := memFullDB.SelectContext(ctx, &realmojis, `
+	nRealMojis, err := stream(`
    SELECT r.id, r.post_id, r.reactor_id, r.image_id, r.reaction_type, r.created_at, r.replaced_at, r.deleted_at
    FROM realmojis r JOIN posts p ON p.id = r.post_id JOIN posting_windows w ON w.id = p.posting_window_id
-   WHERE w.local_date < $1::date AND r.replaced_at IS NULL AND r.deleted_at IS NULL`, before); err != nil {
+   WHERE w.local_date < $1::date AND r.replaced_at IS NULL AND r.deleted_at IS NULL`, func(rows *sqlx.Rows) error {
+		var r memRealMojiRow
+		t0 := time.Now()
+		if err := rows.Scan(&r.ID, &r.PostID, &r.ReactorID, &r.ImageID, &r.ReactionType, &r.CreatedAt, &r.ReplacedAt, &r.DeletedAt); err != nil {
+			return err
+		}
+		t1 := time.Now()
+		tScan += t1.Sub(t0)
+		if p := d.posts[r.PostID]; p != nil {
+			if _, ok := fresh[p]; ok {
+				p.realmojis = append(p.realmojis, &memRealMoji{ID: r.ID, PostID: r.PostID, reactor: d.user(r.ReactorID), ImageID: r.ImageID, ReactionType: r.ReactionType, CreatedAt: memLocal(r.CreatedAt)})
+			} else {
+				d.applyRealMoji(r)
+			}
+		}
+		tApply += time.Since(t1)
+		return nil
+	})
+	if err != nil {
 		return err
 	}
-	for _, r := range realmojis {
-		d.applyRealMoji(r)
+	t0 := time.Now()
+	for w := range touched {
+		sort.Slice(w.posts, func(i, j int) bool { return memPostLess(w.posts[i], w.posts[j]) })
 	}
+	for p := range fresh {
+		if len(p.comments) > 1 {
+			sort.Slice(p.comments, func(i, j int) bool {
+				return memTimeIDLess(p.comments[i].CreatedAt, p.comments[i].ID, p.comments[j].CreatedAt, p.comments[j].ID)
+			})
+		}
+		if len(p.realmojis) > 1 {
+			sort.Slice(p.realmojis, func(i, j int) bool {
+				return memTimeIDLess(p.realmojis[i].CreatedAt, p.realmojis[i].ID, p.realmojis[j].CreatedAt, p.realmojis[j].ID)
+			})
+		}
+	}
+	tSort := time.Since(t0)
 	d.hotFrom, d.hotKnown = time.Time{}, true
-	slog.Info("mem-full: cold rows loaded", "posts", nPosts, "comments", nComments, "realmojis", len(realmojis), "elapsed", time.Since(start))
+	var gc1 runtime.MemStats
+	runtime.ReadMemStats(&gc1)
+	slog.Info("mem-full: cold rows loaded", "posts", nPosts, "comments", nComments, "realmojis", nRealMojis,
+		"elapsed", time.Since(start), "sql", tSQL, "scan", tScan, "apply", tApply, "sort", tSort,
+		"gc_pause", time.Duration(gc1.PauseTotalNs-gc0.PauseTotalNs), "gc_n", gc1.NumGC-gc0.NumGC, "gc_cpu", gc1.GCCPUFraction,
+		"heap_mib", gc1.HeapInuse>>20, "gomaxprocs", runtime.GOMAXPROCS(0))
 	return nil
+}
+
+// --- 送り手側の確認 (ISUREAL_COLD_ORIGIN): 冷たい読みのノードが ready・同じ epoch・追いついているときだけ転送する ---
+
+type coldOriginStatus struct {
+	Ready bool   `json:"ready"`
+	Epoch string `json:"epoch"`
+	Pump  int64  `json:"pump"`
+	Store int64  `json:"store"`
+	at    time.Time
+}
+
+var (
+	coldOriginSt        atomic.Pointer[coldOriginStatus]
+	coldPumpEpochFn     func() string // asia1: pump の epoch (setupMem が設定)
+	coldOriginMaxLag    = int64(envIntOrDefault("ISUREAL_COLD_ORIGIN_MAX_LAG", 256))
+	coldOriginPollEvery = 100 * time.Millisecond
+	coldOriginPollOnce  sync.Once
+	coldOriginSkipped   atomic.Int64
+)
+
+// registerMemFullStatus: MEM_FULL の peer (asia2) が状態を答える。
+func registerMemFullStatus(e *echo.Echo, r *memReceiver) {
+	e.GET("/internal/mem/full-status", func(c *echo.Context) error {
+		if !memAuthOK(c) {
+			return c.NoContent(http.StatusForbidden)
+		}
+		r.mu.Lock()
+		epoch := r.epoch
+		r.mu.Unlock()
+		return c.JSON(http.StatusOK, coldOriginStatus{Ready: r.m.on(), Epoch: epoch, Pump: r.appliedPump.Load(), Store: r.appliedStore.Load()})
+	})
+}
+
+func coldOriginPollLoop() {
+	client := &http.Client{Timeout: 500 * time.Millisecond}
+	for {
+		var st coldOriginStatus
+		req, _ := http.NewRequest(http.MethodGet, "http://"+coldOrigin+"/internal/mem/full-status", nil)
+		req.Header.Set(forwardedSecretHeader, forwardSecret)
+		if resp, err := client.Do(req); err == nil {
+			if resp.StatusCode == http.StatusOK && json.NewDecoder(resp.Body).Decode(&st) == nil {
+				st.at = time.Now()
+				coldOriginSt.Store(&st)
+			}
+			resp.Body.Close()
+		}
+		time.Sleep(coldOriginPollEvery)
+	}
+}
+
+// coldOriginGate: cold_origin.go が転送の前に呼ぶ (テストで差し替える)。
+var coldOriginGate = coldOriginUsable
+
+// coldOriginUsable: 転送してよいか (標本が新しく、ready、asia1 なら同じ epoch で遅れが MAX_LAG 以下)。
+func coldOriginUsable() bool {
+	coldOriginPollOnce.Do(func() { go coldOriginPollLoop() })
+	st := coldOriginSt.Load()
+	ok := st != nil && st.Ready && time.Since(st.at) < 5*coldOriginPollEvery
+	if ok && coldPumpEpochFn != nil && coldPumpSeqFn != nil {
+		ok = st.Epoch == coldPumpEpochFn() && coldPumpSeqFn()-st.Pump <= coldOriginMaxLag
+	}
+	if !ok {
+		coldOriginSkipped.Add(1)
+	}
+	return ok
 }

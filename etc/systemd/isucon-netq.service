@@ -1,0 +1,12 @@
+[Unit]
+Description=ISUCON NIC queue <-> CPU alignment (IRQ pin + XPS, irqbalance off) (scripts/os-knobs.sh NETQ=1)
+After=network-online.target irqbalance.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/isucon-netq.sh on
+
+[Install]
+WantedBy=multi-user.target

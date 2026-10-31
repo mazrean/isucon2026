@@ -96,6 +96,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_LOCAL_ONLY_WRITE '"${LOCAL_ONLY_WRITE:-1}"'
       setenv ISUREAL_SIGN_SIMD_MIN '"${SIGN_SIMD_MIN:-}"'
       setenv ISUREAL_DB_IMG_OPEN '"${DB_IMG_OPEN:-12}"'
+      setenv ISUREAL_IMG_PREEXTEND_MB '"${IMG_PREEXTEND_MB:-0}"'
       setenv ISUREAL_DB_IMG_READ_OPEN '"${DB_IMG_READ_OPEN:-16}"'
       setenv ISUREAL_POST_SLOT_EXEMPT '"${POST_SLOT_EXEMPT:-0}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_CACHE_DIR '"${ASIA1_IMG_DISK:--}"'; else setenv ISUREAL_IMAGE_CACHE_DIR /home/isucon/imgcache; fi

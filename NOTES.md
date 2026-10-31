@@ -197,6 +197,7 @@ END: 2026-10-31 18:00 JST
 | 13916 | - | 67391 | LOGREPL=1 (eb992f8 修正版、公式) on 既定 (往復削減 3 つ、ASIA_LOCALIMG=0)。asia 18/45/123/322/322、eu 121 / am 89、GP 273/120/84。remote_apply で全体が遅くなり半減 → LOGREPL は不採用で確定。invalid_session 401 が 3 件。後始末は確認済み (slot 0、synchronous_standby_names 空、watchdog 2 つとも inactive) |
 | 14134 | - | 146362 | 既定の確認 (MEMORIES_CACHE=1、往復削減 3 つ、ASIA_LOCALIMG=0)。asia 18/52/153/415/618 (d4→d5 1.49 倍)、eu 223 / am 310。GP 368/212/297。画像 GET の 500 が 6 件 (専用プール 12 本を INSERT と取り合って 10s 超え) → 409612f で読みを別プールに |
 | 14564 | - | 131600 | 409612f (画像の読みを別プール、投稿は枠外) + MEM_WM_HB=1 + JPEG 委譲から asia2 を外す。asia 18/48/135/350/428、eu 173 / am 249、GP 268/170/235。投稿タイムアウト 3。eu d2-d3 も悪化 → WM_HB と JPEG の振り分けは既定に戻す |
+| 14901 | - | 135075 | ASIA_LOCALIMG=1 (グループコミット + fsync を tx の前) + 409612f。asia 18/48/137/383/652 (d4→d5 1.70)、eu 287 / am 287、GP 336/214/261。ASIA_LOCALIMG は既定 off のまま。友達申請の地域 (直近 30 分): eu 発の 80% が asia 宛て → eu/am の地域内確定 (REGION_STORE) は効かない |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

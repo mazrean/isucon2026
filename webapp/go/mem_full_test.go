@@ -16,6 +16,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -230,13 +231,15 @@ func TestMemFullCold(t *testing.T) {
 	}
 	// 書き込み直後の読み: pump の seq を待ってからメモリで答える (RYW)
 	c.token = lr.Token
-	code, b = c.json("POST", "/api/posts/"+postIDs[len(postIDs)-1]+"/comments", map[string]string{"body": "mf-ryw"})
+	var own string
+	_ = db.Get(&own, `SELECT id FROM posts WHERE author_id = $1 AND deleted_at IS NULL ORDER BY posted_at LIMIT 1`, u.id)
+	code, b = c.json("POST", "/api/posts/"+own+"/comments", map[string]string{"body": "mf-ryw"})
 	seq := pumpSeq()
-	cc, bc, el := get(sc.URL, "/api/posts/"+postIDs[len(postIDs)-1]+"/comments", hop("pump", seq))
-	ca, ba, _ = get(sa.URL, "/api/posts/"+postIDs[len(postIDs)-1]+"/comments", nil)
-	t.Logf("ryw: comment %d, peer wait %v, same=%v", code, el, ca == cc && ba == bc)
-	if ca != cc || ba != bc {
-		t.Errorf("ryw mismatch: db %.200s / peer %.200s", ba, bc)
+	cc, bc, el := get(sc.URL, "/api/posts/"+own+"/comments", hop("pump", seq))
+	ca, ba, _ = get(sa.URL, "/api/posts/"+own+"/comments", nil)
+	t.Logf("ryw: comment %d, peer wait %v, same=%v, seen=%v", code, el, ca == cc && ba == bc, strings.Contains(bc, "mf-ryw"))
+	if ca != cc || ba != bc || (code == 201 && !strings.Contains(bc, "mf-ryw")) {
+		t.Errorf("ryw mismatch: %d %.300s / db %.200s / peer %.200s", code, b, ba, bc)
 	}
 }
 

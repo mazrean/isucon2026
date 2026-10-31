@@ -91,6 +91,9 @@ func (r *memReceiver) coldWait(ctx context.Context, space string, target int64) 
 		if r.m.on() && r.coldApplied(space) >= target {
 			return true
 		}
+		if !r.m.ready.Load() {
+			return false // 再同期中 (ダンプ + ホット外のロードで数十秒): 待たずに PG
+		}
 		select {
 		case <-ch:
 		case <-time.After(5 * time.Millisecond): // lease の回復など通知の無い変化
@@ -169,7 +172,7 @@ func memLoadCold(d *memData) error {
 		return nil
 	}
 	start := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 	before := "infinity"
 	if d.hotKnown {

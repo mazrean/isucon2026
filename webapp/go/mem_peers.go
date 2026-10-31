@@ -610,7 +610,7 @@ type memReceiver struct {
 	wmPending []memWMMsg
 	// MEM_FULL の冷たい読みの待ち (mem_full.go): 適用済みの pump の seq (-1 = 未同期) と store の seq
 	appliedPump, appliedStore atomic.Int64
-	coldNotify               memNotify
+	coldNotify                memNotify
 }
 
 func newMemReceiver(m *memStore) *memReceiver {

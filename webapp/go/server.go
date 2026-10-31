@@ -82,7 +82,8 @@ func NewServer(config *Config) *echo.Echo {
 		configurePool(imgDB, n)
 		handlerContext.Img = imgDB
 		// ASIA_LOCALIMG=1 では投稿が h.Img を使わず上限が無くなるので、枠から外さない。
-		if !asiaLocalImgOn {
+		// ISUREAL_POST_SLOT_EXEMPT=1 only: with it on, asia d4→d5 fell to 1.2–1.7x (14564/14901/15134).
+		if !asiaLocalImgOn && os.Getenv("ISUREAL_POST_SLOT_EXEMPT") == "1" {
 			fwdPriorityLocalExempt = func(req *http.Request) bool {
 				return req.Method == http.MethodPost && req.URL.Path == "/api/posts"
 			}

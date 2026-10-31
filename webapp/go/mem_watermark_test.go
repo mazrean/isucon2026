@@ -315,11 +315,11 @@ func TestMemMarkWMMode(t *testing.T) {
 
 // pump: setWM は単調で、newEpoch で 0 に戻る。並列数の上限を超えて送らない。
 func TestMemPeersSetWM(t *testing.T) {
-	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", wmInflight: memWMInflight, wmMode: true}, {addr: "127.0.0.1:2"}}}
+	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", wmInflight: memWMInflightLimit(), wmMode: true}, {addr: "127.0.0.1:2"}}}
 	ps.cond = sync.NewCond(&ps.mu)
 	ps.setWM(100)
 	ps.setWM(90)
-	if ps.wm != 100 || ps.peers[0].wmInflight != memWMInflight || ps.peers[1].wmInflight != 0 {
+	if ps.wm != 100 || ps.peers[0].wmInflight != memWMInflightLimit() || ps.peers[1].wmInflight != 0 {
 		t.Fatalf("wm=%d inflight=%d/%d", ps.wm, ps.peers[0].wmInflight, ps.peers[1].wmInflight)
 	}
 	ps.mu.Lock()
@@ -374,5 +374,20 @@ func TestMemPercentiles(t *testing.T) {
 	p50, p90, p99 := memPercentiles(d)
 	if p50 != 51*time.Millisecond || p90 != 91*time.Millisecond || p99 != 100*time.Millisecond {
 		t.Fatalf("%v %v %v", p50, p90, p99)
+	}
+}
+
+// pump (ISUREAL_MEM_WM_HB): publishWM は新しい seq に対して wm を載せる (単調)。publish は wm を変えない。
+func TestMemPeersPublishWM(t *testing.T) {
+	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", inflight: 1 << 20}}}
+	ps.cond = sync.NewCond(&ps.mu)
+	ps.publishWM([]memChange{{Seq: 1}}, 100)
+	if ps.seq != 1 || ps.wm != 100 {
+		t.Fatalf("seq=%d wm=%d", ps.seq, ps.wm)
+	}
+	ps.publishWM([]memChange{{Seq: 2}}, 90)
+	ps.publish([]memChange{{Seq: 3}})
+	if ps.seq != 3 || ps.wm != 100 || len(ps.peers[0].pending) != 3 {
+		t.Fatalf("seq=%d wm=%d pending=%d", ps.seq, ps.wm, len(ps.peers[0].pending))
 	}
 }

@@ -688,6 +688,11 @@ func (d *decoder) applyBlack() (image.Image, error) {
 	// or CMYK)" as per
 	// https://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/JPEG.html#Adobe
 	// we assume that it is YCbCrK. This matches libjpeg's jdapimin.c.
+	// jpegcheck: past the check above applyBlack cannot fail and returns an
+	// image with d.img3's bounds.
+	if true {
+		return d.img3, nil
+	}
 	if d.adobeTransform != adobeTransformUnknown {
 		// Convert the YCbCr part of the YCbCrK to RGB, invert the RGB to get
 		// CMY, and patch in the original K. The RGB to CMY inversion cancels
@@ -777,6 +782,11 @@ func (d *decoder) convertToRGB() (image.Image, error) {
 		return nil, errUnsupportedSubsamplingRatio
 	}
 
+	// jpegcheck: past the check above convertToRGB cannot fail and returns an
+	// image with d.img3's bounds.
+	if true {
+		return d.img3, nil
+	}
 	cScale := h0 / h1
 	bounds := d.img3.Bounds()
 	img := image.NewRGBA(bounds)

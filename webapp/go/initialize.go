@@ -26,6 +26,10 @@ func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 		localImgPurgePeers(c.Request().Context())
 		asiaLocalImgPurge()
 		imgCachePurgePeers(c.Request().Context())
+		// このホスト (asia1) の画像キャッシュも空にする。消さないとベンチごとの
+		// アップロード分が /home/isucon/imgcache に溜まり続け、ディスク満杯で
+		// nginx が本文の一時ファイルを書けず PUT /api/me/profile-image 等が 500 になる。
+		images.purge()
 		cmd := exec.Command("../sql/init.sh")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

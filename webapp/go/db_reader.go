@@ -101,9 +101,27 @@ func newReadRouter(config *Config, primary *sqlx.DB) *readRouter {
 	return router
 }
 
+// ISUREAL_DB_KEEP_IDLE (default on): keep every opened connection idle in the
+// pool (MaxIdle = MaxOpen, idle timeout ISUREAL_DB_IDLE_SEC, default 600s).
+// With MaxIdle = size/2 and a 30s idle timeout, every posting-window burst
+// closed the surplus connections and reopened them on the next burst: on
+// asia1 that was ~5% of the Go CPU in SCRAM pbkdf2 (pgconn.scramAuth) plus a
+// backend fork and cold catalog cache on asia2 per reconnect. The open cap is
+// unchanged, so the peak number of PG backends is unchanged. =0 restores the
+// old size/2 + 30s.
+var (
+	dbKeepIdle = os.Getenv("ISUREAL_DB_KEEP_IDLE") != "0"
+	dbIdleTime = time.Duration(envIntOrDefault("ISUREAL_DB_IDLE_SEC", 600)) * time.Second
+)
+
 func configurePool(db *sqlx.DB, size int) {
 	db.SetMaxOpenConns(size)
-	db.SetMaxIdleConns(max(size/2, 1))
-	db.SetConnMaxIdleTime(30 * time.Second)
+	if dbKeepIdle {
+		db.SetMaxIdleConns(size)
+		db.SetConnMaxIdleTime(dbIdleTime)
+	} else {
+		db.SetMaxIdleConns(max(size/2, 1))
+		db.SetConnMaxIdleTime(30 * time.Second)
+	}
 	db.SetConnMaxLifetime(0)
 }

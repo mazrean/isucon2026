@@ -42,6 +42,8 @@ var (
 	memRespCacheOn       = os.Getenv("ISUREAL_MEMORIES_CACHE") == "1"
 	memRespCacheMaxBytes = envIntDefault("ISUREAL_MEMORIES_CACHE_MB", 256) << 20
 	memRespCacheMaxEntry = 16 << 20
+	// ISUREAL_EXPORT_CACHE_MB > 0: exports get their own budget (Memories keep ISUREAL_MEMORIES_CACHE_MB); 0 = shared
+	memRespExportMaxBytes = envIntDefault("ISUREAL_EXPORT_CACHE_MB", 0) << 20
 
 	memRespHits, memRespMiss, memRespPuts, memRespVeto atomic.Int64 // テスト / 観測用
 )
@@ -90,6 +92,7 @@ type memRespCache struct {
 	byTag   map[string]map[memRespKey]struct{}
 	tagSeq  map[string]uint64
 	bytes   int
+	exBytes int // export entries (memRespExport) within bytes
 }
 
 // memURLBucket is the exp signedImageURL uses now.
@@ -160,7 +163,23 @@ func (c *memRespCache) putAux(k memRespKey, f memRespFill, body []byte, tags []s
 	if old := c.entries[k]; old != nil {
 		c.removeLocked(k, old)
 	}
-	if c.bytes+len(body) > memRespCacheMaxBytes {
+	if memRespExportMaxBytes > 0 {
+		// ISUREAL_EXPORT_CACHE_MB: export and Memories evict only within their own budget
+		limit, used := memRespCacheMaxBytes, func() int { return c.bytes - c.exBytes }
+		if k.kind == memRespExport {
+			limit, used = memRespExportMaxBytes, func() int { return c.exBytes }
+		}
+		if used()+len(body) > limit {
+			for ek, e := range c.entries {
+				if used()+len(body) <= limit*3/4 {
+					break
+				}
+				if (ek.kind == memRespExport) == (k.kind == memRespExport) {
+					c.removeLocked(ek, e)
+				}
+			}
+		}
+	} else if c.bytes+len(body) > memRespCacheMaxBytes {
 		// evict arbitrary entries (map order) down to 3/4 of the budget
 		for ek, e := range c.entries {
 			if c.bytes+len(body) <= memRespCacheMaxBytes*3/4 {
@@ -171,6 +190,9 @@ func (c *memRespCache) putAux(k memRespKey, f memRespFill, body []byte, tags []s
 	}
 	c.entries[k] = &memRespEntry{body: body, tags: tags, bucket: f.bucket, aux: aux}
 	c.bytes += len(body)
+	if k.kind == memRespExport {
+		c.exBytes += len(body)
+	}
 	for _, t := range tags {
 		s := c.byTag[t]
 		if s == nil {
@@ -185,6 +207,9 @@ func (c *memRespCache) putAux(k memRespKey, f memRespFill, body []byte, tags []s
 func (c *memRespCache) removeLocked(k memRespKey, e *memRespEntry) {
 	delete(c.entries, k)
 	c.bytes -= len(e.body)
+	if k.kind == memRespExport {
+		c.exBytes -= len(e.body)
+	}
 	for _, t := range e.tags {
 		if s := c.byTag[t]; s != nil {
 			delete(s, k)
@@ -222,7 +247,7 @@ func (c *memRespCache) clearAll() {
 	defer c.mu.Unlock()
 	c.seq++
 	c.floor = c.seq
-	c.entries, c.byTag, c.tagSeq, c.bytes = nil, nil, nil, 0
+	c.entries, c.byTag, c.tagSeq, c.bytes, c.exBytes = nil, nil, nil, 0, 0
 }
 
 // respCache returns the cache to use for this request, or nil (DB path only).

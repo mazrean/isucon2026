@@ -30,6 +30,7 @@ END: 2026-10-31 18:00 JST
 | 10:44 | 9315bb9 | 16875 | true | 読み書き分離基盤+posting-window修正+SSE集約+画像キャッシュ+ログ抑制 |
 | 10:50 | 6f6685e | 0 | **false** | nginx 調整。デプロイ直後の asia1 再起動 (停止 10s) 中に initialize → 502。deploy で起動待ち + TimeoutStopSec=3 に修正 |
 | 10:52 | 6032c39 | 16175 | true | レプリカ再生停止で回復 |
+| 10:58 | 7b0c307 | 0 | **false** | GET 転送 + PG 1GB。driver の zsh で lock 取得失敗 → E2E の投稿がベンチ中に混入し「存在しない投稿」で整合性違反。アプリ起因ではない |
 
 ## バックログ (優先順)
 1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)

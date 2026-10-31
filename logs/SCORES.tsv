@@ -38,3 +38,4 @@
 13:03	3f16959	job=10890 state=4 pass=false スコア=0 種別エラー数=map[]	LOGREPL=1 (論理レプリカでメモリ反映、asia2 watchdog) + 既定
 13:07	8d2fcbc	job=11091 state=4 pass=true スコア=104839 種別エラー数=map[]	既定 + FOR KEY SHARE (GP の窓) + asia1 CPU 削減 3 本
 13:10	aeac274	job=11272 state=4 pass=true スコア=112194 種別エラー数=map[]	画像の push 停止 (IMG_PEERS 空、閲覧時に取り寄せ) + KEY SHARE。lease 修正後の初の push off
+13:14	ef45497	job=11493 state=4 pass=true スコア=129380 種別エラー数=map[]	push 停止 + KEY SHARE + FWD_PRIORITY=1 (転送された eu/am の書き込みを asia1 で優先)

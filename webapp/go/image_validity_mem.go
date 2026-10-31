@@ -60,7 +60,7 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 	}
 	d := m.d
 	u := d.users[owner]
-	if !u.active() {
+	if !u.active() || u.SecretKeyHash == "" {
 		return imageValidity{}, false
 	}
 	ok := u.ProfileImageID != nil && *u.ProfileImageID == imageID
@@ -81,7 +81,8 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 		}
 		stale := imgPostIndex.d != d
 		imgPostIndex.mu.RUnlock()
-		if stale && !imgPostIndex.loading.Load() {
+		// pump (asia1) only: peers re-sync often and are cross-region from the DB.
+		if stale && h.memPump != nil && !imgPostIndex.loading.Load() {
 			go rebuildImgPostIndex(h)
 		}
 		if hit && ref.authorID == owner {
@@ -121,20 +122,26 @@ func rebuildImgPostIndex(h *HandlerContext) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	start := time.Now()
-	rows, err := h.DB.QueryContext(ctx, `SELECT image_id, id, author_id FROM posts WHERE deleted_at IS NULL`)
+	// background pool: keep the request pool free right after initialize.
+	rows, err := h.BG.QueryContext(ctx, `SELECT image_id, id, author_id FROM posts WHERE deleted_at IS NULL`)
 	if err != nil {
 		slog.Warn("imgv: post index load failed", "error", err)
 		return
 	}
 	defer rows.Close()
 	idx := make(map[string]imgPostRef, 1<<16)
+	authors := make(map[string]string) // intern: few authors, many posts
 	for rows.Next() {
 		var img, id, author string
 		if err := rows.Scan(&img, &id, &author); err != nil {
 			slog.Warn("imgv: post index scan failed", "error", err)
 			return
 		}
-		idx[img] = imgPostRef{postID: id, authorID: author}
+		a, ok := authors[author]
+		if !ok {
+			authors[author], a = author, author
+		}
+		idx[img] = imgPostRef{postID: id, authorID: a}
 	}
 	if err := rows.Err(); err != nil {
 		slog.Warn("imgv: post index load failed", "error", err)

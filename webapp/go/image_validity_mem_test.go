@@ -22,7 +22,7 @@ func TestMemImageValid(t *testing.T) {
 	check := func(img, owner string, want bool) {
 		t.Helper()
 		v, ok := memImageValid(h, img, owner)
-		if ok != want || (ok && (!v.found || !v.valid)) {
+		if ok != want || (ok && (!v.found || !v.valid || v.secretKeyHash == "")) {
 			t.Fatalf("%s/%s: ok=%v v=%+v want %v", img, owner, ok, v, want)
 		}
 	}

@@ -28,6 +28,7 @@ END: 2026-10-31 18:00 JST
 | 10:25 | 8cd4fff | 3407 | true | 画像署名キャッシュ |
 | 10:36 | e33b814 | 7633 | true | 書き込みを asia1 へ転送 |
 | 10:44 | 9315bb9 | 16875 | true | 読み書き分離基盤+posting-window修正+SSE集約+画像キャッシュ+ログ抑制 |
+| 10:50 | 6f6685e | 0 | **false** | nginx 調整。デプロイ直後の asia1 再起動 (停止 10s) 中に initialize → 502。deploy で起動待ち + TimeoutStopSec=3 に修正 |
 
 ## バックログ (優先順)
 1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)

@@ -153,6 +153,9 @@ func (s *memPushStatsT) loop() {
 // memIdleConns: peer ごとに保つ keep-alive 接続数。ISUREAL_MEM_WM_HB=1 は並列 push / wm 通知を 16+16 本にするので、
 // 16 では溢れた分が毎回 TCP を張り直す (asia1→eu/am で +1 RTT)。
 func memIdleConns() int {
+	if v := envInt("ISUREAL_MEM_IDLE_CONNS", 0); v > 0 {
+		return v
+	}
 	if os.Getenv("ISUREAL_MEM_WM_HB") == "1" {
 		return 64
 	}

@@ -68,15 +68,46 @@ func memWMTickDefault() time.Duration {
 	return 20 * time.Millisecond
 }
 
+// ISUREAL_MEM_WM_EARLY=1 (既定 0): poll で取った変更を、asia1 のメモリへの反映 (applyBatch) より先に peer へ出す
+// (publish + wm 通知)。wm=x の意味は「x より前に応答したコミットは seq S 以前のバッチに含まれる」で、
+// asia1 自身の反映とは無関係 (peer は seq S を自分で適用してから wm を進める)。asia1 の書き込みの 2xx は
+// 従来どおりサイクル完了 (= asia1 のメモリ反映後) まで待つので、asia1 の読みの RYW も変わらない。
+// applyBatch が失敗したら、出してしまったバッチを再送しないよう p.snap を進めて invalidate (全ホスト作り直し)。
+// wm はデータ push にも同梱する (publishWM)。
+var memWMEarly = os.Getenv("ISUREAL_MEM_WM_EARLY") == "1"
+
+// ISUREAL_MEM_PUSH_INFLIGHT / ISUREAL_MEM_WM_INFLIGHT (>0 で上書き): wm モードの peer へのデータ push と
+// wm 通知の並列上限を、HB の他の変更 (周期・同梱) と切り離して試すためのノブ。
+// 上限を上げるなら ISUREAL_MEM_IDLE_CONNS も (push + wm 通知 + heartbeat) 以上にすること (溢れると毎回 TCP を張り直す = +1 RTT)。
+var (
+	memPushInflightEnv = envInt("ISUREAL_MEM_PUSH_INFLIGHT", 0)
+	memWMInflightEnv   = envInt("ISUREAL_MEM_WM_INFLIGHT", 0)
+)
+
+func envInt(key string, def int) int {
+	if v, err := strconv.Atoi(os.Getenv(key)); err == nil && v > 0 {
+		return v
+	}
+	return def
+}
+
 // memPushInflight: peer ごとのデータ push の並列上限。
 func memPushInflight(peer *memPeer) int {
-	if memWMHB && memWatermark && peer.wmMode {
-		return 16
+	if memWatermark && peer.wmMode {
+		if memPushInflightEnv > 0 {
+			return memPushInflightEnv
+		}
+		if memWMHB {
+			return 16
+		}
 	}
 	return memMaxInflight
 }
 
 func memWMInflightLimit() int {
+	if memWMInflightEnv > 0 {
+		return memWMInflightEnv
+	}
 	if memWMHB {
 		return 16
 	}

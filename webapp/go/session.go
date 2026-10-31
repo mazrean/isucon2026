@@ -117,7 +117,7 @@ func CreateLoginSession(db *sqlx.DB, userID string) (*Session, error) {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
-	session, err := createLoginSessionTx(ctx, tx, userID)
+	session, err := createLoginSessionTx(ctx, tx, userID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -127,34 +127,36 @@ func CreateLoginSession(db *sqlx.DB, userID string) (*Session, error) {
 	return session, nil
 }
 
-func createLoginSessionTx(ctx context.Context, tx *sqlx.Tx, userID string) (*Session, error) {
+// userLocked: 呼び出し側が同じ tx で users の行を FOR NO KEY UPDATE 済みで active を確認済み (login)。
+// そのときはロックを取り直さない。旧セッションの無効化と新セッションの INSERT は 1 文 (1 往復) にまとめ、
+// INSERT ... RETURNING で読み直しも省く (login_sessions に一意索引は id だけなので同一文でも衝突しない)。
+func createLoginSessionTx(ctx context.Context, tx *sqlx.Tx, userID string, userLocked bool) (*Session, error) {
 	randomToken := uuid.NewString()
 	tokenHashBytes := sha256.Sum256([]byte(randomToken))
 	tokenHash := hex.EncodeToString(tokenHashBytes[:])
-	var lockedUserID string
-	if err := tx.GetContext(ctx, &lockedUserID, `SELECT id FROM users WHERE id = $1 AND status = 'active' FOR NO KEY UPDATE`, userID); err != nil {
-		return nil, fmt.Errorf("failed to lock user: %w", err)
-	}
-	if _, err := tx.ExecContext(ctx, `
-  UPDATE login_sessions
-  SET active = false, invalidated_at = clock_timestamp(), reason = 'replaced'
-  WHERE user_id = $1 AND active = true
- `, userID); err != nil {
-		return nil, fmt.Errorf("failed to invalidate sessions: %w", err)
+	if !userLocked {
+		var lockedUserID string
+		if err := tx.GetContext(ctx, &lockedUserID, `SELECT id FROM users WHERE id = $1 AND status = 'active' FOR NO KEY UPDATE`, userID); err != nil {
+			return nil, fmt.Errorf("failed to lock user: %w", err)
+		}
 	}
 	sessionID := uuid.NewString()
-	if _, err := tx.ExecContext(ctx, `
+	var session Session
+	if err := tx.GetContext(ctx, &session, `
+  WITH inv AS (
+    UPDATE login_sessions
+    SET active = false, invalidated_at = clock_timestamp(), reason = 'replaced'
+    WHERE user_id = $1 AND active = true
+    RETURNING 1
+  )
   INSERT INTO login_sessions (id, user_id, token_hash)
-  VALUES ($1, $2, $3)
- `, sessionID, userID, tokenHash); err != nil {
+  VALUES ($2, $1, $3)
+  RETURNING user_id, token_hash, created_at
+ `, userID, sessionID, tokenHash); err != nil {
 		return nil, fmt.Errorf("failed to insert session: %w", err)
 	}
-	session, err := getLoginSession(ctx, tx, sessionID)
-	if err != nil {
-		return nil, err
-	}
 	session.Token = randomToken
-	return session, nil
+	return &session, nil
 }
 
 func getLoginSession(ctx context.Context, db sqlx.QueryerContext, sessionID string) (*Session, error) {

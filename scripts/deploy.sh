@@ -165,6 +165,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_IMG_PREEXTEND_MB '"${IMG_PREEXTEND_MB:-0}"'
       setenv ISUREAL_EXPORT_REBUILD '"${EXPORT_REBUILD:-0}"'
       setenv ISUREAL_EXPORT_CACHE_MB '"${EXPORT_CACHE_MB:-0}"'
+      setenv ISUREAL_MEMCACHE_FINE '"${MEMCACHE_FINE:-0}"'   # MEMCACHE_FINE=1: Memories cache entries dropped per month / post / changed user row instead of every viewer post, plus a 10s respcache cause log, see webapp/go/mem_respcache_fine.go
       setenv ISUREAL_MEM_HOT_EXTRA_DAYS '"${MEM_HOT_EXTRA_DAYS:-0}"'; setenv ISUREAL_MEM_HOT_EXTRA_MAX_POSTS '"${MEM_HOT_EXTRA_MAX_POSTS:-80000}"'   # MEM_HOT_EXTRA_DAYS=N: N more days of posts in mem, past-month Memories from memory, over MAX_POSTS = off, see webapp/go/mem_hot_extend.go
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_MEM_MB 300; else setenv ISUREAL_IMAGE_MEM_MB '"${PEER_IMAGE_MEM_MB:-300}"'; fi
       setenv ISUREAL_DB_IMG_READ_OPEN '"${DB_IMG_READ_OPEN:-16}"'

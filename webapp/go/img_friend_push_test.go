@@ -3,12 +3,28 @@ package isureal
 import (
 	"context"
 	"net/http"
+	"os"
 	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 )
+
+// friendTestDir: an image cache dir whose removal tolerates the store's async
+// disk writer still writing (t.TempDir fails the test on "directory not empty").
+func friendTestDir(t *testing.T) string {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "friendpush-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		time.Sleep(20 * time.Millisecond)
+		os.RemoveAll(dir)
+	})
+	return dir
+}
 
 func TestFriendRegions(t *testing.T) {
 	d := newMemData()
@@ -93,7 +109,7 @@ func TestFriendPushSendAndReceive(t *testing.T) {
 	imgFriendPushOn, forwardSecret = true, imgReplTestSecret
 	defer func() { imgFriendPushOn, forwardSecret = oldOn, oldSecret }()
 
-	store := newImageStore(t.TempDir())
+	store := newImageStore(friendTestDir(t))
 	e := newImgReplTestEcho(store)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.RemoteAddr = "192.168.1.10:4444" // asia1 (imgReplPeerSource)
@@ -268,7 +284,7 @@ func TestFriendRecvLate(t *testing.T) {
 	oldOn := imgFriendPushOn
 	imgFriendPushOn = true
 	defer func() { imgFriendPushOn = oldOn }()
-	store := newImageStore(t.TempDir())
+	store := newImageStore(friendTestDir(t))
 	e := newImgReplTestEcho(store)
 	id := "0b0c5f3e-1111-4222-8333-944455554444"
 	data := []byte("\xff\xd8abc")

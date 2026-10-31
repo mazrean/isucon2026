@@ -1,0 +1,52 @@
+[
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "d8fe82ed-0cab-4bf8-86d0-bd7bdb48f42a",
+   "username": "e2e_mvvqz1yo1_a",
+   "displayName": "E2E asia",
+   "bio": "",
+   "region": "asia",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ },
+ {
+  "key": "GET /api/posts/:id",
+  "status": 200,
+  "url": "/api/posts/3f9b4779-3205-4c2b-903e-c6d5feb63cdb",
+  "json": {
+   "id": "3f9b4779-3205-4c2b-903e-c6d5feb63cdb",
+   "author": {
+    "id": "d8fe82ed-0cab-4bf8-86d0-bd7bdb48f42a",
+    "username": "e2e_mvvqz1yo1_a",
+    "displayName": "E2E asia",
+    "profileImageUrl": null,
+    "bio": "",
+    "accountType": "regular"
+   },
+   "postingWindowId": "90d863e7-5759-4e39-8aca-e7c6a79b37ee",
+   "imageUrl": "/api/images/31b72031-e552-4ab6-836c-c0ed2398ad3c?exp=1793498021&sig=NzbICdds-lVUb4h33HlNLLSMy8tenTQ3H_O6LtbMwqE",
+   "caption": "E2E check chair",
+   "visibility": "public",
+   "location": {
+    "kind": "none"
+   },
+   "postedAt": "2026-10-31T01:53:41.935984Z",
+   "onTime": true,
+   "lateSeconds": 0
+  }
+ },
+ {
+  "key": "GET /api/posts/:id/realmojis",
+  "status": 200,
+  "url": "/api/posts/3f9b4779-3205-4c2b-903e-c6d5feb63cdb/realmojis",
+  "json": {
+   "items": [],
+   "hasMore": false
+  }
+ }
+]

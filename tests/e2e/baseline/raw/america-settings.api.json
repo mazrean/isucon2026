@@ -1,0 +1,32 @@
+[
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "e5d34f69-391e-4b66-b87e-0c49513cd4ee",
+   "username": "e2e_mvvqz1yo2_a",
+   "displayName": "E2E america",
+   "bio": "",
+   "region": "america",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ },
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "e5d34f69-391e-4b66-b87e-0c49513cd4ee",
+   "username": "e2e_mvvqz1yo2_a",
+   "displayName": "E2E america",
+   "bio": "",
+   "region": "america",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ }
+]

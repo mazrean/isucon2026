@@ -1,0 +1,15 @@
+[
+ {
+  "key": "GET /api/users/:id",
+  "status": 200,
+  "url": "/api/users/f9cc4f60-f383-4ead-984a-0fae49ff08c1",
+  "json": {
+   "id": "f9cc4f60-f383-4ead-984a-0fae49ff08c1",
+   "username": "lingshi_yusuan_1151",
+   "displayName": "零食预算驱动 1151",
+   "profileImageUrl": null,
+   "bio": "",
+   "accountType": "regular"
+  }
+ }
+]

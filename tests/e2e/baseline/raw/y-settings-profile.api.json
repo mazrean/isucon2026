@@ -1,0 +1,32 @@
+[
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "81d06ead-77f3-4bfc-a4fe-1af4fe58a67a",
+   "username": "yuma_kobayashi_186",
+   "displayName": "小林 悠真 186",
+   "bio": "散歩で見つけた景色を記録中",
+   "region": "asia",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ },
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "81d06ead-77f3-4bfc-a4fe-1af4fe58a67a",
+   "username": "yuma_kobayashi_186",
+   "displayName": "小林 悠真 186",
+   "bio": "散歩で見つけた景色を記録中",
+   "region": "asia",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ }
+]

@@ -1,0 +1,15 @@
+[
+ {
+  "key": "GET /api/users/:id",
+  "status": 200,
+  "url": "/api/users/fd084f12-ab3c-4b73-84be-9f2422f130a8",
+  "json": {
+   "id": "fd084f12-ab3c-4b73-84be-9f2422f130a8",
+   "username": "yuma_kobayashi_1071",
+   "displayName": "小林 悠真 1071",
+   "profileImageUrl": null,
+   "bio": "",
+   "accountType": "regular"
+  }
+ }
+]

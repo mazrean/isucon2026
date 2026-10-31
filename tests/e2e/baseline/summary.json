@@ -1,0 +1,5156 @@
+{
+ "base": "https://57.183.58.128",
+ "recordedAt": "2026-10-31T01:54:33.103Z",
+ "steps": [
+  {
+   "name": "a-register-form",
+   "url": "/register",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>form",
+    ">div>main.auth-page>form>a[href=/login]",
+    ">div>main.auth-page>form>button",
+    ">div>main.auth-page>form>h1",
+    ">div>main.auth-page>form>label",
+    ">div>main.auth-page>form>label>input",
+    ">div>main.auth-page>form>label>select",
+    ">div>main.auth-page>form>label>select>option"
+   ],
+   "texts": [
+    "label:ユーザー名",
+    "label:地域",
+    "label:表示名",
+    "新規登録",
+    "登録"
+   ],
+   "api": {},
+   "dataSig": [],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-register-secret",
+   "url": "/register",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>button[type=button]",
+    ">div>main.auth-page>section.secret-key-panel",
+    ">div>main.auth-page>section.secret-key-panel>h2",
+    ">div>main.auth-page>section.secret-key-panel>output.secret-key",
+    ">div>main.auth-page>section.secret-key-panel>p"
+   ],
+   "texts": [
+    "SecretKey",
+    "はじめる"
+   ],
+   "api": {
+    "POST /api/auth/register 201": {
+     "$": [
+      "object"
+     ],
+     "$.secretKey": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "POST /api/auth/register status 201"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-home-after-login",
+   "url": "/",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "My friendsフィード",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    },
+    "POST /api/auth/login 200": {
+     "$": [
+      "object"
+     ],
+     "$.token": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200",
+    "POST /api/auth/login status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-post-new",
+   "url": "/posts/new",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>form",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>label>input[type=file]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>p.muted",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>p[role=alert]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>button[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>button[type=submit]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>div.menu-list",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>div.menu-list>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>label>input[type=radio][name=location]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>label>input[type=radio][name=visibility]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>legend",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>label>textarea",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>p[role=status]",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active.compose-nav[aria-current=page][href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.active.compose-nav[aria-current=page][href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active.compose-nav[aria-current=page][href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:GPSで正確な位置を共有",
+    "label:おおよその場所",
+    "label:キャプション",
+    "label:公開",
+    "label:共有しない",
+    "label:友達",
+    "label:友達の友達",
+    "label:画像ファイル",
+    "つながり",
+    "カメラを再起動",
+    "カメラを利用できません。画像ファイルを選択できます。",
+    "ホーム",
+    "位置情報",
+    "位置情報: 共有しない · 変更",
+    "公開範囲",
+    "写真を撮影するか画像ファイルを選択してください。",
+    "投稿",
+    "投稿する",
+    "投稿設定に戻る",
+    "撮り直す",
+    "撮影",
+    "設定を適用",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-post-settings",
+   "url": "/posts/new?step=",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>form",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>button[type=submit]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>div.menu-list",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>div.menu-list>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>fieldset",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>fieldset>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>fieldset>label>input[type=radio][name=visibility]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>fieldset>legend",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>img.post-preview",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack>label>textarea",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>button[type=button]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>label>input[type=radio][name=location]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>fieldset>legend",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>label",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>label>input[type=file]",
+    ">div>div.app-shell>main>section.panel>form>fieldset.form-body>div.stack[hidden]>p.muted",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active.compose-nav[aria-current=page][href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.active.compose-nav[aria-current=page][href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active.compose-nav[aria-current=page][href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:GPSで正確な位置を共有",
+    "label:おおよその場所",
+    "label:キャプション",
+    "label:公開",
+    "label:共有しない",
+    "label:友達",
+    "label:友達の友達",
+    "label:画像ファイル",
+    "この写真で続ける",
+    "つながり",
+    "カメラを再起動",
+    "ホーム",
+    "位置情報",
+    "位置情報: 共有しない · 変更",
+    "公開範囲",
+    "投稿",
+    "投稿する",
+    "投稿設定に戻る",
+    "撮り直す",
+    "撮影後・投稿設定",
+    "設定を適用",
+    "通知"
+   ],
+   "api": {},
+   "dataSig": [],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-post-complete",
+   "url": "/posts/complete",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>div.state-view",
+    ">div>div.app-shell>main>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>div.state-view>div.state-actions>a.button[href=/]",
+    ">div>div.app-shell>main>div.state-view>div.state-actions>a.text-link[href=/posts/me/current]",
+    ">div>div.app-shell>main>div.state-view>h2",
+    ">div>div.app-shell>main>div.state-view>p",
+    ">div>div.app-shell>main>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "ホーム",
+    "投稿",
+    "投稿しました。",
+    "通知"
+   ],
+   "api": {
+    "POST /api/posts 201": {
+     "$": [
+      "object"
+     ],
+     "$.author": [
+      "object"
+     ],
+     "$.author.accountType": [
+      "string:string"
+     ],
+     "$.author.bio": [
+      "string:string"
+     ],
+     "$.author.displayName": [
+      "string:string"
+     ],
+     "$.author.id": [
+      "string:uuid"
+     ],
+     "$.author.profileImageUrl": [
+      "null"
+     ],
+     "$.author.username": [
+      "string:string"
+     ],
+     "$.caption": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.imageUrl": [
+      "string:image-url"
+     ],
+     "$.lateSeconds": [
+      "number"
+     ],
+     "$.location": [
+      "object"
+     ],
+     "$.location.kind": [
+      "string:string"
+     ],
+     "$.onTime": [
+      "boolean"
+     ],
+     "$.postedAt": [
+      "string:datetime"
+     ],
+     "$.postingWindowId": [
+      "string:uuid"
+     ],
+     "$.visibility": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "POST /api/posts status 201"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-my-current-post",
+   "url": "/posts/me/current",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>div.stack",
+    ">div>div.app-shell>main>section.panel>div.stack>a.text-link[href=/posts/:id]",
+    ">div>div.app-shell>main>section.panel>div.stack>button",
+    ">div>div.app-shell>main>section.panel>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>h2",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>p",
+    ">div>div.app-shell>main>section.panel>div.stack>label",
+    ">div>div.app-shell>main>section.panel>div.stack>label>select",
+    ">div>div.app-shell>main>section.panel>div.stack>label>select>option",
+    ">div>div.app-shell>main>section.panel>div.stack>label>textarea",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>main>section.panel>img.post-image",
+    ">div>div.app-shell>main>section.panel>p.muted",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:キャプション",
+    "label:公開範囲",
+    "つながり",
+    "キャンセル",
+    "ホーム",
+    "削除する",
+    "変更を保存",
+    "投稿",
+    "投稿の削除",
+    "自分の現在の投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posts/me/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.author": [
+      "object"
+     ],
+     "$.author.accountType": [
+      "string:string"
+     ],
+     "$.author.bio": [
+      "string:string"
+     ],
+     "$.author.displayName": [
+      "string:string"
+     ],
+     "$.author.id": [
+      "string:uuid"
+     ],
+     "$.author.profileImageUrl": [
+      "null"
+     ],
+     "$.author.username": [
+      "string:string"
+     ],
+     "$.caption": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.imageUrl": [
+      "string:image-url"
+     ],
+     "$.lateSeconds": [
+      "number"
+     ],
+     "$.location": [
+      "object"
+     ],
+     "$.location.kind": [
+      "string:string"
+     ],
+     "$.onTime": [
+      "boolean"
+     ],
+     "$.postedAt": [
+      "string:datetime"
+     ],
+     "$.postingWindowId": [
+      "string:uuid"
+     ],
+     "$.visibility": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posts/me/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 1,
+    "apiImgLoaded": 1,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "a-own-post-detail",
+   "url": "/posts/:id",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>a.back-link[href=/]",
+    ">div>div.app-shell>main>section>article",
+    ">div>div.app-shell>main>section>article>a.author-name[href=/users/:id]",
+    ">div>div.app-shell>main>section>article>img.post-image",
+    ">div>div.app-shell>main>section>article>p",
+    ">div>div.app-shell>main>section>article>time.muted",
+    ">div>div.app-shell>main>section>div.menu-list",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/comments]",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/comments]>span",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/realmoji]",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/realmoji]>span",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "ホーム",
+    "投稿",
+    "投稿詳細",
+    "通知"
+   ],
+   "api": {
+    "GET /api/posts/:id 200": {
+     "$": [
+      "object"
+     ],
+     "$.author": [
+      "object"
+     ],
+     "$.author.accountType": [
+      "string:string"
+     ],
+     "$.author.bio": [
+      "string:string"
+     ],
+     "$.author.displayName": [
+      "string:string"
+     ],
+     "$.author.id": [
+      "string:uuid"
+     ],
+     "$.author.profileImageUrl": [
+      "null"
+     ],
+     "$.author.username": [
+      "string:string"
+     ],
+     "$.caption": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.imageUrl": [
+      "string:image-url"
+     ],
+     "$.lateSeconds": [
+      "number"
+     ],
+     "$.location": [
+      "object"
+     ],
+     "$.location.kind": [
+      "string:string"
+     ],
+     "$.onTime": [
+      "boolean"
+     ],
+     "$.postedAt": [
+      "string:datetime"
+     ],
+     "$.postingWindowId": [
+      "string:uuid"
+     ],
+     "$.visibility": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/posts/:id status 200"
+   ],
+   "images": {
+    "apiImgCount": 1,
+    "apiImgLoaded": 1,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-own-post-comments",
+   "url": "/posts/:id/comments",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>a.back-link[href=/posts/:id]",
+    ">div>div.app-shell>main>section>article",
+    ">div>div.app-shell>main>section>article>a.author-name[href=/users/:id]",
+    ">div>div.app-shell>main>section>article>img.post-image",
+    ">div>div.app-shell>main>section>article>p",
+    ">div>div.app-shell>main>section>article>time.muted",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>main>section>section",
+    ">div>div.app-shell>main>section>section>form",
+    ">div>div.app-shell>main>section>section>form>button",
+    ">div>div.app-shell>main>section>section>form>label",
+    ">div>div.app-shell>main>section>section>form>label>textarea",
+    ">div>div.app-shell>main>section>section>h2",
+    ">div>div.app-shell>main>section>section>ol",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:コメント",
+    "つながり",
+    "コメント",
+    "ホーム",
+    "投稿",
+    "送信",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posts/:id 200": {
+     "$": [
+      "object"
+     ],
+     "$.author": [
+      "object"
+     ],
+     "$.author.accountType": [
+      "string:string"
+     ],
+     "$.author.bio": [
+      "string:string"
+     ],
+     "$.author.displayName": [
+      "string:string"
+     ],
+     "$.author.id": [
+      "string:uuid"
+     ],
+     "$.author.profileImageUrl": [
+      "null"
+     ],
+     "$.author.username": [
+      "string:string"
+     ],
+     "$.caption": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.imageUrl": [
+      "string:image-url"
+     ],
+     "$.lateSeconds": [
+      "number"
+     ],
+     "$.location": [
+      "object"
+     ],
+     "$.location.kind": [
+      "string:string"
+     ],
+     "$.onTime": [
+      "boolean"
+     ],
+     "$.postedAt": [
+      "string:datetime"
+     ],
+     "$.postingWindowId": [
+      "string:uuid"
+     ],
+     "$.visibility": [
+      "string:string"
+     ]
+    },
+    "GET /api/posts/:id/comments 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "EMPTY"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posts/:id status 200",
+    "GET /api/posts/:id/comments 200 $.items[] empty",
+    "GET /api/posts/:id/comments status 200"
+   ],
+   "images": {
+    "apiImgCount": 1,
+    "apiImgLoaded": 1,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "a-own-post-realmoji",
+   "url": "/posts/:id/realmoji",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>a.back-link[href=/posts/:id]",
+    ">div>div.app-shell>main>section>section.interaction-panel",
+    ">div>div.app-shell>main>section>section.interaction-panel>h1",
+    ">div>div.app-shell>main>section>section.interaction-panel>ul.reaction-list",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "RealMoji",
+    "つながり",
+    "ホーム",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posts/:id 200": {
+     "$": [
+      "object"
+     ],
+     "$.author": [
+      "object"
+     ],
+     "$.author.accountType": [
+      "string:string"
+     ],
+     "$.author.bio": [
+      "string:string"
+     ],
+     "$.author.displayName": [
+      "string:string"
+     ],
+     "$.author.id": [
+      "string:uuid"
+     ],
+     "$.author.profileImageUrl": [
+      "null"
+     ],
+     "$.author.username": [
+      "string:string"
+     ],
+     "$.caption": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.imageUrl": [
+      "string:image-url"
+     ],
+     "$.lateSeconds": [
+      "number"
+     ],
+     "$.location": [
+      "object"
+     ],
+     "$.location.kind": [
+      "string:string"
+     ],
+     "$.onTime": [
+      "boolean"
+     ],
+     "$.postedAt": [
+      "string:datetime"
+     ],
+     "$.postingWindowId": [
+      "string:uuid"
+     ],
+     "$.visibility": [
+      "string:string"
+     ]
+    },
+    "GET /api/posts/:id/realmojis 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "EMPTY"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posts/:id status 200",
+    "GET /api/posts/:id/realmojis 200 $.items[] empty",
+    "GET /api/posts/:id/realmojis status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-feed-friends",
+   "url": "/",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.feed-grid",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/users]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "My friendsフィード",
+    "つながり",
+    "まだ、一枚もありません。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/feeds/friends 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "EMPTY"
+     ]
+    },
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/feeds/friends 200 $.items[] empty",
+    "GET /api/feeds/friends status 200",
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-feed-friends-of-friends",
+   "url": "/feeds/friends-of-friends",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.feed-grid",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/users]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Friends of friendsフィード",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まだ、一枚もありません。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/feeds/friends-of-friends 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "EMPTY"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/feeds/friends-of-friends 200 $.items[] empty",
+    "GET /api/feeds/friends-of-friends status 200",
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-feed-public",
+   "url": "/feeds/public",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.feed-grid",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>a[href=/posts/:id]",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>a[href=/posts/:id]>img.post-image",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>div.card-meta",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>div.card-meta>a[href=/users/:id]",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>div.card-meta>time",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>p",
+    ">div>div.app-shell>main>section>div.feed-grid>article.post-card>p.muted",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/public]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "つながり",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "公開フィード",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/feeds/public 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "object"
+     ],
+     "$.items[].author": [
+      "object"
+     ],
+     "$.items[].author.accountType": [
+      "string:string"
+     ],
+     "$.items[].author.bio": [
+      "string:string"
+     ],
+     "$.items[].author.displayName": [
+      "string:string"
+     ],
+     "$.items[].author.id": [
+      "string:uuid"
+     ],
+     "$.items[].author.profileImageUrl": [
+      "null",
+      "string:image-url"
+     ],
+     "$.items[].author.username": [
+      "string:string"
+     ],
+     "$.items[].caption": [
+      "string:string"
+     ],
+     "$.items[].id": [
+      "string:uuid"
+     ],
+     "$.items[].imageUrl": [
+      "string:image-url"
+     ],
+     "$.items[].lateSeconds": [
+      "number"
+     ],
+     "$.items[].location": [
+      "object"
+     ],
+     "$.items[].location.kind": [
+      "string:string"
+     ],
+     "$.items[].location.locality": [
+      "string:string"
+     ],
+     "$.items[].onTime": [
+      "boolean"
+     ],
+     "$.items[].postedAt": [
+      "string:datetime"
+     ],
+     "$.items[].postingWindowId": [
+      "string:uuid"
+     ],
+     "$.items[].visibility": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/feeds/public 200 $.items[] nonempty",
+    "GET /api/feeds/public status 200",
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 7,
+    "apiImgLoaded": 7,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "a-feed-following",
+   "url": "/feeds/following",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.feed-grid",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/users]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まだ、一枚もありません。",
+    "フォロー中",
+    "フォロー中フィード",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/feeds/following 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "EMPTY"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/feeds/following 200 $.items[] empty",
+    "GET /api/feeds/following status 200",
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "a-public-post-detail",
+   "url": "/posts/:id",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>a.back-link[href=/]",
+    ">div>div.app-shell>main>section>article",
+    ">div>div.app-shell>main>section>article>a.author-name[href=/users/:id]",
+    ">div>div.app-shell>main>section>article>img.post-image",
+    ">div>div.app-shell>main>section>article>p",
+    ">div>div.app-shell>main>section>article>time.muted",
+    ">div>div.app-shell>main>section>div.menu-list",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/comments]",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/comments]>span",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/realmoji]",
+    ">div>div.app-shell>main>section>div.menu-list>a[href=/posts/:id/realmoji]>span",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "ホーム",
+    "投稿",
+    "投稿詳細",
+    "通知"
+   ],
+   "api": {
+    "GET /api/feeds/public 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "object"
+     ],
+     "$.items[].author": [
+      "object"
+     ],
+     "$.items[].author.accountType": [
+      "string:string"
+     ],
+     "$.items[].author.bio": [
+      "string:string"
+     ],
+     "$.items[].author.displayName": [
+      "string:string"
+     ],
+     "$.items[].author.id": [
+      "string:uuid"
+     ],
+     "$.items[].author.profileImageUrl": [
+      "null",
+      "string:image-url"
+     ],
+     "$.items[].author.username": [
+      "string:string"
+     ],
+     "$.items[].caption": [
+      "string:string"
+     ],
+     "$.items[].id": [
+      "string:uuid"
+     ],
+     "$.items[].imageUrl": [
+      "string:image-url"
+     ],
+     "$.items[].lateSeconds": [
+      "number"
+     ],
+     "$.items[].location": [
+      "object"
+     ],
+     "$.items[].location.kind": [
+      "string:string"
+     ],
+     "$.items[].location.locality": [
+      "string:string"
+     ],
+     "$.items[].onTime": [
+      "boolean"
+     ],
+     "$.items[].postedAt": [
+      "string:datetime"
+     ],
+     "$.items[].postingWindowId": [
+      "string:uuid"
+     ],
+     "$.items[].visibility": [
+      "string:string"
+     ]
+    },
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    },
+    "GET /api/posts/:id 200": {
+     "$": [
+      "object"
+     ],
+     "$.author": [
+      "object"
+     ],
+     "$.author.accountType": [
+      "string:string"
+     ],
+     "$.author.bio": [
+      "string:string"
+     ],
+     "$.author.displayName": [
+      "string:string"
+     ],
+     "$.author.id": [
+      "string:uuid"
+     ],
+     "$.author.profileImageUrl": [
+      "null"
+     ],
+     "$.author.username": [
+      "string:string"
+     ],
+     "$.caption": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.imageUrl": [
+      "string:image-url"
+     ],
+     "$.lateSeconds": [
+      "number"
+     ],
+     "$.location": [
+      "object"
+     ],
+     "$.location.kind": [
+      "string:string"
+     ],
+     "$.onTime": [
+      "boolean"
+     ],
+     "$.postedAt": [
+      "string:datetime"
+     ],
+     "$.postingWindowId": [
+      "string:uuid"
+     ],
+     "$.visibility": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/feeds/public 200 $.items[] nonempty",
+    "GET /api/feeds/public status 200",
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200",
+    "GET /api/posts/:id status 200"
+   ],
+   "images": {
+    "apiImgCount": 1,
+    "apiImgLoaded": 1,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "y-top-redirect-login",
+   "url": "/login",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>form",
+    ">div>main.auth-page>form>a[href=/register]",
+    ">div>main.auth-page>form>button",
+    ">div>main.auth-page>form>h1",
+    ">div>main.auth-page>form>label",
+    ">div>main.auth-page>form>label>input"
+   ],
+   "texts": [
+    "label:SecretKey",
+    "label:ユーザー名",
+    "ログイン"
+   ],
+   "api": {},
+   "dataSig": [],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-feed-friends",
+   "url": "/",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "My friendsフィード",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    },
+    "POST /api/auth/login 200": {
+     "$": [
+      "object"
+     ],
+     "$.token": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200",
+    "POST /api/auth/login status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-feed-friends-of-friends",
+   "url": "/feeds/friends-of-friends",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Friends of friendsフィード",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-feed-public",
+   "url": "/feeds/public",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/public]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "公開フィード",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-feed-following",
+   "url": "/feeds/following",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "フォロー中フィード",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-memories",
+   "url": "/memories",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>a[href=/memories/posts/:id?month=]",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>a[href=/memories/posts/:id?month=]>img.post-image",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>button.secondary[type=button]",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>dialog.confirm-dialog",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>dialog.confirm-dialog>div.stack",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>dialog.confirm-dialog>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>dialog.confirm-dialog>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>dialog.confirm-dialog>h2",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>dialog.confirm-dialog>p",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>p",
+    ">div>div.app-shell>main>section>div.feed-grid.memories-grid>article.post-card>time",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>main>section>label",
+    ">div>div.app-shell>main>section>label>input[type=month]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:月",
+    "つながり",
+    "キャンセル",
+    "ホーム",
+    "削除",
+    "投稿",
+    "投稿の削除",
+    "通知"
+   ],
+   "api": {
+    "GET /api/memories?month= 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "object"
+     ],
+     "$.items[].author": [
+      "object"
+     ],
+     "$.items[].author.accountType": [
+      "string:string"
+     ],
+     "$.items[].author.bio": [
+      "string:string"
+     ],
+     "$.items[].author.displayName": [
+      "string:string"
+     ],
+     "$.items[].author.id": [
+      "string:uuid"
+     ],
+     "$.items[].author.profileImageUrl": [
+      "null"
+     ],
+     "$.items[].author.username": [
+      "string:string"
+     ],
+     "$.items[].caption": [
+      "string:string"
+     ],
+     "$.items[].comments": [
+      "array"
+     ],
+     "$.items[].comments[]": [
+      "EMPTY",
+      "object"
+     ],
+     "$.items[].comments[].author": [
+      "object"
+     ],
+     "$.items[].comments[].author.accountType": [
+      "string:string"
+     ],
+     "$.items[].comments[].author.bio": [
+      "string:string"
+     ],
+     "$.items[].comments[].author.displayName": [
+      "string:string"
+     ],
+     "$.items[].comments[].author.id": [
+      "string:uuid"
+     ],
+     "$.items[].comments[].author.profileImageUrl": [
+      "null"
+     ],
+     "$.items[].comments[].author.username": [
+      "string:string"
+     ],
+     "$.items[].comments[].body": [
+      "string:string"
+     ],
+     "$.items[].comments[].createdAt": [
+      "string:datetime"
+     ],
+     "$.items[].comments[].id": [
+      "string:uuid"
+     ],
+     "$.items[].id": [
+      "string:uuid"
+     ],
+     "$.items[].imageUrl": [
+      "string:image-url"
+     ],
+     "$.items[].lateSeconds": [
+      "number"
+     ],
+     "$.items[].location": [
+      "object"
+     ],
+     "$.items[].location.kind": [
+      "string:string"
+     ],
+     "$.items[].location.locality": [
+      "string:string"
+     ],
+     "$.items[].onTime": [
+      "boolean"
+     ],
+     "$.items[].postedAt": [
+      "string:datetime"
+     ],
+     "$.items[].postingWindowId": [
+      "string:uuid"
+     ],
+     "$.items[].realmojis": [
+      "array"
+     ],
+     "$.items[].realmojis[]": [
+      "object"
+     ],
+     "$.items[].realmojis[].createdAt": [
+      "string:datetime"
+     ],
+     "$.items[].realmojis[].id": [
+      "string:uuid"
+     ],
+     "$.items[].realmojis[].imageUrl": [
+      "string:image-url"
+     ],
+     "$.items[].realmojis[].reactionType": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor": [
+      "object"
+     ],
+     "$.items[].realmojis[].reactor.accountType": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor.bio": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor.displayName": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor.id": [
+      "string:uuid"
+     ],
+     "$.items[].realmojis[].reactor.profileImageUrl": [
+      "null"
+     ],
+     "$.items[].realmojis[].reactor.username": [
+      "string:string"
+     ],
+     "$.items[].visibility": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/memories?month= 200 $.items[] nonempty",
+    "GET /api/memories?month= 200 $.items[].comments[] nonempty",
+    "GET /api/memories?month= 200 $.items[].realmojis[] nonempty",
+    "GET /api/memories?month= status 200"
+   ],
+   "images": {
+    "apiImgCount": 3,
+    "apiImgLoaded": 3,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "y-memory-detail",
+   "url": "/memories/posts/:id?month=",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>a.back-link[href=/memories?month=]",
+    ">div>div.app-shell>main>section>button[type=button]",
+    ">div>div.app-shell>main>section>dialog.confirm-dialog",
+    ">div>div.app-shell>main>section>dialog.confirm-dialog>div.stack",
+    ">div>div.app-shell>main>section>dialog.confirm-dialog>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section>dialog.confirm-dialog>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section>dialog.confirm-dialog>h2",
+    ">div>div.app-shell>main>section>dialog.confirm-dialog>p",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>main>section>h2",
+    ">div>div.app-shell>main>section>img.post-image",
+    ">div>div.app-shell>main>section>ol.comment-list",
+    ">div>div.app-shell>main>section>p",
+    ">div>div.app-shell>main>section>p.muted",
+    ">div>div.app-shell>main>section>time",
+    ">div>div.app-shell>main>section>ul.reaction-list",
+    ">div>div.app-shell>main>section>ul.reaction-list>li",
+    ">div>div.app-shell>main>section>ul.reaction-list>li>img",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "RealMoji",
+    "つながり",
+    "キャンセル",
+    "コメント",
+    "ホーム",
+    "削除",
+    "投稿",
+    "投稿の削除",
+    "通知",
+    "過去投稿・交流を表示"
+   ],
+   "api": {
+    "GET /api/memories?month= 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "object"
+     ],
+     "$.items[].author": [
+      "object"
+     ],
+     "$.items[].author.accountType": [
+      "string:string"
+     ],
+     "$.items[].author.bio": [
+      "string:string"
+     ],
+     "$.items[].author.displayName": [
+      "string:string"
+     ],
+     "$.items[].author.id": [
+      "string:uuid"
+     ],
+     "$.items[].author.profileImageUrl": [
+      "null"
+     ],
+     "$.items[].author.username": [
+      "string:string"
+     ],
+     "$.items[].caption": [
+      "string:string"
+     ],
+     "$.items[].comments": [
+      "array"
+     ],
+     "$.items[].comments[]": [
+      "EMPTY",
+      "object"
+     ],
+     "$.items[].comments[].author": [
+      "object"
+     ],
+     "$.items[].comments[].author.accountType": [
+      "string:string"
+     ],
+     "$.items[].comments[].author.bio": [
+      "string:string"
+     ],
+     "$.items[].comments[].author.displayName": [
+      "string:string"
+     ],
+     "$.items[].comments[].author.id": [
+      "string:uuid"
+     ],
+     "$.items[].comments[].author.profileImageUrl": [
+      "null"
+     ],
+     "$.items[].comments[].author.username": [
+      "string:string"
+     ],
+     "$.items[].comments[].body": [
+      "string:string"
+     ],
+     "$.items[].comments[].createdAt": [
+      "string:datetime"
+     ],
+     "$.items[].comments[].id": [
+      "string:uuid"
+     ],
+     "$.items[].id": [
+      "string:uuid"
+     ],
+     "$.items[].imageUrl": [
+      "string:image-url"
+     ],
+     "$.items[].lateSeconds": [
+      "number"
+     ],
+     "$.items[].location": [
+      "object"
+     ],
+     "$.items[].location.kind": [
+      "string:string"
+     ],
+     "$.items[].location.locality": [
+      "string:string"
+     ],
+     "$.items[].onTime": [
+      "boolean"
+     ],
+     "$.items[].postedAt": [
+      "string:datetime"
+     ],
+     "$.items[].postingWindowId": [
+      "string:uuid"
+     ],
+     "$.items[].realmojis": [
+      "array"
+     ],
+     "$.items[].realmojis[]": [
+      "object"
+     ],
+     "$.items[].realmojis[].createdAt": [
+      "string:datetime"
+     ],
+     "$.items[].realmojis[].id": [
+      "string:uuid"
+     ],
+     "$.items[].realmojis[].imageUrl": [
+      "string:image-url"
+     ],
+     "$.items[].realmojis[].reactionType": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor": [
+      "object"
+     ],
+     "$.items[].realmojis[].reactor.accountType": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor.bio": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor.displayName": [
+      "string:string"
+     ],
+     "$.items[].realmojis[].reactor.id": [
+      "string:uuid"
+     ],
+     "$.items[].realmojis[].reactor.profileImageUrl": [
+      "null"
+     ],
+     "$.items[].realmojis[].reactor.username": [
+      "string:string"
+     ],
+     "$.items[].visibility": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/memories?month= 200 $.items[] nonempty",
+    "GET /api/memories?month= 200 $.items[].comments[] nonempty",
+    "GET /api/memories?month= 200 $.items[].realmojis[] nonempty",
+    "GET /api/memories?month= status 200"
+   ],
+   "images": {
+    "apiImgCount": 3,
+    "apiImgLoaded": 3,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "y-settings",
+   "url": "/settings",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/]",
+    ">div>div.app-shell>main>section.panel>button.logout-button[type=button]",
+    ">div>div.app-shell>main>section.panel>div.menu-list",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/posts/me/current]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/posts/me/current]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/account]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/account]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/profile]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/profile]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/users]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/users]>span",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "プロフィールメニュー",
+    "ホーム",
+    "ログアウト",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-settings-profile",
+   "url": "/settings/profile",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/settings]",
+    ">div>div.app-shell>main>section.panel>div.profile-avatar",
+    ">div>div.app-shell>main>section.panel>div.profile-avatar>span.avatar",
+    ">div>div.app-shell>main>section.panel>form",
+    ">div>div.app-shell>main>section.panel>form>button",
+    ">div>div.app-shell>main>section.panel>form>label",
+    ">div>div.app-shell>main>section.panel>form>label>input",
+    ">div>div.app-shell>main>section.panel>form>label>input[type=file]",
+    ">div>div.app-shell>main>section.panel>form>label>textarea",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:プロフィール画像",
+    "label:自己紹介",
+    "label:表示名",
+    "つながり",
+    "プロフィール設定",
+    "ホーム",
+    "保存",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-settings-account",
+   "url": "/settings/account",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/settings]",
+    ">div>div.app-shell>main>section.panel>div.menu-list",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/delete]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/delete]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/export]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/export]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/region]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/region]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/secret]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/secret]>span",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "アカウント・データ",
+    "ホーム",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-my-current-post",
+   "url": "/posts/me/current",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "ホーム",
+    "今日の一枚は、まだ。",
+    "投稿",
+    "自分の現在の投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posts/me/current 404": {
+     "$": [
+      "object"
+     ],
+     "$.error": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posts/me/current status 404"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": [
+    "console.error Failed to load resource: the server responded with a status of # ()"
+   ]
+  },
+  {
+   "name": "y-search",
+   "url": "/users",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>button.more.secondary",
+    ">div>div.app-shell>main>section>form[role=search]",
+    ">div>div.app-shell>main>section>form[role=search]>button",
+    ">div>div.app-shell>main>section>form[role=search]>label",
+    ">div>div.app-shell>main>section>form[role=search]>label>input",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>main>section>ul.user-list",
+    ">div>div.app-shell>main>section>ul.user-list>li",
+    ">div>div.app-shell>main>section>ul.user-list>li>a.button.compact.secondary[href=/users/:id]",
+    ">div>div.app-shell>main>section>ul.user-list>li>a[href=/users/:id]",
+    ">div>div.app-shell>main>section>ul.user-list>li>a[href=/users/:id]>small",
+    ">div>div.app-shell>main>section>ul.user-list>li>img.avatar",
+    ">div>div.app-shell>main>section>ul.user-list>li>span.avatar",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "label:ユーザー名または表示名",
+    "さらに読み込む",
+    "つながり",
+    "ホーム",
+    "ユーザー検索",
+    "投稿",
+    "検索",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/users?q= 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "object"
+     ],
+     "$.items[].accountType": [
+      "string:string"
+     ],
+     "$.items[].bio": [
+      "string:string"
+     ],
+     "$.items[].displayName": [
+      "string:string"
+     ],
+     "$.items[].id": [
+      "string:uuid"
+     ],
+     "$.items[].profileImageUrl": [
+      "null",
+      "string:image-url"
+     ],
+     "$.items[].username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/users?q= 200 $.items[] nonempty",
+    "GET /api/users?q= status 200"
+   ],
+   "images": {
+    "apiImgCount": 25,
+    "apiImgLoaded": 25,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "y-user-profile",
+   "url": "/users/:id",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/users]",
+    ">div>div.app-shell>main>section.panel>div.profile-avatar",
+    ">div>div.app-shell>main>section.panel>div.profile-avatar>span.avatar",
+    ">div>div.app-shell>main>section.panel>div.stack",
+    ">div>div.app-shell>main>section.panel>div.stack>button",
+    ">div>div.app-shell>main>section.panel>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>h2",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>p",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>main>section.panel>p",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "キャンセル",
+    "ブロック",
+    "ブロック解除",
+    "ホーム",
+    "友達申請",
+    "友達解除",
+    "小林 悠真 #",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/users/:id 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/users/:id status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-relationships-friends",
+   "url": "/relationships/friends",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>a.text-link[href=/users]",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>main>section>nav.tabs.wrap-tabs",
+    ">div>div.app-shell>main>section>nav.tabs.wrap-tabs>a.active[aria-current=page][href=/relationships/friends]",
+    ">div>div.app-shell>main>section>nav.tabs.wrap-tabs>a[href=/relationships/followers]",
+    ">div>div.app-shell>main>section>nav.tabs.wrap-tabs>a[href=/relationships/following]",
+    ">div>div.app-shell>main>section>nav.tabs.wrap-tabs>a[href=/relationships/incoming-requests]",
+    ">div>div.app-shell>main>section>nav.tabs.wrap-tabs>a[href=/relationships/outgoing-requests]",
+    ">div>div.app-shell>main>section>ul.user-list",
+    ">div>div.app-shell>main>section>ul.user-list>li",
+    ">div>div.app-shell>main>section>ul.user-list>li>a[href=/users/:id]",
+    ">div>div.app-shell>main>section>ul.user-list>li>a[href=/users/:id]>small",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>button.secondary[type=button]",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>dialog.confirm-dialog",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>dialog.confirm-dialog>div.stack",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>dialog.confirm-dialog>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>dialog.confirm-dialog>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>dialog.confirm-dialog>h2",
+    ">div>div.app-shell>main>section>ul.user-list>li>div.row-actions>dialog.confirm-dialog>p",
+    ">div>div.app-shell>main>section>ul.user-list>li>img.avatar",
+    ">div>div.app-shell>main>section>ul.user-list>li>span.avatar",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/relationships/friends]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "キャンセル",
+    "フォロワー",
+    "フォロー中",
+    "ホーム",
+    "友達",
+    "友達解除",
+    "受信申請",
+    "投稿",
+    "送信申請",
+    "通知"
+   ],
+   "api": {
+    "GET /api/relationships/friends 200": {
+     "$": [
+      "object"
+     ],
+     "$.hasMore": [
+      "boolean"
+     ],
+     "$.items": [
+      "array"
+     ],
+     "$.items[]": [
+      "object"
+     ],
+     "$.items[].relationId": [
+      "string:uuid"
+     ],
+     "$.items[].status": [
+      "string:string"
+     ],
+     "$.items[].updatedAt": [
+      "string:datetime"
+     ],
+     "$.items[].user": [
+      "object"
+     ],
+     "$.items[].user.accountType": [
+      "string:string"
+     ],
+     "$.items[].user.bio": [
+      "string:string"
+     ],
+     "$.items[].user.displayName": [
+      "string:string"
+     ],
+     "$.items[].user.id": [
+      "string:uuid"
+     ],
+     "$.items[].user.profileImageUrl": [
+      "null",
+      "string:image-url"
+     ],
+     "$.items[].user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/relationships/friends 200 $.items[] nonempty",
+    "GET /api/relationships/friends status 200"
+   ],
+   "images": {
+    "apiImgCount": 1,
+    "apiImgLoaded": 1,
+    "broken": [],
+    "srcFormats": [
+     "image-url"
+    ],
+    "fetches": [
+     "200 image/jpeg"
+    ]
+   },
+   "console": []
+  },
+  {
+   "name": "y-friend-profile",
+   "url": "/users/:id",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/users]",
+    ">div>div.app-shell>main>section.panel>div.profile-avatar",
+    ">div>div.app-shell>main>section.panel>div.profile-avatar>span.avatar",
+    ">div>div.app-shell>main>section.panel>div.stack",
+    ">div>div.app-shell>main>section.panel>div.stack>button",
+    ">div>div.app-shell>main>section.panel>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack>button.secondary[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>div.stack>button[type=button]",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>h2",
+    ">div>div.app-shell>main>section.panel>div.stack>dialog.confirm-dialog>p",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>main>section.panel>p",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "キャンセル",
+    "ブロック",
+    "ブロック解除",
+    "ホーム",
+    "友達申請",
+    "友達解除",
+    "投稿",
+    "通知",
+    "零食预算驱动 #"
+   ],
+   "api": {
+    "GET /api/users/:id 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/users/:id status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-notifications",
+   "url": "/notifications",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1",
+    ">div>div.app-shell>main>section>p.muted",
+    ">div>div.app-shell>main>section>ul.user-list",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "ホーム",
+    "投稿",
+    "次の一枚を、待っています。",
+    "通知"
+   ],
+   "api": {},
+   "dataSig": [],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "y-after-logout",
+   "url": "/login",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>form",
+    ">div>main.auth-page>form>a[href=/register]",
+    ">div>main.auth-page>form>button",
+    ">div>main.auth-page>form>h1",
+    ">div>main.auth-page>form>label",
+    ">div>main.auth-page>form>label>input",
+    ">div>main.auth-page>section.secret-key-panel",
+    ">div>main.auth-page>section.secret-key-panel>h2",
+    ">div>main.auth-page>section.secret-key-panel>output.secret-key",
+    ">div>main.auth-page>section.secret-key-panel>p"
+   ],
+   "texts": [
+    "SecretKey",
+    "label:SecretKey",
+    "label:ユーザー名",
+    "ログイン"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "POST /api/auth/logout 204": {
+     "$": [
+      "non-json"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "POST /api/auth/logout status 204"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": [
+    "requestfailed /api/auth/logout"
+   ]
+  },
+  {
+   "name": "europe-register-form",
+   "url": "/register",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>form",
+    ">div>main.auth-page>form>a[href=/login]",
+    ">div>main.auth-page>form>button",
+    ">div>main.auth-page>form>h1",
+    ">div>main.auth-page>form>label",
+    ">div>main.auth-page>form>label>input",
+    ">div>main.auth-page>form>label>select",
+    ">div>main.auth-page>form>label>select>option"
+   ],
+   "texts": [
+    "label:ユーザー名",
+    "label:地域",
+    "label:表示名",
+    "新規登録",
+    "登録"
+   ],
+   "api": {},
+   "dataSig": [],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "europe-register-secret",
+   "url": "/register",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>button[type=button]",
+    ">div>main.auth-page>section.secret-key-panel",
+    ">div>main.auth-page>section.secret-key-panel>h2",
+    ">div>main.auth-page>section.secret-key-panel>output.secret-key",
+    ">div>main.auth-page>section.secret-key-panel>p"
+   ],
+   "texts": [
+    "SecretKey",
+    "はじめる"
+   ],
+   "api": {
+    "POST /api/auth/register 201": {
+     "$": [
+      "object"
+     ],
+     "$.secretKey": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "POST /api/auth/register status 201"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "europe-home",
+   "url": "/",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "My friendsフィード",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    },
+    "POST /api/auth/login 200": {
+     "$": [
+      "object"
+     ],
+     "$.token": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200",
+    "POST /api/auth/login status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "europe-feed-public",
+   "url": "/feeds/public",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/public]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "公開フィード",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "europe-settings",
+   "url": "/settings",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/]",
+    ">div>div.app-shell>main>section.panel>button.logout-button[type=button]",
+    ">div>div.app-shell>main>section.panel>div.menu-list",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/posts/me/current]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/posts/me/current]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/account]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/account]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/profile]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/profile]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/users]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/users]>span",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "プロフィールメニュー",
+    "ホーム",
+    "ログアウト",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "mismatch-europe-user-from-jp",
+   "url": "/",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>aside.region-alert[role=alert]",
+    ">div>div.app-shell>main>aside.region-alert[role=alert]>a[href=/login]",
+    ">div>div.app-shell>main>aside.region-alert[role=alert]>a[href=/settings/region]",
+    ">div>div.app-shell>main>aside.region-alert[role=alert]>p",
+    ">div>div.app-shell>main>aside.region-alert[role=alert]>strong",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>button",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "My friendsフィード",
+    "つながり",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "再読み込み",
+    "投稿",
+    "接続先の地域を確認してください。",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 403": {
+     "$": [
+      "object"
+     ],
+     "$.error": [
+      "string:string"
+     ]
+    },
+    "GET /api/notifications 403": {
+     "$": [
+      "object"
+     ],
+     "$.error": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 403": {
+     "$": [
+      "object"
+     ],
+     "$.error": [
+      "string:string"
+     ]
+    },
+    "POST /api/auth/login 200": {
+     "$": [
+      "object"
+     ],
+     "$.token": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 403",
+    "GET /api/notifications status 403",
+    "GET /api/posting-window/current status 403",
+    "POST /api/auth/login status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": [
+    "console.error Failed to load resource: the server responded with a status of # ()"
+   ]
+  },
+  {
+   "name": "america-register-form",
+   "url": "/register",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>form",
+    ">div>main.auth-page>form>a[href=/login]",
+    ">div>main.auth-page>form>button",
+    ">div>main.auth-page>form>h1",
+    ">div>main.auth-page>form>label",
+    ">div>main.auth-page>form>label>input",
+    ">div>main.auth-page>form>label>select",
+    ">div>main.auth-page>form>label>select>option"
+   ],
+   "texts": [
+    "label:ユーザー名",
+    "label:地域",
+    "label:表示名",
+    "新規登録",
+    "登録"
+   ],
+   "api": {},
+   "dataSig": [],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "america-register-secret",
+   "url": "/register",
+   "paths": [
+    ">div",
+    ">div>main.auth-page",
+    ">div>main.auth-page>a.brand[href=/]",
+    ">div>main.auth-page>a.brand[href=/]>img",
+    ">div>main.auth-page>button[type=button]",
+    ">div>main.auth-page>section.secret-key-panel",
+    ">div>main.auth-page>section.secret-key-panel>h2",
+    ">div>main.auth-page>section.secret-key-panel>output.secret-key",
+    ">div>main.auth-page>section.secret-key-panel>p"
+   ],
+   "texts": [
+    "SecretKey",
+    "はじめる"
+   ],
+   "api": {
+    "POST /api/auth/register 201": {
+     "$": [
+      "object"
+     ],
+     "$.secretKey": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "POST /api/auth/register status 201"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "america-home",
+   "url": "/",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/public]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[aria-current=page][href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "My friendsフィード",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    },
+    "POST /api/auth/login 200": {
+     "$": [
+      "object"
+     ],
+     "$.token": [
+      "string:uuid"
+     ],
+     "$.user": [
+      "object"
+     ],
+     "$.user.accountType": [
+      "string:string"
+     ],
+     "$.user.bio": [
+      "string:string"
+     ],
+     "$.user.displayName": [
+      "string:string"
+     ],
+     "$.user.id": [
+      "string:uuid"
+     ],
+     "$.user.region": [
+      "string:string"
+     ],
+     "$.user.status": [
+      "string:string"
+     ],
+     "$.user.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200",
+    "POST /api/auth/login status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "america-feed-public",
+   "url": "/feeds/public",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section",
+    ">div>div.app-shell>main>section>div.state-view",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.button[href=/posts/new]",
+    ">div>div.app-shell>main>section>div.state-view>div.state-actions>a.text-link[href=/notifications]",
+    ">div>div.app-shell>main>section>div.state-view>h2",
+    ">div>div.app-shell>main>section>div.state-view>p",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon",
+    ">div>div.app-shell>main>section>div.state-view>span.state-icon>svg",
+    ">div>div.app-shell>main>section>h1.sr-only",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a.active[aria-current=page][href=/feeds/public]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/following]",
+    ">div>div.app-shell>main>section>nav.feed-tabs.tabs>a[href=/feeds/friends-of-friends]",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.active[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Friends of friends",
+    "Memories",
+    "My friends",
+    "つながり",
+    "まずは、あなたの一枚。",
+    "フォロー中",
+    "ホーム",
+    "公開",
+    "公開フィード",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    },
+    "GET /api/posting-window/current 200": {
+     "$": [
+      "object"
+     ],
+     "$.canPost": [
+      "boolean"
+     ],
+     "$.deletionCount": [
+      "number"
+     ],
+     "$.hasPosted": [
+      "boolean"
+     ],
+     "$.window": [
+      "object"
+     ],
+     "$.window.id": [
+      "string:uuid"
+     ],
+     "$.window.localDate": [
+      "string:date"
+     ],
+     "$.window.onTimeDeadline": [
+      "string:datetime"
+     ],
+     "$.window.region": [
+      "string:string"
+     ],
+     "$.window.startsAt": [
+      "string:datetime"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200",
+    "GET /api/posting-window/current status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  },
+  {
+   "name": "america-settings",
+   "url": "/settings",
+   "paths": [
+    ">div",
+    ">div>div.app-shell",
+    ">div>div.app-shell>a.skip-link[href=#main-content]",
+    ">div>div.app-shell>header.app-header",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]",
+    ">div>div.app-shell>header.app-header>a.brand[href=/]>img",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]",
+    ">div>div.app-shell>header.app-header>a.icon-link[href=/users]>svg",
+    ">div>div.app-shell>header.app-header>a.profile-link[href=/settings]",
+    ">div>div.app-shell>main",
+    ">div>div.app-shell>main>section.panel",
+    ">div>div.app-shell>main>section.panel>a.back-link[href=/]",
+    ">div>div.app-shell>main>section.panel>button.logout-button[type=button]",
+    ">div>div.app-shell>main>section.panel>div.menu-list",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/posts/me/current]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/posts/me/current]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/account]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/account]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/profile]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/settings/profile]>span",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/users]",
+    ">div>div.app-shell>main>section.panel>div.menu-list>a[href=/users]>span",
+    ">div>div.app-shell>main>section.panel>h1",
+    ">div>div.app-shell>nav.bottom-nav",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>span",
+    ">div>div.app-shell>nav.bottom-nav>a.compose-nav[href=/posts/new]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/memories]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/notifications]>svg",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>span",
+    ">div>div.app-shell>nav.bottom-nav>a[href=/relationships/friends]>svg"
+   ],
+   "texts": [
+    "Memories",
+    "つながり",
+    "プロフィールメニュー",
+    "ホーム",
+    "ログアウト",
+    "投稿",
+    "通知"
+   ],
+   "api": {
+    "GET /api/me 200": {
+     "$": [
+      "object"
+     ],
+     "$.accountType": [
+      "string:string"
+     ],
+     "$.bio": [
+      "string:string"
+     ],
+     "$.displayName": [
+      "string:string"
+     ],
+     "$.id": [
+      "string:uuid"
+     ],
+     "$.profileImageUrl": [
+      "null"
+     ],
+     "$.region": [
+      "string:string"
+     ],
+     "$.status": [
+      "string:string"
+     ],
+     "$.username": [
+      "string:string"
+     ]
+    }
+   },
+   "dataSig": [
+    "GET /api/me status 200"
+   ],
+   "images": {
+    "apiImgCount": 0,
+    "apiImgLoaded": 0,
+    "broken": [],
+    "srcFormats": [],
+    "fetches": []
+   },
+   "console": []
+  }
+ ]
+}

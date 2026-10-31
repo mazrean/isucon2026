@@ -1,0 +1,17 @@
+[
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "d8fe82ed-0cab-4bf8-86d0-bd7bdb48f42a",
+   "username": "e2e_mvvqz1yo1_a",
+   "displayName": "E2E asia",
+   "bio": "",
+   "region": "asia",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ }
+]

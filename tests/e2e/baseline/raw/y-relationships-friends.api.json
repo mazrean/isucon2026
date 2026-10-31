@@ -1,0 +1,77 @@
+[
+ {
+  "key": "GET /api/relationships/friends",
+  "status": 200,
+  "url": "/api/relationships/friends",
+  "json": {
+   "items": [
+    {
+     "relationId": "18a30ca9-e9ff-40fb-a04e-5d85b3614d9a",
+     "user": {
+      "id": "f9cc4f60-f383-4ead-984a-0fae49ff08c1",
+      "username": "lingshi_yusuan_1151",
+      "displayName": "零食预算驱动 1151",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "regular"
+     },
+     "status": "friends",
+     "updatedAt": "2025-10-16T09:35:04.238022Z"
+    },
+    {
+     "relationId": "8600e5e9-8599-4c55-912c-21fa3d399266",
+     "user": {
+      "id": "6ee898b3-a6b0-40cb-bbcd-833252b3296a",
+      "username": "soba_smooth_rust_2272",
+      "displayName": "そばとなめらかRust 2272",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "regular"
+     },
+     "status": "friends",
+     "updatedAt": "2025-10-15T06:35:03.549956Z"
+    },
+    {
+     "relationId": "a5a673d1-b82e-48c1-8167-ea802c4e690a",
+     "user": {
+      "id": "c0897f7c-3d37-4675-9f5d-650c1f541433",
+      "username": "stew_obasan_3377",
+      "displayName": "シチューおばさん 3377",
+      "profileImageUrl": "/api/images/334157d3-4287-4c36-9a77-1405bec4365b?exp=1793497923&sig=XQBcc0wSRDnZsdx56joYD-odGOdfKbXz3ntw2nlMKgY",
+      "bio": "",
+      "accountType": "regular"
+     },
+     "status": "friends",
+     "updatedAt": "2025-09-25T17:35:52.179031Z"
+    },
+    {
+     "relationId": "8c9c367a-ab1d-4b95-8099-ea5914965b73",
+     "user": {
+      "id": "8d663fe0-41ae-44d0-8428-7ea9c56b32d0",
+      "username": "sutbul_mini_chilmyeonjo_904",
+      "displayName": "숯불 미니 칠면조 904",
+      "profileImageUrl": null,
+      "bio": "커피와 카메라와 고양이를 좋아해요",
+      "accountType": "regular"
+     },
+     "status": "friends",
+     "updatedAt": "2025-09-21T00:20:19.599879Z"
+    },
+    {
+     "relationId": "fa4a060b-4530-4ee4-905e-bce11e910428",
+     "user": {
+      "id": "9ffced71-542e-462a-a4d8-d5ebbedf1322",
+      "username": "yui_kato_1195",
+      "displayName": "加藤 結衣 1195",
+      "profileImageUrl": null,
+      "bio": "コーヒーとカメラと猫が好き",
+      "accountType": "regular"
+     },
+     "status": "friends",
+     "updatedAt": "2025-09-19T16:36:15.921633Z"
+    }
+   ],
+   "hasMore": false
+  }
+ }
+]

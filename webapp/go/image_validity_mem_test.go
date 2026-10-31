@@ -145,4 +145,55 @@ func TestMemImageValidMemOnlyRealMoji(t *testing.T) {
 	// post deleted
 	d.applyPost(memPostRow{ID: "p1", AuthorID: "author", PostingWindowID: "w", ImageID: "img-p1", PostedAt: now, DeletedAt: &now})
 	check("img-rm2", "r", false)
+	// the deleted post's own image: found, signed with the owner's key, not valid
+	if v, ok := memImageValid(h, "img-p1", "author"); !ok || !v.found || v.valid || v.secretKeyHash != "ka" {
+		t.Fatalf("deleted own post: ok=%v v=%+v", ok, v)
+	}
+	imgMemOnly = false
+	if _, ok := memImageValid(h, "img-p1", "author"); ok {
+		t.Fatal("knob off: deleted post must ask the DB")
+	}
+}
+
+// ISUREAL_IMG_MEM_ONLY: a realmoji not yet in PG (no hint) is found by the
+// scan of the open window's newest posts.
+func TestMemImageValidMemOnlyRealMojiScan(t *testing.T) {
+	old := imgMemOnly
+	imgMemOnly = true
+	defer func() { imgMemOnly = old }()
+	imgRealMojiHint.mu.Lock()
+	imgRealMojiHint.m = nil
+	imgRealMojiHint.mu.Unlock()
+	imgRealMojiHint.lastTry.Store(time.Now().Add(time.Hour).UnixNano()) // no PG load in the test
+	defer func() {
+		imgRealMojiHint.mu.Lock()
+		imgRealMojiHint.m = nil
+		imgRealMojiHint.mu.Unlock()
+		imgRealMojiHint.lastTry.Store(0)
+	}()
+	m := &memStore{d: newMemData()}
+	m.ready.Store(true)
+	h := &HandlerContext{Mem: m}
+	d := m.d
+	d.applyUser(memUserRow{ID: "author", Username: "author", SecretKeyHash: "ka", Status: "active"})
+	d.applyUser(memUserRow{ID: "r", Username: "r", SecretKeyHash: "kr", Status: "active"})
+	now := time.Now()
+	w := &memWindow{}
+	w.ID = "w"
+	d.windows["w"] = w
+	d.open["asia"] = w
+	d.applyPost(memPostRow{ID: "p1", AuthorID: "author", PostingWindowID: "w", ImageID: "img-p1", PostedAt: now})
+	if p := d.posts["p1"]; p != nil && len(w.posts) == 0 {
+		w.posts = append(w.posts, p)
+	}
+	d.applyRealMoji(memRealMojiRow{ID: "rm1", PostID: "p1", ReactorID: "r", ImageID: "img-new", ReactionType: "smile", CreatedAt: now})
+	if v, ok := memImageValid(h, "img-new", "r"); !ok || !v.found || !v.valid {
+		t.Fatalf("scan: ok=%v v=%+v", ok, v)
+	}
+	if _, ok := memImageValid(h, "img-new", "author"); ok {
+		t.Fatal("not the reactor")
+	}
+	if _, ok := memImageValid(h, "img-none", "r"); ok {
+		t.Fatal("unknown image must ask the DB")
+	}
 }

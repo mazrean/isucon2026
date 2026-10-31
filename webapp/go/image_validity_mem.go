@@ -47,6 +47,9 @@ var imgvPeerIndex = os.Getenv("ISUREAL_IMGV_PEER_INDEX") == "1"
 // (no row for u.status = 'active'). Unknown owners still ask the DB.
 var imgMemOnly = os.Getenv("ISUREAL_IMG_MEM_ONLY") == "1"
 
+// imgRealMojiScanPosts: newest posts per open window scanned on a hint miss.
+var imgRealMojiScanPosts = envIntOrDefault("ISUREAL_IMG_RM_SCAN", 256)
+
 type imgPostRef struct {
 	postID   string
 	authorID string
@@ -81,13 +84,23 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 		return imageValidity{}, false
 	}
 	ok := u.ProfileImageID != nil && *u.ProfileImageID == imageID
+	deletedOwn := false
 	if !ok {
 		for _, p := range u.posts {
-			if p.ImageID == imageID && !p.deleted && p.AuthorID == owner {
-				ok = true
-				break
+			if p.ImageID == imageID && p.AuthorID == owner {
+				if !p.deleted {
+					ok = true
+					break
+				}
+				deletedOwn = true
 			}
 		}
+	}
+	// ISUREAL_IMG_MEM_ONLY: the image of a deleted own post (an image id
+	// belongs to one upload: not a profile image, not a realmoji) is
+	// found=true, valid=false, as the DB says once the deletion is written.
+	if !ok && deletedOwn && imgMemOnly {
+		return imageValidity{found: true, secretKeyHash: u.SecretKeyHash, valid: false}, true
 	}
 	if !ok {
 		imgPostIndex.mu.RLock()
@@ -140,7 +153,31 @@ func memRealMojiImageValid(d *memData, imageID, owner string) bool {
 	postID, hit := imgRealMojiHint.m[imageID]
 	imgRealMojiHint.mu.RUnlock()
 	if !hit {
-		return false
+		// STORE: a new realmoji is in memory before PG. Scan the newest posts
+		// of the open windows and remember the hit.
+		for _, w := range d.open {
+			ps := w.posts
+			for i := len(ps) - 1; i >= 0 && i >= len(ps)-imgRealMojiScanPosts && !hit; i-- {
+				for _, x := range ps[i].realmojis {
+					if x.ImageID == imageID {
+						postID, hit = ps[i].ID, true
+						break
+					}
+				}
+			}
+			if hit {
+				break
+			}
+		}
+		if !hit {
+			return false
+		}
+		imgRealMojiHint.mu.Lock()
+		if imgRealMojiHint.m == nil {
+			imgRealMojiHint.m = make(map[string]string)
+		}
+		imgRealMojiHint.m[imageID] = postID
+		imgRealMojiHint.mu.Unlock()
 	}
 	p := d.posts[postID]
 	if p == nil || p.deleted || !p.author.active() {

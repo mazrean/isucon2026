@@ -19,6 +19,7 @@ for h in "${HOSTS[@]}"; do
   (
     scp -q "$OUT/isureal" "$h:/tmp/isureal.new"
     scp -q etc/app/nginx.conf "$h:/tmp/nginx.conf"
+    scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
     r=$(region_of "$h"); f=$FWD; [[ $h == asia1 ]] && f=0
     sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_SECRET__/$SECRET/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
@@ -30,9 +31,11 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-127.0.0.1}"'
       setenv ISUREAL_NODE_NAME '"$h"'
       sudo nginx -t -q
+      sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
       sudo systemctl restart isureal-go
       sudo systemctl reload nginx
+      for i in $(seq 100); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/posting-window/current); [ "$c" != 000 ] && break; sleep 0.2; done
       sha1sum /home/isucon/webapp/go/isureal | cut -c1-12' </dev/null | sed "s/^/$h: /"
   ) &
 done

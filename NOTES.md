@@ -215,6 +215,7 @@ END: 2026-10-31 18:00 JST
 | 19508 | - | **167878** | bare 既定 (18619 の構成、インデックスあり)。asia 18/52/151/428/1062、eu 20/56/151/380、am 16/56/148/311 (eu/am とも d5 は最多級)、GP 699/211/155 → 過去最高。インデックスは残す (確定)。残りは eu/am の GP (56% / 50%) |
 | 19708 | - | 157303 | bare + GP_FAIR=1 (修正版、ゲートは効いた、FWD_LEAD 1000)。asia 1046 / eu 349 / am 251、GP 342/341/242 → eu/am は 98% / 96% に上がり、asia は 33% に落ちた。GP の通過の合計は 925 (19508 は 1065) で負け |
 | 19953 | - | 156554 | bare + GP_FAIR=1 (FWD_LEAD 300) + MEM_PUSH_STATS=1。asia 932 / eu 327 / am 286 (d5、人数は揺れで低め)、GP 606/229/255 (合計 1090、19508 の 1065 を少し上回る) |
+| 20203 | - | 145506 | bare + VM=1 + ASIA2_GOMEM=900MiB:100 + LOGIN_BATCH=1。asia 970 / eu 347 / am 333、GP 375/321/286 (asia の GP 39%)。3 つ同時なので切り分けられない。不採用、1 つずつ試す |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

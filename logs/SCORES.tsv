@@ -69,3 +69,4 @@
 14:52	409cf81	job=19508 state=4 pass=true スコア=167878 種別エラー数=map[]	bare 既定 (18619 の構成、インデックスあり) — 最終候補の基準 1 本目
 14:55	29e9648	job=19708 state=4 pass=true スコア=157303 種別エラー数=map[]	bare 既定 + GP_FAIR=1 (9defa59、GP の判定を修正、SLOTS 52、FWD_LEAD 1000)
 14:58	402ab79	job=19953 state=4 pass=true スコア=156554 種別エラー数=map[]	bare + GP_FAIR=1 (FWD_LEAD 300ms) + MEM_PUSH_STATS=1 (GP 中の pump の push の計測)
+15:01	34fe7dc	job=20203 state=4 pass=true スコア=145506 種別エラー数=map[]	bare 既定 + VM=1 (asia1/asia2 の vm の watermark・compaction・dirty) + ASIA2_GOMEM=900MiB:100 + LOGIN_BATCH=1 (login/logout/register を 1 往復)

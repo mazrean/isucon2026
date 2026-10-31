@@ -25,8 +25,14 @@ END: 2026-10-31 18:00 JST
 | 時刻 | commit | score | pass | 内容 |
 |---|---|---|---|---|
 
-## バックログ
-(問題確認後に記入)
+## バックログ (優先順)
+1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)
+2. [進行中] アプリ: 読み書き分離 / posting-window タイムアウト修正 / SSE を DB ポーリングから脱却 / 書き込み往復削減 / initialize 申告値
+3. 書き込みの asia1 転送: europe1/america1 の非 GET /api/* を asia1 アプリへ (ルーター経由のプライベート IP) 転送し、SQL 往復を 1ms 化。RegionMiddleware はオリジン地域を内部ヘッダーで引き継ぐ (192.168.x からのみ信頼)
+4. 画像: ローカル replica から読む + ディスクキャッシュ / nginx 配信 (署名検証・削除 5 秒ルールは維持)
+5. guard 依存: ログイン失敗ログ形式維持 or アプリ内 BAN 実装 (10 回/10 秒 → 2 分)
+6. 監視: スロット wal_status 監視 + 自動 sync 縮退 watchdog、追試のランダム順再起動で書き込みが止まらないこと
+7. 最終: 全台ランダム順再起動 → 公式ベンチ、E2E、envcheck 全台、SG 差分なし確認
 
 ## ポート登録
 

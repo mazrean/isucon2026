@@ -94,6 +94,15 @@ type mdUser struct {
 func TestMemDiff(t *testing.T) {
 	config := ConfigFromEnv()
 	memoriesMem = true
+	// MD_RESP_CACHE=1: Memories/export go through mem_respcache.go instead of the mem path
+	respCache := os.Getenv("MD_RESP_CACHE") == "1"
+	if respCache {
+		memoriesMem, memRespCacheOn = false, true
+		defer func() {
+			memRespCacheOn = false
+			t.Logf("resp cache: hits %d miss %d puts %d veto %d", memRespHits.Load(), memRespMiss.Load(), memRespPuts.Load(), memRespVeto.Load())
+		}()
+	}
 	defer func() {
 		memoriesMem = false
 		t.Logf("memories from mem: %d responses, %d items", memMemoriesServed.Load(), memMemoriesItems.Load())
@@ -277,6 +286,9 @@ func TestMemDiff(t *testing.T) {
 				"/api/memories?month=2026-11", "/api/memories?month=2026-10", "/api/memories?month=2026-12",
 				"/api/memories/2026-11-01", "/api/memories/2026-11-02", "/api/memories/2026-11-03"} {
 				compare(step, u, p)
+			}
+			if respCache {
+				compare(step, u, "/api/me/export")
 			}
 			for i := 0; i < 3; i++ {
 				id := pickID(postIDs)

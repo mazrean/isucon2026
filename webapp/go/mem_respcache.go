@@ -145,9 +145,13 @@ func (c *memRespCache) put(k memRespKey, f memRespFill, body []byte, tags []stri
 		c.removeLocked(k, old)
 	}
 	if c.bytes+len(body) > memRespCacheMaxBytes {
-		c.entries = map[memRespKey]*memRespEntry{}
-		c.byTag = map[string]map[memRespKey]struct{}{}
-		c.bytes = 0
+		// evict arbitrary entries (map order) down to 3/4 of the budget
+		for ek, e := range c.entries {
+			if c.bytes+len(body) <= memRespCacheMaxBytes*3/4 {
+				break
+			}
+			c.removeLocked(ek, e)
+		}
 	}
 	c.entries[k] = &memRespEntry{body: body, tags: tags, bucket: f.bucket}
 	c.bytes += len(body)
@@ -286,6 +290,12 @@ func serveMemories(h *HandlerContext, c *echo.Context, userID string, start, end
 			return c.JSONBlob(http.StatusOK, b)
 		}
 		fill = rc.begin()
+		if r, ok := fetchOrigin(c); ok {
+			if r.tags != nil {
+				rc.put(key, fill, r.body, r.tags)
+			}
+			return r.write(c)
+		}
 	}
 	defer heavyAcquire(ctx)()
 	response, err := listMemories(ctx, h.Reader(), userID, start, end, beforeAt, beforeID)
@@ -293,6 +303,7 @@ func serveMemories(h *HandlerContext, c *echo.Context, userID string, start, end
 		return err
 	}
 	if rc == nil {
+		memRespSetTags(c, memoriesTags(userID, response))
 		return c.JSON(http.StatusOK, wrap(response))
 	}
 	b, err := encodeJSONLikeEcho(wrap(response))

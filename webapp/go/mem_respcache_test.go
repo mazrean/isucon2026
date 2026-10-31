@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,16 +35,26 @@ func TestMemRespCacheInvalidation(t *testing.T) {
 		hit  bool
 		do   func()
 	}{
-		{"comment on shown post", false, func() { apply("comments", "I", memCommentRow{ID: "c", PostID: "P1", AuthorID: "x", CreatedAt: time.Now()}) }},
+		{"comment on shown post", false, func() {
+			apply("comments", "I", memCommentRow{ID: "c", PostID: "P1", AuthorID: "x", CreatedAt: time.Now()})
+		}},
 		{"comment delete", false, func() { apply("comments", "D", memCommentRow{ID: "c", PostID: "P1"}) }},
-		{"realmoji on shown post", false, func() { apply("realmojis", "I", memRealMojiRow{ID: "r", PostID: "P1", ReactorID: "x", CreatedAt: time.Now()}) }},
+		{"realmoji on shown post", false, func() {
+			apply("realmojis", "I", memRealMojiRow{ID: "r", PostID: "P1", ReactorID: "x", CreatedAt: time.Now()})
+		}},
 		{"realmoji without post id", false, func() { apply("realmojis", "D", memRealMojiRow{ID: "r"}) }},
-		{"viewer posts", false, func() { apply("posts", "I", memPostRow{ID: "P9", AuthorID: "v", PostingWindowID: "W9", PostedAt: time.Now()}) }},
+		{"viewer posts", false, func() {
+			apply("posts", "I", memPostRow{ID: "P9", AuthorID: "v", PostingWindowID: "W9", PostedAt: time.Now()})
+		}},
 		{"viewer user row", false, func() { apply("users", "U", memUserRow{ID: "v", Status: "active"}) }},
 		{"reactor user row", false, func() { apply("users", "U", memUserRow{ID: "R", Status: "deleted"}) }},
 		{"window of shown post", false, func() { apply("posting_windows", "U", memWindowRow{ID: "W1", Region: "asia", LocalDate: "2026-01-01"}) }},
-		{"other post comment", true, func() { apply("comments", "I", memCommentRow{ID: "c2", PostID: "P2", AuthorID: "x", CreatedAt: time.Now()}) }},
-		{"other user posts", true, func() { apply("posts", "I", memPostRow{ID: "P8", AuthorID: "o", PostingWindowID: "W9", PostedAt: time.Now()}) }},
+		{"other post comment", true, func() {
+			apply("comments", "I", memCommentRow{ID: "c2", PostID: "P2", AuthorID: "x", CreatedAt: time.Now()})
+		}},
+		{"other user posts", true, func() {
+			apply("posts", "I", memPostRow{ID: "P8", AuthorID: "o", PostingWindowID: "W9", PostedAt: time.Now()})
+		}},
 		{"other window", true, func() { apply("posting_windows", "U", memWindowRow{ID: "W2", Region: "asia", LocalDate: "2026-01-02"}) }},
 		{"follow", true, func() { apply("follows", "I", memFollowRow{ID: "f", FollowerID: "a", FolloweeID: "b"}) }},
 	}
@@ -124,6 +135,7 @@ func TestMemRespCacheMatchesDB(t *testing.T) {
 			c.SetPathValues(pv)
 		}
 		c.Set("session", &Session{UserID: userID})
+		req.Header.Set("Authorization", "Bearer "+userID)
 		if err := handler(c); err != nil {
 			return -1, nil, []byte(err.Error())
 		}
@@ -145,23 +157,58 @@ func TestMemRespCacheMatchesDB(t *testing.T) {
 		hits += int(memRespHits.Load() - before)
 		n++
 	}
-	for _, cs := range cases {
-		month := cs.Date.Format("2006-01")
-		day := cs.Date.Format(time.DateOnly)
-		compare("month", getMemoriesHandler(h), "/api/memories?month="+month, nil, cs.UserID)
-		compare("date", getMemoriesByDateHandler(h), "/api/memories/"+day, echo.PathValues{{Name: "date", Value: day}}, cs.UserID)
-		var r getMemoriesResponse
-		_, _, b := run(getMemoriesHandler(h), "/api/memories?month="+month, nil, cs.UserID)
-		_ = json.Unmarshal(b, &r)
-		if len(r.Items) > 1 {
-			last := r.Items[len(r.Items)/2]
-			q := url.Values{"month": {month}, "beforePostedAt": {last.PostedAt.Format(time.RFC3339Nano)}, "beforeId": {last.ID}}
-			compare("page2", getMemoriesHandler(h), "/api/memories?"+q.Encode(), nil, cs.UserID)
+	all := func() {
+		for _, cs := range cases {
+			month := cs.Date.Format("2006-01")
+			day := cs.Date.Format(time.DateOnly)
+			compare("month", getMemoriesHandler(h), "/api/memories?month="+month, nil, cs.UserID)
+			compare("date", getMemoriesByDateHandler(h), "/api/memories/"+day, echo.PathValues{{Name: "date", Value: day}}, cs.UserID)
+			var r getMemoriesResponse
+			_, _, b := run(getMemoriesHandler(h), "/api/memories?month="+month, nil, cs.UserID)
+			_ = json.Unmarshal(b, &r)
+			if len(r.Items) > 1 {
+				last := r.Items[len(r.Items)/2]
+				q := url.Values{"month": {month}, "beforePostedAt": {last.PostedAt.Format(time.RFC3339Nano)}, "beforeId": {last.ID}}
+				compare("page2", getMemoriesHandler(h), "/api/memories?"+q.Encode(), nil, cs.UserID)
+			}
+			compare("export", exportPostsHandler(h), "/api/me/export", nil, cs.UserID)
 		}
-		compare("export", exportPostsHandler(h), "/api/me/export", nil, cs.UserID)
 	}
+	all()
 	compare("bad-pagination", getMemoriesHandler(h), "/api/memories?month=2026-01&beforeId=x", nil, cases[0].UserID)
-	t.Logf("%d comparisons, %d cache hits", n, hits)
+	t.Logf("local: %d comparisons, %d cache hits", n, hits)
+
+	// misses computed by an origin app (asia2 role: no mem model)
+	defer func(o, s string) { memRespOrigin, forwardSecret = o, s }(memRespOrigin, forwardSecret)
+	ho := &HandlerContext{DB: db, reads: &readRouter{primary: db}, Config: &Config{}}
+	originHits := 0
+	origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		originHits++
+		c := e.NewContext(r, w)
+		c.Set("session", &Session{UserID: strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")})
+		var err error
+		switch {
+		case r.URL.Path == "/api/me/export":
+			err = exportPostsHandler(ho)(c)
+		case strings.HasPrefix(r.URL.Path, "/api/memories/"):
+			c.SetPathValues(echo.PathValues{{Name: "date", Value: strings.TrimPrefix(r.URL.Path, "/api/memories/")}})
+			err = getMemoriesByDateHandler(ho)(c)
+		default:
+			err = getMemoriesHandler(ho)(c)
+		}
+		if err != nil {
+			w.WriteHeader(599)
+		}
+	}))
+	defer origin.Close()
+	memRespOrigin, forwardSecret = strings.TrimPrefix(origin.URL, "http://"), "test-secret"
+	m.d = newMemData()
+	n, hits = 0, 0
+	all()
+	t.Logf("origin: %d comparisons, %d cache hits, %d origin requests", n, hits, originHits)
+	if originHits == 0 {
+		t.Fatal("origin not used")
+	}
 	if hits == 0 {
 		t.Fatal("no cache hits")
 	}

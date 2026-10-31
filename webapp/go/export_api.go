@@ -29,6 +29,12 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 				return writeExport(c, b)
 			}
 			fill = rc.begin()
+			if r, ok := fetchOrigin(c); ok {
+				if r.tags != nil {
+					rc.put(key, fill, r.body, r.tags)
+				}
+				return r.write(c)
+			}
 		}
 		defer heavyAcquire(ctx)()
 		body, tags, err := buildExport(h, c, userID)
@@ -37,6 +43,9 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		if rc != nil && tags != nil {
 			rc.put(key, fill, body, tags)
+		}
+		if rc == nil {
+			memRespSetTags(c, tags)
 		}
 		return writeExport(c, body)
 	}

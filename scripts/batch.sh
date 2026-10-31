@@ -9,7 +9,7 @@ exec 9>>/tmp/isucon/env.lock
 flock -w 1200 9 || { echo "env busy: $(cat /tmp/isucon/env.lock.owner)" >&2; exit 75; }
 echo "$(date +%T) driver batch $(git rev-parse --short HEAD) $NOTE" >| /tmp/isucon/env.lock.owner
 export LOCK_HELD=1
-scripts/deploy.sh 2>&1 | tail -5 || exit 4
+if [ "${SKIP_DEPLOY:-0}" = 1 ] || [ "${SKIP_DEPLOY_NOTE:-0}" = 1 ]; then echo "deploy skipped (bench on the state as it is)"; else scripts/deploy.sh 2>&1 | tail -5 || exit 4; fi
 out=$(scripts/portal-bench.sh run 2>&1)
 line=$(grep 'job=' <<<"$out" | tail -1)
 echo "$out" | grep -E '整合性|失敗|"messages"' -A3 | head -8

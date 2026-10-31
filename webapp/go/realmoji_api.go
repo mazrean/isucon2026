@@ -63,6 +63,11 @@ func replaceRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		actor := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.replaceRealMoji(c, actor, input, data); ok {
+				return err
+			}
+		}
 		post, err := getPost(ctx, h.Reader(), input.PostID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusForbidden, "interaction_forbidden")
@@ -173,6 +178,11 @@ func deleteRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		ctx := c.Request().Context()
 		actor := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.deleteRealMoji(c, actor, input.RealMojiID); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err

@@ -456,7 +456,7 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			var apiErr *APIError
 			clientErr := (bw.code >= 400 && bw.code < 500) ||
 				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
-			if !clientErr {
+			if handled, _ := c.Get(storeHandledKey).(bool); !clientErr && !handled {
 				p.barrier()
 			}
 			if bw.code != 0 {

@@ -127,6 +127,11 @@ func loginHandler(h *HandlerContext) echo.HandlerFunc {
 		if !usernamePattern.MatchString(input.Username) {
 			return NewAPIError(http.StatusUnauthorized, "invalid_credentials")
 		}
+		if h.Store != nil {
+			if ok, err := h.Store.login(c, input); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
@@ -161,6 +166,11 @@ func logoutHandler(h *HandlerContext) echo.HandlerFunc {
 		session := GetSession(c)
 		if session == nil {
 			return NewAPIError(http.StatusUnauthorized, "invalid_session")
+		}
+		if h.Store != nil {
+			if ok, err := h.Store.logout(c, session); ok {
+				return err
+			}
 		}
 		if err := InvalidateLoginSession(h.DB, session.UserID, session.TokenHash); err != nil {
 			return err

@@ -465,12 +465,21 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs, ack memAckTarg
 	if seqs == nil {
 		return
 	}
+	var t0 time.Time
+	if opsTraceOn {
+		t0 = time.Now()
+	}
 	var acked chan struct{}
+	var ackDur time.Duration // ACK_OWN の並行の待ち: 開始から自分の ack までの時間 (close の前に書く)
 	if memAckOwn && ack.ok && e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		// 自分の (epoch, seq) の ack を PG の待ちと並行に待つ
 		acked = make(chan struct{})
+		ackStart := t0 // t0 は下で書き換えるので写す
 		go func() {
 			e.p.peers.waitAckedFor(ack)
+			if opsTraceOn {
+				ackDur = time.Since(ackStart)
+			}
 			close(acked)
 		}()
 	}
@@ -486,10 +495,21 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs, ack memAckTarg
 		}
 		e.waitFlushed(img)
 	}
+	if opsTraceOn {
+		t1 := time.Now()
+		opsAdd(c.Request().Context(), opsPersist, t1.Sub(t0))
+		t0 = t1
+	}
 	if acked != nil {
 		<-acked
+		if opsTraceOn {
+			opsAdd(c.Request().Context(), opsRepl, ackDur)
+		}
 	} else if e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		e.p.peers.waitAcked()
+		if opsTraceOn {
+			opsAdd(c.Request().Context(), opsRepl, time.Since(t0))
+		}
 	}
 }
 

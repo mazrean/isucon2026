@@ -22,6 +22,7 @@ func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 			h.Store.mu.Lock()
 			defer h.Store.mu.Unlock()
 			h.Store.syncPG()
+			h.Store.walBeforeInit()
 		}
 		localImgPurgePeers(c.Request().Context())
 		asiaLocalImgPurge()
@@ -32,6 +33,9 @@ func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			return err
+		}
+		if h.Store != nil {
+			h.Store.walAfterInit(c.Request().Context())
 		}
 		if h.memPump != nil {
 			h.memPump.resetAfterInitialize(c.Request().Context())

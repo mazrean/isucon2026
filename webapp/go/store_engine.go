@@ -63,6 +63,13 @@ type storeEngine struct {
 	reqs chan *storeReq
 
 	userSess map[string]map[string]struct{} // user id -> 有効セッションの token hash (memData.sessions の索引)
+
+	// ISUREAL_STORE_WAL (store_wal.go)。nil = 無効
+	wal    *storeWAL
+	gseq   int64 // e.mu 保持中に進める書き込みバッチの seq
+	pendMu sync.Mutex
+	pend   []storePend
+	pgCh   chan struct{}
 }
 
 type storeLane struct {
@@ -71,6 +78,8 @@ type storeLane struct {
 	queue      []storeOp
 	queuedSeq  uint64
 	flushedSeq uint64
+	idx        int
+	queuedG    int64 // このレーンに最後に積んだバッチの seq (store_wal_applied に記録)
 }
 
 // storeSeqs[i] = レーン i で待つべき seq (0 = 待たない)
@@ -131,9 +140,21 @@ func setupStore(h *HandlerContext) {
 		return
 	}
 	configurePool(db, 1+storeLaneCount())
-	e := &storeEngine{p: h.memPump, m: h.memPump.m, db: db}
+	e := &storeEngine{p: h.memPump, m: h.memPump.m, db: db, pgCh: make(chan struct{})}
+	if storeWALDir != "" {
+		w, err := openStoreWAL(storeWALDir)
+		if err != nil {
+			slog.Error("store wal: open failed; WAL disabled", "error", err)
+		} else {
+			e.wal = w
+		}
+	}
+	if e.wal == nil && !storeAwaitPG {
+		slog.Warn("store: ISUREAL_STORE_AWAIT_PG=0 without ISUREAL_STORE_WAL is unsafe; forcing AWAIT_PG=1")
+		storeAwaitPG = true
+	}
 	for i := 0; i < storeLaneCount(); i++ {
-		l := &storeLane{}
+		l := &storeLane{idx: i}
 		l.cond = sync.NewCond(&l.mu)
 		e.lanes = append(e.lanes, l)
 		go e.flusher(l)
@@ -143,7 +164,13 @@ func setupStore(h *HandlerContext) {
 	h.Store = e
 	h.memPump.preReload = e.syncPG
 	storeCurrent = e
-	slog.Info("store: enabled", "await_pg", storeAwaitPG, "image_lanes", storeImageLanes, "table_lanes", storeTableLanes)
+	if e.wal != nil {
+		// store_pgbarrier.go の PG 読みの待ちに繋ぐ
+		storePGBarrierFn = storePGBarrier
+		storeCurrentSeqFn = storeCurrentSeq
+		storePGAppliedFn = storePGApplied.Load
+	}
+	slog.Info("store: enabled", "await_pg", storeAwaitPG, "image_lanes", storeImageLanes, "table_lanes", storeTableLanes, "wal", storeWALDir)
 }
 
 type storeTx struct {
@@ -325,23 +352,49 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 	}
 	m.mu.Unlock()
 	var seqs storeSeqs
+	walWait := false
 	if len(changes) > 0 || len(ops) > 0 {
 		if p.peers != nil && len(changes) > 0 {
 			p.peers.publish(changes)
 		}
 		seqs = e.enqueue(ops)
+		if e.wal != nil {
+			ok, err := e.wal.append(e.gseq, ops)
+			if err != nil {
+				// WAL に書けない: このバッチは PG の flush を待って応答する
+				slog.Error("store wal: append failed; awaiting PG", "error", err)
+				seqs = append(storeSeqs{}, seqs...)
+				seqs = append(seqs, 1) // 印 (commitWait が全レーンを待つ)
+			} else {
+				walWait = ok
+			}
+		}
 	}
 	if partial {
 		e.enqueue(nil)
 		p.invalidate()
 	}
-	for i, r := range batch {
-		res := storeRes{err: errs[i]}
-		if work[i] {
-			res.seqs = seqs
+	release := func() {
+		for i, r := range batch {
+			res := storeRes{err: errs[i]}
+			if work[i] {
+				res.seqs = seqs
+			}
+			r.done <- res
 		}
-		r.done <- res
 	}
+	if !walWait {
+		release()
+		return
+	}
+	// group commit: 次のバッチの適用と並行に fsync を待ち、終わったら書き手を解放する
+	go func() {
+		if err := e.wal.wait(); err != nil {
+			slog.Error("store wal: sync failed; awaiting PG", "error", err)
+			e.waitFlushed(seqs)
+		}
+		release()
+	}()
 }
 
 // enqueue は e.mu 保持中に呼ばれる (各レーン内の順序 = 書き込み順)。レーン 0 には常に 1 つ積む。
@@ -360,14 +413,21 @@ func (e *storeEngine) enqueue(ops []storeOp) storeSeqs {
 		l.mu.Lock()
 		l.queue = append(l.queue, mine...)
 		l.queuedSeq++
+		l.queuedG = e.gseq + 1
 		seqs[i] = l.queuedSeq
 		l.cond.Broadcast()
 		l.mu.Unlock()
 	}
+	e.gseq++
+	storeSeqNow.Store(e.gseq)
+	e.trackPG(e.gseq, seqs)
 	return seqs
 }
 
 func (e *storeEngine) waitFlushed(seqs storeSeqs) {
+	if len(seqs) > len(e.lanes) { // WAL の失敗の印: 全レーンを待つ
+		seqs = seqs[:len(e.lanes)]
+	}
 	for i, seq := range seqs {
 		if seq == 0 {
 			continue
@@ -398,8 +458,17 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
 	if seqs == nil {
 		return
 	}
-	if storeAwaitPG {
+	if storeAwaitPG || len(seqs) > len(e.lanes) {
 		e.waitFlushed(seqs)
+	} else {
+		// WAL 有効 (AWAIT_PG=0): 画像レーン (WAL に入れない) だけ PG を待つ
+		img := make(storeSeqs, len(seqs))
+		for i := range seqs {
+			if isImageLane(i) {
+				img[i] = seqs[i]
+			}
+		}
+		e.waitFlushed(img)
 	}
 	if e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		e.p.peers.waitAcked()
@@ -415,25 +484,33 @@ func (e *storeEngine) flusher(l *storeLane) {
 		ops := l.queue
 		l.queue = nil
 		upto := l.queuedSeq
+		g := l.queuedG
 		l.mu.Unlock()
 
+		if storeWBDelay > 0 {
+			time.Sleep(storeWBDelay)
+		}
 		if len(ops) > 0 {
-			e.flushOps(ops)
+			e.flushOps(l.idx, g, ops)
 		}
 
 		l.mu.Lock()
 		l.flushedSeq = upto
 		l.cond.Broadcast()
 		l.mu.Unlock()
+		e.advancePG()
 	}
 }
 
 // flushOps: 接続系の失敗 (PG に届かない) は成功するまで再試行する (その間 書き込みの応答は止まる = 元実装と同じく
 // PG なしでは応答しない)。文そのものの失敗 (PgError) だけ 1 文ずつに分け、失敗した文はログを出して捨てる。
-func (e *storeEngine) flushOps(ops []storeOp) {
+func (e *storeEngine) flushOps(lane int, g int64, ops []storeOp) {
+	if !e.walOn() || isImageLane(lane) {
+		g = 0
+	}
 	backoff := 50 * time.Millisecond
 	for attempt := 0; ; attempt++ {
-		err := e.runBatch(ops)
+		err := e.runBatch(ops, lane, g)
 		if err == nil {
 			return
 		}
@@ -449,7 +526,7 @@ func (e *storeEngine) flushOps(ops []storeOp) {
 	for _, op := range ops {
 		backoff := 50 * time.Millisecond
 		for {
-			err := e.runBatch([]storeOp{op})
+			err := e.runBatch([]storeOp{op}, lane, 0)
 			if err == nil {
 				break
 			}
@@ -462,9 +539,22 @@ func (e *storeEngine) flushOps(ops []storeOp) {
 			backoff = min(backoff*2, time.Second)
 		}
 	}
+	if g > 0 {
+		backoff := 50 * time.Millisecond
+		for e.runBatch(nil, lane, g) != nil {
+			time.Sleep(backoff)
+			backoff = min(backoff*2, time.Second)
+		}
+	}
 }
 
-func (e *storeEngine) runBatch(ops []storeOp) error {
+// walOn: 適用位置 (store_wal_applied) を記録するか (回復中の一時エンジンは db だけ持つ)。
+func (e *storeEngine) walOn() bool { return e.wal != nil || e.p == nil }
+
+// ISUREAL_STORE_WB_DELAY_MS: テスト用。書き戻しの各 flush の前に待つ (既定 0)。
+var storeWBDelay = time.Duration(envIntOrDefault("ISUREAL_STORE_WB_DELAY_MS", 0)) * time.Millisecond
+
+func (e *storeEngine) runBatch(ops []storeOp, lane int, g int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	conn, err := e.db.Conn(ctx)
@@ -480,6 +570,9 @@ func (e *storeEngine) runBatch(ops []storeOp) error {
 		b.Queue("SET LOCAL session_replication_role = replica")
 		for _, op := range ops {
 			b.Queue(op.SQL, op.Args...)
+		}
+		if g > 0 {
+			b.Queue(`INSERT INTO store_wal_applied (lane, seq) VALUES ($1, $2) ON CONFLICT (lane) DO UPDATE SET seq = GREATEST(store_wal_applied.seq, EXCLUDED.seq)`, lane, g)
 		}
 		b.Queue("COMMIT")
 		err := pc.SendBatch(ctx, b).Close()

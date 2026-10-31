@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"io"
 	"log/slog"
@@ -266,7 +267,7 @@ func registerPrevalidate(e *echo.Echo, region string) {
 	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			req := c.Request()
-			if proxy != nil && req.Header.Get(prevalidateHeader) == forwardSecret {
+			if proxy != nil && subtle.ConstantTimeCompare([]byte(req.Header.Get(prevalidateHeader)), []byte(forwardSecret)) == 1 {
 				return prevalidateForward(c, proxy)
 			}
 			if v := req.Header.Get(jpegResultHeader); v != "" {

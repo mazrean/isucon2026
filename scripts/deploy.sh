@@ -132,7 +132,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_NODE_NAME '"$h"'
       setenv ISUREAL_IMG_HOTPART '"$IMG_HOTPART"'
       setenv PGSSLMODE '"${PGSSL:-allow}"'
-      setenv ISUREAL_PPROF_ADDR '"${PPROF-127.0.0.1:6060}"'
+      setenv ISUREAL_PPROF_ADDR '"${PPROF-}"'
       setenv ISUREAL_MEM '"$MEM"'
       setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
       setenv ISUREAL_MEM_WM_HB '"$MEM_WM_HB"'

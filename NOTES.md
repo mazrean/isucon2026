@@ -257,6 +257,7 @@ END: 2026-10-31 18:00 JST
 | 31838 | - | 0 FAIL | A の既定 + MEM_FULL v2 (29dc137)。走行後の整合性で Memories 2026-10 がタイムアウト。asia2 のロードに 1m32s (scan 1m18s)。d5 652/239/257。不採用 |
 | 32055 | - | 185111 | A の既定 + STORE_OWN_SEQ=1 + MEM_FEED_UNLOCKED=1。pass。d5 1088/351/283、GP 642/194/201。通知 503 が数件。A 系を下回る。不採用 |
 | 32381 | - | 0 FAIL | A の既定 + MEM_FULL v3 (9b527ac)。ロードは 17s に縮んだが、走行後の Memories 2026-10 がまたタイムアウト。eu/am の GP 96/82 に崩れる。ロードの長さが原因ではない |
+| 32602 | - | 159585 | A の既定 + STORE_WAL + BARRIER_LAZY + NOTIFY_MEM + IMG_MEM_ONLY (CACHE_ORIGIN はガードで空)。pass。d5 1218/268/236 (asia は最多)、GP 697/196/183。eu/am が落ちる。不採用 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

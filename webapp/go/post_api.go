@@ -123,6 +123,25 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if asiaLocalImgOn && localImgFromCtx(ctx) == nil {
 			asiaKept = asiaLocalImgKeep(ctx, imageID, userID, imageData)
 		}
+		// ISUREAL_POST_BATCH=1: 画像が tx の外で片付いている (DB に先に入れた / asia1 のディスクに置いた / 転送) ときは
+		// tx を 1 往復の batch で流す (post_batch.go に正しさの論証)。それ以外は従来どおり。
+		if postBatchOn && (imageInserted || asiaKept || localImgFromCtx(ctx) != nil) {
+			user, post, ok, err := createPostBatch(ctx, h.DB, userID, uuid.NewString(), imageID, input, location)
+			if err != nil {
+				if !errors.Is(err, sql.ErrNoRows) {
+					commitTried = true // COMMIT まで届いたかわからないので画像は消さない
+				}
+				return err
+			}
+			if !ok {
+				return NewAPIError(http.StatusConflict, "post_slot_unavailable")
+			}
+			commitTried, committed = true, true
+			if !externalImage(c, userID) {
+				replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
+			}
+			return c.JSON(http.StatusCreated, newPostResponse(post, user))
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err

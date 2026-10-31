@@ -76,6 +76,7 @@ func NewServer(config *Config) *echo.Echo {
 	setupMem(handlerContext, e)
 	registerLocalImg(e, handlerContext)
 	setupStore(handlerContext)
+	registerLocalSession(e, handlerContext)
 
 	e.POST("/api/initialize", initializeHandler(handlerContext))
 	e.POST("/api/auth/register", registerHandler(handlerContext))

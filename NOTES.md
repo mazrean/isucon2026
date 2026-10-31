@@ -226,3 +226,4 @@ END: 2026-10-31 18:00 JST
 | 6 | eu/am の login (4 日目に 41% が 1 秒超) | 転送 | 地域内 | LOCAL_SESSION (1fdaef9、未マージ) |
 | 7 | TB との差の説明 | 7〜13 万が不明 | 帳簿で説明 | 帳簿・検証役の天井・未発見の点源 (担当 3 本) |
 | 8 | 最終版の安全 | localOnlyWrite あり | 切替スイッチ | LOCAL_ONLY_WRITE=0 の A/B、ディスク上限、全台 df、再起動試験、2 回 pass |
+| 13083 | - | 133128 | STORE=1 (レーン + fsync 修正) on 既定。asia5 785 / GP asia 437 → 既定 (STORE=0) の 146736 より低い。STORE は不採用 |

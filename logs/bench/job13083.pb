@@ -1,0 +1,42 @@
+
+��f��� *�ޕ����2�ߕ�Ї��:�ޕ�����B�ߕ�����H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T04:33:04.216Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T04:33:07.409Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T04:33:10.208Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T04:33:13.263Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T04:33:15.569Z level=INFO msg="user moved" user=mutohi_5289 from=asia to=america
+time=2026-10-31T04:33:16.412Z level=INFO msg="europe 2 日目: 15 人"
+time=2026-10-31T04:33:18.717Z level=INFO msg="user moved" user=mutohi_5289 from=america to=asia
+time=2026-10-31T04:33:19.211Z level=INFO msg="america 2 日目: 17 人"
+time=2026-10-31T04:33:22.362Z level=INFO msg="asia 3 日目: 152 人"
+time=2026-10-31T04:33:25.329Z level=INFO msg="europe 3 日目: 40 人"
+time=2026-10-31T04:33:25.868Z level=INFO msg="user moved" user=maxben5908 from=asia to=america
+time=2026-10-31T04:33:26.335Z level=INFO msg="user moved" user=mutohi_5289 from=asia to=america
+time=2026-10-31T04:33:26.484Z level=INFO msg="user moved" user=ramete-6163 from=asia to=america
+time=2026-10-31T04:33:28.290Z level=INFO msg="america 3 日目: 55 人"
+time=2026-10-31T04:33:31.205Z level=INFO msg="asia 4 日目: 433 人"
+time=2026-10-31T04:33:33.164Z level=INFO msg="user moved" user=nutorta-6641 from=asia to=europe
+time=2026-10-31T04:33:34.347Z level=INFO msg="europe 4 日目: 105 人"
+time=2026-10-31T04:33:34.826Z level=INFO msg="user moved" user=nutorta-6641 from=europe to=america
+time=2026-10-31T04:33:37.626Z level=INFO msg="america 4 日目: 144 人"
+time=2026-10-31T04:33:38.061Z level=INFO msg="user moved" user=keyase7019 from=asia to=europe
+time=2026-10-31T04:33:39.890Z level=INFO msg="user moved" user=yunamax-7221 from=asia to=america
+time=2026-10-31T04:33:40.605Z level=INFO msg="asia 5 日目: 785 人"
+time=2026-10-31T04:33:41.050Z level=INFO msg="user moved" user=liareku7739 from=asia to=america
+time=2026-10-31T04:33:42.641Z level=INFO msg="user moved" user=horo8461 from=europe to=america
+time=2026-10-31T04:33:43.795Z level=INFO msg="europe 5 日目: 204 人"
+time=2026-10-31T04:33:48.171Z level=INFO msg="america 5 日目: 264 人"
+time=2026-10-31T04:33:55.911Z level=INFO msg="america 最終日（グランプリ）: 264 人"
+time=2026-10-31T04:33:55.912Z level=INFO msg="asia 最終日（グランプリ）: 783 人"
+time=2026-10-31T04:33:55.916Z level=INFO msg="europe 最終日（グランプリ）: 203 人"
+time=2026-10-31T04:34:04.247Z level=INFO msg="グランプリ: アジア 437 人, ヨーロッパ 198 人, アメリカ 231 人"
+{
+  "pass": true,
+  "score": 133128,
+  "messages": [
+    "ulzoe10387: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+ ���������(���������2�ߕ�������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

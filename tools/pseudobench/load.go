@@ -176,9 +176,10 @@ func runLoad(base string, dur time.Duration, conc int, scale float64, doInit boo
 	date = date.AddDate(0, 0, 1)
 	var dayStats []string
 	for day := 1; day <= days; day++ {
-		last := day == days
+		// 残り時間が 2 日分に満たなければ最終日 (グランプリ, 20 点) として残りを全部使う
+		last := day == days || time.Until(deadline) < dayLen*2
 		dayEnd := time.Now().Add(dayLen)
-		if dayEnd.After(deadline) {
+		if last || dayEnd.After(deadline) {
 			dayEnd = deadline
 		}
 		st.posts = sync.Map{}
@@ -226,8 +227,8 @@ func runLoad(base string, dur time.Duration, conc int, scale float64, doInit boo
 		}
 		wg.Wait()
 		cancel()
-		dayStats = append(dayStats, fmt.Sprintf("day%d %s: open=%dms posted=%d/%d feedVerified=%d", day, ds, openDur.Milliseconds(), posted.Load(), len(st.users), verified.Load()))
-		if time.Now().After(deadline) {
+		dayStats = append(dayStats, fmt.Sprintf("day%d%s %s: open=%dms posted=%d/%d feedVerified=%d", day, map[bool]string{true: "(final)", false: ""}[last], ds, openDur.Milliseconds(), posted.Load(), len(st.users), verified.Load()))
+		if last || time.Now().After(deadline) {
 			break
 		}
 	}

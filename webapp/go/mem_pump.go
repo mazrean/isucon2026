@@ -86,6 +86,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		e.Use(memWriteBarrier(p))
 		registerMemPumpRoutes(e, p)
 		go p.ticker()
+		go memBarrierStatsLoop()
 		if p.peers != nil {
 			go p.peers.heartbeatLoop()
 		}
@@ -286,7 +287,7 @@ func (p *memPump) invalidate() {
 }
 
 func (p *memPump) reload() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	start := time.Now()
 	gen := p.wantGen.Load()
@@ -469,7 +470,9 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			clientErr := (bw.code >= 400 && bw.code < 500) ||
 				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
 			if !clientErr {
+				bs := time.Now()
 				p.barrierScope(!localOnlyWrite(req))
+				memRecordBarrier(time.Since(bs))
 			}
 			if bw.code != 0 {
 				orig.WriteHeader(bw.code)

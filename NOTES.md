@@ -260,6 +260,7 @@ END: 2026-10-31 18:00 JST
 | 32602 | - | 159585 | A の既定 + STORE_WAL + BARRIER_LAZY + NOTIFY_MEM + IMG_MEM_ONLY (CACHE_ORIGIN はガードで空)。pass。d5 1218/268/236 (asia は最多)、GP 697/196/183。eu/am が落ちる。不採用 |
 | 32937 | - | 0 FAIL | A の既定 + MEM_FULL v4 (d8b8d15) + EXPORT_MEM=1、CACHE_ORIGIN=asia2 のまま。走行後の Memories 2026-10 がまたタイムアウト。4 回続けて同じ型。MEM_FULL はここで打ち切り |
 | 33229 | - | 192745 | 最終候補: A 系の既定のみ (3383bf6 = c893462 のコード)。pass、エラー種別 0。d5 1204/424/273、GP 630/137/244。最終の版に決定 |
+| 33705 | - | 197299 | 最終 1 本目: 再起動の後、デプロイなし (3383bf6)。pass、エラー種別 0。d5 1142/330/325、GP 773/199/167。197k 以上なので、これを最後の走行として止める |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -407,3 +408,4 @@ END: 2026-10-31 18:00 JST
 - (17:19) 最終の版は 3383bf6 (A 系、33229 で pass 192,745)。17:20 に再起動試験を始める。
 - (17:21) 再起動試験 OK (4 台同時、24〜39s で復帰、DATA OK、cd5968b = 3383bf6 のコード)。pprof は 127.0.0.1 のみで今日の A 系の全走行と同じなので、変えない。17:21 にデプロイなしの最終 1 本目を積む。
 - (17:23) 最終の再走の決め方: 同じ版 (3383bf6)・デプロイなしだけ。pass で 197k 以上なら止める。下回ったら同じ構成をもう 1 本。再走の最後の開始は 17:45 (FAIL のときの保険の 1 本を 17:51 に始められるように)。ほかの構成は流さない。
+- (17:24) 最終の走行は job33705 (197,299、pass)。これ以降、ベンチは積まない。

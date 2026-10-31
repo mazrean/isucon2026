@@ -34,43 +34,34 @@ func compare(t *testing.T, name string, data []byte) bool {
 	return rok
 }
 
-func TestEquivalence(t *testing.T) {
-	dir := os.Getenv("JPEGCHECK_CORPUS")
-	if dir == "" {
-		t.Skip("JPEGCHECK_CORPUS not set")
-	}
+// forEachCase feeds every equivalence-test input (real images plus
+// truncated / corrupted / header-corrupted / padded variants) to fn, in a
+// fixed order with a fixed seed so every consumer sees the same inputs.
+func forEachCase(t testing.TB, dir string, fn func(name string, data []byte)) int {
 	files, _ := filepath.Glob(filepath.Join(dir, "*", "*.jpg"))
 	rng := rand.New(rand.NewSource(1))
-	okCount, badCount := 0, 0
-	tally := func(ok bool) {
-		if ok {
-			okCount++
-		} else {
-			badCount++
-		}
-	}
-	tally(compare(t, "empty", nil))
-	tally(compare(t, "soi-only", []byte{0xff, 0xd8}))
+	fn("empty", nil)
+	fn("soi-only", []byte{0xff, 0xd8})
 	for _, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
 			t.Fatal(err)
 		}
-		tally(compare(t, f, data))
+		fn(f, data)
 		// truncations
 		for _, frac := range []float64{0, 0.001, 0.01, 0.1, 0.3, 0.5, 0.9, 0.99, 0.999} {
 			n := int(float64(len(data)) * frac)
-			tally(compare(t, f+" trunc", data[:n]))
+			fn(f+" trunc", data[:n])
 		}
-		tally(compare(t, f+" -2", data[:len(data)-2]))
-		tally(compare(t, f+" noSOI", data[2:]))
+		fn(f+" -2", data[:len(data)-2])
+		fn(f+" noSOI", data[2:])
 		// random byte corruption
 		for k := 0; k < 60; k++ {
 			c := append([]byte(nil), data...)
 			for j := 0; j <= k%5; j++ {
 				c[rng.Intn(len(c))] = byte(rng.Intn(256))
 			}
-			tally(compare(t, f+" flip", c))
+			fn(f+" flip", c)
 		}
 		// header-region corruption (markers, SOF dims, DHT/DQT)
 		for k := 0; k < 60; k++ {
@@ -80,13 +71,29 @@ func TestEquivalence(t *testing.T) {
 				lim = len(c)
 			}
 			c[rng.Intn(lim)] = byte(rng.Intn(256))
-			tally(compare(t, f+" hdr", c))
+			fn(f+" hdr", c)
 		}
 		// garbage appended / prepended
-		tally(compare(t, f+" app", append(append([]byte(nil), data...), 0xde, 0xad)))
-		tally(compare(t, f+" pre", append([]byte{0}, data...)))
+		fn(f+" app", append(append([]byte(nil), data...), 0xde, 0xad))
+		fn(f+" pre", append([]byte{0}, data...))
 	}
-	t.Logf("files=%d ok=%d rejected=%d", len(files), okCount, badCount)
+	return len(files)
+}
+
+func TestEquivalence(t *testing.T) {
+	dir := os.Getenv("JPEGCHECK_CORPUS")
+	if dir == "" {
+		t.Skip("JPEGCHECK_CORPUS not set")
+	}
+	okCount, badCount := 0, 0
+	nfiles := forEachCase(t, dir, func(name string, data []byte) {
+		if compare(t, name, data) {
+			okCount++
+		} else {
+			badCount++
+		}
+	})
+	t.Logf("files=%d ok=%d rejected=%d", nfiles, okCount, badCount)
 }
 
 func BenchmarkCheck(b *testing.B) {

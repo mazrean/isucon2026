@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"reflect"
@@ -64,21 +65,47 @@ func parseJPEGRemotes(s string) []*jpegRemote {
 	return out
 }
 
-var jpegStats struct{ remoteOK, remoteErr, local atomic.Int64 }
+// ISUREAL_JPEG_LOCAL_SOCK points at webapp/rust/jpegcheckd (HTTP/1.1 on a
+// unix socket, same protocol as POST /internal/jpegcheck). When set, the local
+// check goes there; any error (daemon down, 5xx) falls back to in-process.
+var (
+	jpegLocalSock   = os.Getenv("ISUREAL_JPEG_LOCAL_SOCK")
+	jpegLocalClient = &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				var d net.Dialer
+				return d.DialContext(ctx, "unix", jpegLocalSock)
+			},
+			MaxIdleConnsPerHost: 64,
+			IdleConnTimeout:     300 * time.Second,
+		},
+	}
+)
+
+var jpegStats struct{ remoteOK, remoteErr, local, sockErr atomic.Int64 }
 
 func init() {
 	go func() {
 		for range time.Tick(10 * time.Second) {
-			ok, bad, loc := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0)
+			ok, bad, loc, se := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0), jpegStats.sockErr.Swap(0)
 			if ok+bad+loc > 0 {
-				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc)
+				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc, "sock", jpegLocalSock != "", "sock_err", se)
 			}
 		}
 	}()
 }
 
+// checkJPEGLocal checks on this host: via jpegcheckd when configured, else
+// (or on any daemon error) in-process.
 func checkJPEGLocal(data []byte) (w, h int, ok bool) {
 	jpegStats.local.Add(1)
+	if jpegLocalSock != "" {
+		w, h, ok, err := postJPEGCheck(context.Background(), jpegLocalClient, "http://jpegcheckd/internal/jpegcheck", "local", data, 2*time.Second)
+		if err == nil {
+			return w, h, ok
+		}
+		jpegStats.sockErr.Add(1)
+	}
 	w, h, err := jpegcheck.Check(bytes.NewReader(data))
 	return w, h, err == nil
 }
@@ -131,14 +158,18 @@ func (r *jpegRemote) run(ctx context.Context, data []byte) (w, h int, ok bool) {
 }
 
 func (r *jpegRemote) check(ctx context.Context, data []byte) (w, h int, ok bool, err error) {
-	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	return postJPEGCheck(ctx, jpegRemoteClient, "http://"+r.addr+"/internal/jpegcheck", r.addr, data, r.timeout)
+}
+
+func postJPEGCheck(ctx context.Context, client *http.Client, url, name string, data []byte, timeout time.Duration) (w, h int, ok bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://"+r.addr+"/internal/jpegcheck", bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
 	if err != nil {
 		return 0, 0, false, err
 	}
 	req.Header.Set(forwardedSecretHeader, forwardSecret)
-	res, err := jpegRemoteClient.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		return 0, 0, false, err
 	}
@@ -148,7 +179,7 @@ func (r *jpegRemote) check(ctx context.Context, data []byte) (w, h int, ok bool,
 		return 0, 0, false, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return 0, 0, false, fmt.Errorf("jpegcheck remote %s: %d", r.addr, res.StatusCode)
+		return 0, 0, false, fmt.Errorf("jpegcheck remote %s: %d", name, res.StatusCode)
 	}
 	var okInt int
 	if _, err := fmt.Sscanf(string(body), "%d %d %d", &okInt, &w, &h); err != nil {
@@ -166,8 +197,8 @@ func registerJPEGCheckRoutes(e *echo.Echo) {
 		if err != nil {
 			return c.NoContent(http.StatusBadRequest)
 		}
-		w, h, err := jpegcheck.Check(bytes.NewReader(data))
-		if err != nil {
+		w, h, ok := checkJPEGLocal(data)
+		if !ok {
 			return c.String(http.StatusOK, "0 0 0")
 		}
 		return c.String(http.StatusOK, fmt.Sprintf("1 %d %d", w, h))

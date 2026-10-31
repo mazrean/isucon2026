@@ -9,6 +9,23 @@ if [[ -z ${LOCK_HELD:-} ]]; then exec 9>>/tmp/isucon/env.lock; flock -w 600 9 ||
 HOSTS=("$@"); [[ ${#HOSTS[@]} -gt 0 ]] || HOSTS=(asia1 europe1 america1)
 OUT=$(mktemp -d)
 ( cd webapp/go && GOOS=linux GOARCH=amd64 GOAMD64=v3 CGO_ENABLED=0 go build -o "$OUT/isureal" ./cmd/isureal )
+JC=${JC:-0}   # 1 = Rust jpegcheckd (webapp/rust/jpegcheckd) does the local JPEG check on every app host; 0 = in-process Go
+JC_SOCK=""
+if [[ $JC == 1 ]]; then
+  # +nightly is explicit: RUSTUP_TOOLCHAIN in the env overrides rust-toolchain.toml
+  ( cd webapp/rust/jpegcheckd && cargo +nightly build --release -q )
+  cp webapp/rust/jpegcheckd/target/x86_64-unknown-linux-musl/release/jpegcheckd "$OUT/jpegcheckd"
+  JC_SOCK=/run/isureal/jpegcheck.sock
+  JC_REMOTE='mkdir -p /home/isucon/webapp/rust && install -m 755 /tmp/jpegcheckd.new /home/isucon/webapp/rust/jpegcheckd
+      sudo install -m 644 /tmp/isureal-jpegcheckd.service /etc/systemd/system/isureal-jpegcheckd.service && sudo systemctl daemon-reload
+      sudo systemctl enable -q isureal-jpegcheckd; sudo systemctl restart isureal-jpegcheckd'
+else
+  JC_REMOTE='sudo systemctl disable -q --now isureal-jpegcheckd 2>/dev/null || true'
+fi
+# runs on each app host before isureal-go is restarted
+JC_REMOTE=$JC_REMOTE'
+      grep -q "^ISUREAL_JPEG_LOCAL_SOCK=" /home/isucon/env.sh && sed -i "s|^ISUREAL_JPEG_LOCAL_SOCK=.*|ISUREAL_JPEG_LOCAL_SOCK='"$JC_SOCK"'|" /home/isucon/env.sh || echo "ISUREAL_JPEG_LOCAL_SOCK='"$JC_SOCK"'" >> /home/isucon/env.sh'
+jc_scp() { [[ $JC == 1 ]] || return 0; scp -q "$OUT/jpegcheckd" "$1:/tmp/jpegcheckd.new"; scp -q etc/systemd/isureal-jpegcheckd.service "$1:/tmp/isureal-jpegcheckd.service"; }
 SSH=(ssh -o BatchMode=yes -o ConnectTimeout=10)
 SECRET_FILE=${FWD_SECRET_FILE:-$HOME/.config/isucon2026/fwd_secret}
 if [[ ! -s $SECRET_FILE ]]; then mkdir -p "${SECRET_FILE%/*}"; head -c 24 /dev/urandom | base64 | tr -d '/+=' >| "$SECRET_FILE"; chmod 600 "$SECRET_FILE"; fi
@@ -16,6 +33,7 @@ SECRET=$(cat "$SECRET_FILE")
 FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
 FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
+MEM_WM=${MEM_WM:-0}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
 PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
 MEMORIES_PAR=${MEMORIES_PAR:-0}   # 1 = Memories run posts/RealMojis/comments queries at once (1 DB round trip instead of 3)
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
@@ -30,6 +48,7 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
     scp -q etc/systemd/isureal-go.service.d/10-tune.conf "$h:/tmp/10-tune.conf"
     scp -q etc/systemd/isureal-go.service.d/30-front.conf "$h:/tmp/30-front.conf"
+    jc_scp "$h"
     r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-192.168.4.10}; [[ $f == 1 ]] || pvt=""
     sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
@@ -42,6 +61,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_NODE_NAME '"$h"'
       setenv ISUREAL_PPROF_ADDR 127.0.0.1:6060
       setenv ISUREAL_MEM '"$MEM"'
+      setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
       setenv ISUREAL_PREVALIDATE '"$pv"'
       setenv ISUREAL_PREVALIDATE_TARGET '"$pvt"'
       setenv ISUREAL_LOCALIMG '"$LOCALIMG"'
@@ -60,6 +80,7 @@ for h in "${HOSTS[@]}"; do
       sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf
       sudo install -D -m 644 /tmp/10-tune.conf /etc/systemd/system/isureal-go.service.d/10-tune.conf
       sudo install -D -m 644 /tmp/30-front.conf /etc/systemd/system/isureal-go.service.d/30-front.conf && sudo systemctl daemon-reload
+      '"$JC_REMOTE"'
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
       sudo systemctl restart isureal-go
       if [ "'"$fr"'" = 1 ]; then
@@ -79,6 +100,7 @@ if true; then
   # forward target when FWD_TARGET=192.168.4.10; no nginx there
   scp -q "$OUT/isureal" asia2:/tmp/isureal.new
   scp -q etc/systemd/isureal-go.service.d/20-stop.conf asia2:/tmp/20-stop.conf
+  jc_scp asia2
   "${SSH[@]}" asia2 'set -e
     grep -q "^ISUREAL_DB_MAX_OPEN=" /home/isucon/env.sh && sed -i "s|^ISUREAL_DB_MAX_OPEN=.*|ISUREAL_DB_MAX_OPEN=30|" /home/isucon/env.sh || echo "ISUREAL_DB_MAX_OPEN=30" >> /home/isucon/env.sh
     grep -q "^ISUREAL_FWD_SECRET=" /home/isucon/env.sh && sed -i "s|^ISUREAL_FWD_SECRET=.*|ISUREAL_FWD_SECRET='"$SECRET"'|" /home/isucon/env.sh || echo "ISUREAL_FWD_SECRET='"$SECRET"'" >> /home/isucon/env.sh
@@ -86,6 +108,7 @@ if true; then
     grep -q "^ISUREAL_LOCALIMG=" /home/isucon/env.sh && sed -i "s|^ISUREAL_LOCALIMG=.*|ISUREAL_LOCALIMG='"$LOCALIMG"'|" /home/isucon/env.sh || echo "ISUREAL_LOCALIMG='"$LOCALIMG"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_PREVALIDATE=" /home/isucon/env.sh && sed -i "s|^ISUREAL_PREVALIDATE=.*|ISUREAL_PREVALIDATE='"$PREVALIDATE"'|" /home/isucon/env.sh || echo "ISUREAL_PREVALIDATE='"$PREVALIDATE"'" >> /home/isucon/env.sh
     sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
+    '"$JC_REMOTE"'
     install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
     sudo systemctl enable isureal-go >/dev/null 2>&1; sudo systemctl restart isureal-go
     for i in $(seq 100); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/posting-window/current); [ "$c" != 000 ] && break; sleep 0.2; done

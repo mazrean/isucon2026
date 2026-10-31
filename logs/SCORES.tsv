@@ -28,3 +28,4 @@
 12:27	fc4e33c	job=8010 state=4 pass=true スコア=84958 種別エラー数=map[]	FRONT=1 (asia1 の nginx 撤去、Go が :80)
 12:28	f5d3543	job=8178 state=4 pass=false スコア=0 種別エラー数=map[]	既定 (LOCALIMG=1, nginx あり) の再現確認
 12:32	428c7d2	job=8353 state=4 pass=true スコア=112338 種別エラー数=map[]	lease 修正 (送信時刻で上限) + LOCALIMG
+12:34	99291db	job=8506 state=4 pass=true スコア=110123 種別エラー数=map[]	push パイプライン化 + 送信時刻 lease (mem-pipeline) + LOCALIMG

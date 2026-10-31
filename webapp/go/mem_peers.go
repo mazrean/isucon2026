@@ -42,6 +42,8 @@ type memPushRequest struct {
 	SentAt int64 `json:"t"`
 	// probe: down 扱いの peer への送信。peer は反映するが lease は延ばさない (pump が lease の上界を把握するため)。
 	Probe bool `json:"p,omitempty"`
+	// watermark (ISUREAL_MEM_WATERMARK): Seq までのバッチに、この時刻より前に応答が返ったコミットがすべて含まれる。
+	WM int64 `json:"w,omitempty"`
 }
 
 // peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
@@ -100,6 +102,9 @@ type memPeer struct {
 	lastGrantAt time.Time
 	// この epoch で invalidate (not-ready 化) の成功を確認済み
 	invalidatedEpoch string
+	// dump 取得時に watermark で読みを待つと申告した (ISUREAL_MEM_WATERMARK)。この peer の ack は待たない。
+	wmMode     bool
+	wmInflight int
 }
 
 type memPeers struct {
@@ -110,6 +115,7 @@ type memPeers struct {
 	seq   int64
 	buf   []memBatch
 	peers []*memPeer
+	wm    int64 // seq に対して有効な watermark (unix ns)
 }
 
 func newMemPeersFromEnv(p *memPump) *memPeers {
@@ -157,6 +163,9 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 	}
 	now := time.Now()
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
+	if last == ps.seq {
+		req.WM = ps.wm // ps.wm は ps.seq に対して有効
+	}
 	if !req.Probe {
 		peer.lastGrantAt = now
 	}
@@ -237,6 +246,9 @@ func (ps *memPeers) waitAcked() {
 		var wakeAt time.Time
 		ok := true
 		for _, peer := range ps.peers {
+			if memWatermark && peer.wmMode {
+				continue // peer の読みが watermark を待つ
+			}
 			if ps.epoch == epoch && peer.acked >= target {
 				continue
 			}
@@ -273,6 +285,7 @@ func (ps *memPeers) newEpoch() {
 	ps.mu.Lock()
 	ps.epoch = memNewEpoch()
 	ps.seq = 0
+	ps.wm = 0
 	ps.buf = nil
 	for _, peer := range ps.peers {
 		peer.pending = nil
@@ -386,6 +399,8 @@ type memDump struct {
 	Posts       []memPostRow          `json:"posts"`
 	Comments    []memCommentRow       `json:"comments"`
 	RealMojis   []memRealMojiRow      `json:"realmojis"`
+	WM          int64                 `json:"wm,omitempty"`     // Seq に対して有効な watermark
+	WMMode      bool                  `json:"wmMode,omitempty"` // pump が ack を待たずに返す (peer は watermark を待つ)
 }
 
 func (d *memData) dump() *memDump {
@@ -487,7 +502,9 @@ func registerMemPumpRoutes(e *echo.Echo, p *memPump) {
 		p.m.mu.RUnlock()
 		p.peers.mu.Lock()
 		dump.Epoch, dump.Seq = p.peers.epoch, p.peers.seq
+		dump.WM, dump.WMMode = p.peers.wm, memWatermark
 		p.peers.mu.Unlock()
+		p.peers.markWMMode(c.Request().RemoteAddr, c.QueryParam("wm") == "1")
 		p.cycleMu.Unlock()
 		var buf bytes.Buffer
 		zw, _ := gzip.NewWriterLevel(&buf, gzip.BestSpeed)
@@ -536,6 +553,8 @@ type memReceiver struct {
 	rsRun  bool
 	// r.seq が進んだら Broadcast (並列 push の到着順の入れ替わりを短時間待つ)
 	seqCond *sync.Cond
+	// まだバッチが届いていない seq の watermark (mu 下)
+	wmPending []memWMMsg
 }
 
 func newMemReceiver(m *memStore) *memReceiver {
@@ -551,6 +570,8 @@ func (r *memReceiver) invalidate() uint64 {
 	r.mu.Lock()
 	r.m.ready.Store(false)
 	r.epoch = ""
+	r.wmPending = nil
+	r.m.w.set(0)
 	r.gen++
 	g := r.gen
 	r.mu.Unlock()
@@ -594,7 +615,7 @@ func (r *memReceiver) resyncLoop() {
 
 func (r *memReceiver) resyncOnce(g uint64) error {
 	start := time.Now()
-	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump", 40*time.Second)
+	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark], 40*time.Second)
 	if err != nil {
 		return err
 	}
@@ -621,6 +642,9 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.d = d
 	r.m.mu.Unlock()
 	r.epoch, r.seq = dump.Epoch, dump.Seq
+	r.wmPending = nil
+	r.m.w.pumpWM.Store(memWatermark && dump.WMMode)
+	r.m.w.set(dump.WM)
 	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
 	r.m.ready.Store(true)
 	slog.Info("mem: synced from pump", "seq", dump.Seq, "users", len(d.users), "posts", len(d.posts), "elapsed", time.Since(start))
@@ -758,7 +782,22 @@ func registerMemPeerRoutes(e *echo.Echo, r *memReceiver) {
 			go r.invalidate()
 			return c.NoContent(http.StatusBadRequest)
 		}
-		return c.JSON(http.StatusOK, memPushResponse{OK: r.push(req)})
+		ok := r.push(req)
+		if ok {
+			r.wmAfterPush(req)
+		}
+		return c.JSON(http.StatusOK, memPushResponse{OK: ok})
+	})
+	e.POST("/internal/mem/wm", func(c *echo.Context) error {
+		if !memAuthOK(c) {
+			return c.NoContent(http.StatusForbidden)
+		}
+		var msg memWMMsg
+		if err := json.NewDecoder(c.Request().Body).Decode(&msg); err != nil {
+			return c.NoContent(http.StatusBadRequest)
+		}
+		r.wmMsg(msg)
+		return c.NoContent(http.StatusOK)
 	})
 	e.POST("/internal/mem/invalidate", func(c *echo.Context) error {
 		if !memAuthOK(c) {

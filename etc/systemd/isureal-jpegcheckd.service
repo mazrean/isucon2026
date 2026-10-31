@@ -1,0 +1,21 @@
+[Unit]
+Description=isureal JPEG validation daemon (Rust port of internal/jpegcheck)
+Before=isureal-go.service
+
+[Service]
+Type=simple
+User=isucon
+Group=isucon
+# /run/isureal is owned by isucon; kept across restarts of this unit so a
+# restart never removes a directory other units may also use.
+RuntimeDirectory=isureal
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=yes
+UMask=0007
+ExecStart=/home/isucon/webapp/rust/jpegcheckd --sock /run/isureal/jpegcheck.sock
+Restart=always
+RestartSec=0.2
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

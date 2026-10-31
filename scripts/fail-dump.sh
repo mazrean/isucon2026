@@ -27,3 +27,20 @@ SQL
   done <<<"$pairs"
 } >"$out" 2>&1
 echo "fail dump: $out"
+
+# 401 invalid_session: the user's region, sessions and the region-change history
+users401=$(grep -oE '"[A-Za-z0-9_.-]+: [^"]*401[^"]*invalid_session' "$log" | sed -E 's/^"([^:]+):.*/\1/' | sort -u)
+[ -n "$users401" ] || exit 0
+{
+  for u in $users401; do
+    echo "=== 401 user=$u"
+    ssh -o BatchMode=yes asia2 "sudo -u postgres psql -d isureal -P pager=off" <<SQL
+\set u '$u'
+SELECT id AS uid, region, status, updated_at FROM users WHERE username = :'u' \gset
+\echo user :uid :region :status :updated_at
+SELECT id, active, reason, created_at, invalidated_at FROM login_sessions WHERE user_id = :'uid' ORDER BY created_at;
+SELECT seq, op, row->>'region' AS region, row->>'updated_at' AS updated_at FROM mem_changelog WHERE tbl = 'users' AND row->>'id' = :'uid' ORDER BY seq;
+SELECT seq, op, row->>'active' AS active, row->>'reason' AS reason, row->>'created_at' AS created_at, row->>'invalidated_at' AS inv FROM mem_changelog WHERE tbl = 'login_sessions' AND row->>'user_id' = :'uid' ORDER BY seq;
+SQL
+  done
+} >>"$out" 2>&1

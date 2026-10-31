@@ -3,7 +3,7 @@
 set -u
 cd "$(dirname "$0")/.."
 psql2() { ssh -o BatchMode=yes asia2 "sudo -u postgres psql -d isureal -AtX -c \"$1\"" </dev/null; }
-LOGREPL=1 scripts/deploy.sh 2>&1 | tail -4
+LOCK_HELD=1 LOGREPL=1 scripts/deploy.sh 2>&1 | tail -4
 sleep 8
 psql2 "select slot_name, active, confirmed_flush_lsn from pg_replication_slots"
 psql2 "select application_name, state, sync_state, replay_lag from pg_stat_replication"
@@ -20,7 +20,7 @@ echo "== app logrepl state after init"; for h in asia1 europe1 america1; do ssh 
 [[ ${KEEP:-0} == 1 ]] && { echo "KEEP=1: leaving LOGREPL on"; exit 0; }
 echo "== revert"
 ssh asia2 "sudo -u postgres psql -AtX -c 'ALTER SYSTEM RESET synchronous_standby_names' -c 'select pg_reload_conf()'" </dev/null
-scripts/deploy.sh 2>&1 | tail -2
+LOCK_HELD=1 scripts/deploy.sh 2>&1 | tail -2
 sleep 3
 psql2 "select pg_drop_replication_slot(slot_name) from pg_replication_slots where slot_type='logical' and not active"
 psql2 "select slot_name, active from pg_replication_slots"

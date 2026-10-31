@@ -80,3 +80,22 @@ END: 2026-10-31 18:00 JST
 - scripts/host-tune.sh (冪等, env.lock 取得) で 4 台に適用済み: 不要デーモン停止 (unattended-upgrades, ModemManager, multipathd, udisks2, apt/fwupd/motd/man-db 等 timer)、sysctl `/etc/sysctl.d/99-zz-isucon-tune.conf` (somaxconn 65535, tw_reuse, slow_start_after_idle=0, tcp_rmem 既定 262144)、`isucon-route-tune.service` (192.168.0.0/16 を initcwnd 32 / initrwnd 64)、isureal-go drop-in (LimitNOFILE, GOGC=200, GOMEMLIMIT=1200MiB)、nginx drop-in (LimitNOFILE=65536)。
 - 計測 (europe1→asia1, ルーター経由): RTT 100.8ms、新規接続 HTTP 0.203s / keepalive 再利用 0.101s。80–100KB 応答は初期受信窓 64KB で +1RTT (0.304s) → rmem 既定 + initrwnd で 0.205s。30MB で再送 0、帯域上限は観測されず → BBR 不採用。
 - ルーター↔アプリは 0.2–0.5ms (遅延はホスト間のみ)。ip_local_port_range は公式 90-isucon.conf のまま。
+
+## PG レプリカ
+- 構成: asia2 (192.168.4.10) がプライマリ、asia1/europe1/america1 がローカル PG16 ホットスタンバイ (物理スロット = ホスト名、application_name = ホスト名)。ロール `replicator` (REPLICATION)。
+- 再現: `scripts/pg-replica-setup.sh primary|standby [hosts]|walserve start|stop|restart-primary|status`。設定は `etc/pg/` (primary-repl.conf / primary-tuning.conf / primary-hba.conf / standby.conf / isucon_sync_members.sql / pg-sync-watchdog.service)。env.lock は適用の瞬間だけ取る。
+- 初期化: 4 台とも同一イメージ (system id 7702429198198691336, checkpoint 4/57A3CDC8) なので base backup なしで standby.signal + restore_command (asia2 walsave の一時 HTTP :18081、停止済み) → streaming。
+- 帯域 (asia2→各ホスト, 50MB curl): asia1 約 120MB/s、europe1/america1 約 18.5MB/s (~150Mbps)、RTT 約 100ms。
+- 追従が遅い原因: スタンバイのディスク IOPS (gp3 3000) 上限。初期 WAL は全表 VACUUM (Heap2/VISIBLE) で全ページ読み → 1 セグメント ~1 分。ベンチ中は画像 INSERT で WAL ~100MB/分出るので、ベンチ直後は lag 1.5GB 程度になりうる。スタンバイの replay がアプリホストの IOPS を食う点に注意。
+- スタンバイ設定: shared_buffers=256MB, max_connections=200 (プライマリ以上必須。下回ると recovery 停止), hot_standby_feedback=on, max_standby_streaming_delay=500ms, wal_receiver_status_interval=1s。postgresql は enable 済みで再起動後に自動追従。restore_command は残っているが HTTP 停止済みなので即失敗 → streaming に移るだけ (無害)。
+- asia2 チューニング (conf.d/isucon-tuning.conf): shared_buffers=1GB / max_connections=200 は **要再起動 (未反映, pending_restart)**。公式ベンチ外で `scripts/pg-replica-setup.sh restart-primary` (lock 取得)。その他 (wal_compression=lz4, work_mem 等) は reload 済み。再起動・reboot 前にスタンバイ側 max_connections=200 が入っていること (入っている)。
+- asia2 再起動: スタンバイは primary_conninfo で自動再接続 (スロットは永続)。
+
+### 同期レプリケーション (pg-sync-watchdog)
+- `scripts/pg-sync.sh on|off|status`。on/off は `/etc/postgresql/16/main/pg-sync.mode` に書くだけで、asia2 の `pg-sync-watchdog.service` (enable 済み) が `conf.d/zz-sync.conf` を書き換えて reload する。現在 **off**。
+- on: 健全なスタンバイ (streaming, reply_time 3 秒以内, replay 遅れ 16MB 未満, スロット wal_status が lost/unreserved でない) だけで `synchronous_standby_names='ANY n (...)'` + `synchronous_commit=remote_apply`。不健全が 5 秒続くと除外、2 秒健全で復帰。
+- 順序: 外す時は `isucon_sync_members.in_sync=false` を commit (synchronous_commit=local) → 除外 → reload。戻す時は追加 → reload → sync_state=quorum 確認 → in_sync=true。app はローカル replica で in_sync を読み false ならプライマリ読み。
+- 注意: 切断されたスタンバイ自身は false を受け取れないため、ローカルの in_sync=true が古いまま残る。app 側は `pg_stat_wal_receiver.status='streaming'` も併せて確認すること。
+- 危険: on の間、スタンバイが落ちると検出まで最大 ~5 秒 (+wal_sender_timeout 10s で切断が見えない場合はreply_time で検出) 全書き込みが止まる。watchdog が止まっていたら `scripts/pg-sync.sh off` (watchdog 不在時は直接 zz-sync.conf を空にして reload する)。
+- 起動時: watchdog の ExecStartPre が PG 起動前に sync を空にし、起動後は全員 in_sync=false から始める → asia2 が先に上がっても書き込みはブロックされない。
+- ログ: `sudo journalctl -u pg-sync-watchdog`。

@@ -715,7 +715,7 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		return true
 	}
 	write := writeFileNoSync // group commit: durable after asiaSyncer.wait
-	if asiaLocalImgPerFileSync {
+	if asiaLocalImgPerFileSync && !asiaLocalImgAsync {
 		write = writeFileSync
 	}
 	dataPath, metaPath := asiaStore.p("data", id), asiaStore.p("meta", id)
@@ -729,6 +729,12 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		slog.Warn("asia localimg meta", "error", err)
 		os.Remove(dataPath)
 		return false
+	}
+	if asiaLocalImgAsync {
+		// ISUREAL_ASIA_LOCALIMG_ASYNC: ページキャッシュに書いた時点で返る。sync は裏で (localimg_async.go)
+		asiaLocalImgN.Add(1)
+		asiaLocalImgSyncBehind(dataPath, metaPath)
+		return true
 	}
 	if !asiaLocalImgPerFileSync {
 		// 201 only after the sync that covers both files (and their dir entries)

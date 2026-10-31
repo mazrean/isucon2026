@@ -62,12 +62,18 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 	if ok {
 		return cached
 	}
-	value := []byte(strconv.FormatInt(exp, 10) + ":" + imageID)
-	for range imageSignatureIterations {
-		mac := hmac.New(sha256.New, key)
+	// one HMAC reused via Reset: the padded key blocks are hashed once, so each
+	// round costs 2 SHA-256 compressions instead of 4 and allocates nothing.
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(strconv.FormatInt(exp, 10) + ":" + imageID))
+	var buf [sha256.Size]byte
+	value := mac.Sum(buf[:0])
+	for range imageSignatureIterations - 1 {
+		mac.Reset()
 		mac.Write(value)
-		value = mac.Sum(nil)
+		value = mac.Sum(value[:0])
 	}
+	value = append([]byte(nil), value...)
 	signatureCacheMu.Lock()
 	if len(signatureCache) >= signatureCacheLimit {
 		signatureCache = make(map[signatureCacheKey][]byte)
@@ -81,14 +87,16 @@ func signedImageURL(user User, imageID string) string {
 	var ck signedURLCacheKey
 	copy(ck.key[:], user.ImageKey)
 	ck.imageID = imageID
-	now := time.Now()
+	// exp is floored to a shared 10-minute boundary (lifetime 23h50m-24h), so
+	// every process and host signs/verifies the same (image, exp) pair.
+	exp := time.Now().Add(imageURLLifetime).Unix()
+	exp -= exp % int64((imageURLLifetime-imageURLReuseMargin)/time.Second)
 	signedURLCacheMu.RLock()
 	entry, ok := signedURLCache[ck]
 	signedURLCacheMu.RUnlock()
-	if ok && time.Unix(entry.exp, 0).Sub(now) >= imageURLReuseMargin {
+	if ok && entry.exp == exp {
 		return entry.url
 	}
-	exp := now.Add(imageURLLifetime).Unix()
 	query := url.Values{
 		"exp": {strconv.FormatInt(exp, 10)},
 		"sig": {base64.RawURLEncoding.EncodeToString(imageSignature(user.ImageKey, imageID, exp))},

@@ -1,0 +1,51 @@
+[
+ {
+  "key": "POST /api/auth/login",
+  "status": 200,
+  "url": "/api/auth/login",
+  "json": {
+   "token": "<redacted>",
+   "user": {
+    "id": "c0536248-d5f2-41bd-bd27-c4706db6aab5",
+    "username": "e2e_mvvqz1yo1_e",
+    "displayName": "E2E europe",
+    "bio": "",
+    "region": "europe",
+    "accountType": "regular",
+    "status": "active"
+   }
+  }
+ },
+ {
+  "key": "GET /api/posting-window/current",
+  "status": 200,
+  "url": "/api/posting-window/current",
+  "json": {
+   "window": {
+    "id": "2aad24db-f327-4026-916d-6a47953f4109",
+    "region": "europe",
+    "localDate": "2026-11-05",
+    "startsAt": "2026-10-31T01:52:51.639765Z",
+    "onTimeDeadline": "2026-11-01T01:52:51.639765Z"
+   },
+   "hasPosted": false,
+   "canPost": true,
+   "deletionCount": 0
+  }
+ },
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "c0536248-d5f2-41bd-bd27-c4706db6aab5",
+   "username": "e2e_mvvqz1yo1_e",
+   "displayName": "E2E europe",
+   "bio": "",
+   "region": "europe",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ }
+]

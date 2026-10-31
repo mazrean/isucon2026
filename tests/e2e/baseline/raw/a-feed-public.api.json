@@ -1,0 +1,177 @@
+[
+ {
+  "key": "GET /api/posting-window/current",
+  "status": 200,
+  "url": "/api/posting-window/current",
+  "json": {
+   "window": {
+    "id": "90d863e7-5759-4e39-8aca-e7c6a79b37ee",
+    "region": "asia",
+    "localDate": "2026-11-05",
+    "startsAt": "2026-10-31T01:52:51.640577Z",
+    "onTimeDeadline": "2026-11-01T01:52:51.640577Z"
+   },
+   "hasPosted": true,
+   "canPost": false,
+   "deletionCount": 0
+  }
+ },
+ {
+  "key": "GET /api/feeds/public",
+  "status": 200,
+  "url": "/api/feeds/public",
+  "json": {
+   "items": [
+    {
+     "id": "28fe982f-9c3a-4839-93a2-428fe93872b7",
+     "author": {
+      "id": "ee3876cd-d1fa-40b7-8cbc-eaed70d9889a",
+      "username": "seyaro-5071",
+      "displayName": "Leo Tanaka",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "90d863e7-5759-4e39-8aca-e7c6a79b37ee",
+     "imageUrl": "/api/images/0097640c-036d-4d1e-99c4-e1170b2bed20?exp=1793497977&sig=633Td7mxcBJHMlnVGoUaKQooDEZUNc7P6OiurQjLgVE",
+     "caption": "折り紙の椅子",
+     "visibility": "public",
+     "location": {
+      "kind": "none"
+     },
+     "postedAt": "2026-10-31T01:52:57.313166Z",
+     "onTime": true,
+     "lateSeconds": 0
+    },
+    {
+     "id": "874903f2-4260-4c09-beac-4dac32aa2ef4",
+     "author": {
+      "id": "c8d466ba-1215-4635-ad7e-2fd23ef61bb1",
+      "username": "noako-5081",
+      "displayName": "Max Müller",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "90d863e7-5759-4e39-8aca-e7c6a79b37ee",
+     "imageUrl": "/api/images/8b0354df-877a-46ac-a85f-6c5f41054368?exp=1793497976&sig=rFHveaCAp5KSNXr3TgOIhDaUvjXpnTfXcVbIVc8R4GM",
+     "caption": "庭の石製ベンチ",
+     "visibility": "public",
+     "location": {
+      "kind": "none"
+     },
+     "postedAt": "2026-10-31T01:52:56.47843Z",
+     "onTime": true,
+     "lateSeconds": 0
+    },
+    {
+     "id": "01a09057-5b54-4234-963e-a23d9c4ab4f8",
+     "author": {
+      "id": "127b50ac-0898-4e5b-9ea8-2627a7fd22f4",
+      "username": "orkuku5115",
+      "displayName": "鈴木 一郎",
+      "profileImageUrl": null,
+      "bio": "Berlin based. Night owl.",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "2aad24db-f327-4026-916d-6a47953f4109",
+     "imageUrl": "/api/images/5cce69dc-26da-443c-875e-61742a226079?exp=1793497976&sig=55ZERKCmW1pO3UOGV0Nzg5odw0fp3y0jTaRU_EGjPuM",
+     "caption": "仕立て屋の小さな木製丸椅子",
+     "visibility": "public",
+     "location": {
+      "kind": "none"
+     },
+     "postedAt": "2026-10-31T01:52:55.852011Z",
+     "onTime": true,
+     "lateSeconds": 0
+    },
+    {
+     "id": "98573d78-689b-41c3-aac9-409bd4590e2d",
+     "author": {
+      "id": "6ead1623-4c02-4c67-b1e9-fc659bd4a99f",
+      "username": "mono5019",
+      "displayName": "ＫＡＮＡ",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "90d863e7-5759-4e39-8aca-e7c6a79b37ee",
+     "imageUrl": "/api/images/06550062-3193-4456-8b80-6ec9aff848df?exp=1793497976&sig=iqhhI-8nNuJW3-XL1ff_wbfJcERJsSNrcYeUjiS_x0o",
+     "caption": "ミニバンの三列目シート",
+     "visibility": "public",
+     "location": {
+      "kind": "approximate",
+      "locality": "Umeda"
+     },
+     "postedAt": "2026-10-31T01:52:55.837679Z",
+     "onTime": true,
+     "lateSeconds": 0
+    },
+    {
+     "id": "d0800174-817f-4e1f-9c33-852d62b90ddd",
+     "author": {
+      "id": "c7a59f55-c7aa-4d7a-bebd-aba488b31c7c",
+      "username": "tose5143",
+      "displayName": "高橋 さくら",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "82a8fd72-d746-4444-8b01-3c23fa6e91f5",
+     "imageUrl": "/api/images/5f4b0557-4fa5-4d95-87c4-274c88aacdd9?exp=1793497975&sig=nzX0RGQihKaXoIe67bmZanGDBU-UhJQQ61RGEkKGWKE",
+     "caption": "木枠の革スリングチェア",
+     "visibility": "public",
+     "location": {
+      "kind": "none"
+     },
+     "postedAt": "2026-10-31T01:52:55.165155Z",
+     "onTime": true,
+     "lateSeconds": 0
+    },
+    {
+     "id": "0bebb23c-c276-4488-82d3-d205aac39694",
+     "author": {
+      "id": "ebb78375-b960-4f9d-9fc6-aea65e4c5e9a",
+      "username": "seorki_5148",
+      "displayName": "Dvořák Ema",
+      "profileImageUrl": "/api/images/c98b96f8-938f-402f-aa50-ffd9fdbe6422?exp=1793497934&sig=1sUrX09fsfwEOVIdkteroO3LgihAHC4kMj47HSgjPW4",
+      "bio": "",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "82a8fd72-d746-4444-8b01-3c23fa6e91f5",
+     "imageUrl": "/api/images/8945fa29-79d1-4ecd-9c79-1a9d68dace1c?exp=1793497974&sig=1Qx-ehbyAwsw_NI1eSp7CuMjtSS56jHBtNUlPZTuNtw",
+     "caption": "録音スタジオの大きなメッシュチェア",
+     "visibility": "public",
+     "location": {
+      "kind": "none"
+     },
+     "postedAt": "2026-10-31T01:52:54.830879Z",
+     "onTime": true,
+     "lateSeconds": 0
+    },
+    {
+     "id": "c3f8ce46-f9f5-4562-a306-a5bbc4528d27",
+     "author": {
+      "id": "c735dd0c-c9aa-4e22-aa20-9fc6a7508d46",
+      "username": "nasomar5138",
+      "displayName": "Kana Miro",
+      "profileImageUrl": null,
+      "bio": "",
+      "accountType": "certified_public"
+     },
+     "postingWindowId": "82a8fd72-d746-4444-8b01-3c23fa6e91f5",
+     "imageUrl": "/api/images/841d80ff-5d77-4603-afc7-860c6ac69c8c?exp=1793497974&sig=jr7R7Pz9ZFE2akCNgbQ9LzjOFafAgcdsx2sxrzWVloQ",
+     "caption": "ゴルフカートの二人掛け席",
+     "visibility": "public",
+     "location": {
+      "kind": "none"
+     },
+     "postedAt": "2026-10-31T01:52:54.421112Z",
+     "onTime": true,
+     "lateSeconds": 0
+    }
+   ],
+   "hasMore": false
+  }
+ }
+]

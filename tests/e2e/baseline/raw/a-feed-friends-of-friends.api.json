@@ -1,0 +1,28 @@
+[
+ {
+  "key": "GET /api/posting-window/current",
+  "status": 200,
+  "url": "/api/posting-window/current",
+  "json": {
+   "window": {
+    "id": "90d863e7-5759-4e39-8aca-e7c6a79b37ee",
+    "region": "asia",
+    "localDate": "2026-11-05",
+    "startsAt": "2026-10-31T01:52:51.640577Z",
+    "onTimeDeadline": "2026-11-01T01:52:51.640577Z"
+   },
+   "hasPosted": true,
+   "canPost": false,
+   "deletionCount": 0
+  }
+ },
+ {
+  "key": "GET /api/feeds/friends-of-friends",
+  "status": 200,
+  "url": "/api/feeds/friends-of-friends",
+  "json": {
+   "items": [],
+   "hasMore": false
+  }
+ }
+]

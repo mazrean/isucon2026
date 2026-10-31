@@ -1,0 +1,34 @@
+[
+ {
+  "key": "GET /api/posting-window/current",
+  "status": 200,
+  "url": "/api/posting-window/current",
+  "json": {
+   "window": {
+    "id": "82a8fd72-d746-4444-8b01-3c23fa6e91f5",
+    "region": "america",
+    "localDate": "2026-11-05",
+    "startsAt": "2026-10-31T01:52:51.637956Z",
+    "onTimeDeadline": "2026-11-01T01:52:51.637956Z"
+   },
+   "hasPosted": false,
+   "canPost": true,
+   "deletionCount": 0
+  }
+ },
+ {
+  "key": "GET /api/me",
+  "status": 200,
+  "url": "/api/me",
+  "json": {
+   "id": "e5d34f69-391e-4b66-b87e-0c49513cd4ee",
+   "username": "e2e_mvvqz1yo2_a",
+   "displayName": "E2E america",
+   "bio": "",
+   "region": "america",
+   "accountType": "regular",
+   "status": "active",
+   "profileImageUrl": null
+  }
+ }
+]

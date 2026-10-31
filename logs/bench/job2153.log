@@ -1,0 +1,31 @@
+time=2026-10-31T01:57:54.941Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T01:57:55.583Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T01:57:57.875Z level=INFO msg="user moved" user=rana-5058 from=asia to=europe
+time=2026-10-31T01:57:57.976Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T01:58:02.508Z level=INFO msg="asia 2 日目: 17 人"
+time=2026-10-31T01:58:04.127Z level=INFO msg="europe 2 日目: 8 人"
+time=2026-10-31T01:58:06.966Z level=INFO msg="america 2 日目: 6 人"
+time=2026-10-31T01:58:09.075Z level=INFO msg="user moved" user=rana-5058 from=europe to=asia
+time=2026-10-31T01:58:11.134Z level=INFO msg="asia 3 日目: 19 人"
+time=2026-10-31T01:58:13.101Z level=INFO msg="europe 3 日目: 9 人"
+time=2026-10-31T01:58:13.444Z level=INFO msg="user moved" user=rana-5058 from=asia to=europe
+time=2026-10-31T01:58:16.252Z level=INFO msg="america 3 日目: 9 人"
+time=2026-10-31T01:58:20.768Z level=INFO msg="asia 4 日目: 22 人"
+time=2026-10-31T01:58:22.098Z level=INFO msg="europe 4 日目: 15 人"
+time=2026-10-31T01:58:25.216Z level=INFO msg="america 4 日目: 15 人"
+time=2026-10-31T01:58:28.037Z level=INFO msg="user moved" user=rana-5058 from=europe to=asia
+time=2026-10-31T01:58:29.473Z level=INFO msg="asia 5 日目: 28 人"
+time=2026-10-31T01:58:31.373Z level=INFO msg="europe 5 日目: 25 人"
+time=2026-10-31T01:58:34.779Z level=INFO msg="america 5 日目: 25 人"
+time=2026-10-31T01:58:43.146Z level=INFO msg="america 最終日（グランプリ）: 24 人"
+time=2026-10-31T01:58:43.184Z level=INFO msg="europe 最終日（グランプリ）: 24 人"
+time=2026-10-31T01:58:45.135Z level=INFO msg="asia 最終日（グランプリ）: 27 人"
+time=2026-10-31T01:58:51.863Z level=INFO msg="グランプリ: アジア 25 人, ヨーロッパ 24 人, アメリカ 24 人"
+{
+  "pass": true,
+  "score": 17351,
+  "messages": []
+}
+
+reason= 実行終了
+job=2153 state=4 pass=true スコア=17351 種別エラー数=map[]

@@ -29,6 +29,11 @@ END: 2026-10-31 18:00 JST
 | 10:36 | e33b814 | 7633 | true | 書き込みを asia1 へ転送 |
 | 10:44 | 9315bb9 | 16875 | true | 読み書き分離基盤+posting-window修正+SSE集約+画像キャッシュ+ログ抑制 |
 | 10:50 | 6f6685e | 0 | **false** | nginx 調整。デプロイ直後の asia1 再起動 (停止 10s) 中に initialize → 502。deploy で起動待ち + TimeoutStopSec=3 に修正 |
+| 10:52 | 6032c39 | 16175 | true | レプリカ再生停止で回復 |
+| 10:58 | 7b0c307 | 0 | **false** | GET 転送 + PG 1GB。driver の zsh で lock 取得失敗 → E2E の投稿がベンチ中に混入し「存在しない投稿」で整合性違反。アプリ起因ではない |
+| 11:03 | 8c9e0e0 | 17423 | true | GET も asia1 へ転送 + PG shared_buffers 1GB。eu/am 人数増、asia 18 で停滞 |
+| 11:10 | 2f19b70 | 17351 | true | pprof 有効 (再現確認)。CPU の 6 割が画像署名 HMAC |
+| 11:16 | 2f19b70 | 24549 | true | HMAC Reset 使い回し 4x。eu 43 人 / asia 32 人まで伸びる |
 
 ## バックログ (優先順)
 1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)
@@ -113,3 +118,23 @@ END: 2026-10-31 18:00 JST
 - 分散モード: asia1 に `ISUREAL_MEM_PEERS=192.168.2.10:8080,192.168.3.10:8080`、europe1/america1 に `ISUREAL_MEM=1 ISUREAL_MEM_PUMP=192.168.1.10:8080` (ISUREAL_FWD_SECRET 共有, /internal/mem/* は 192.168.x + secret のみ)。peer は DB を読まず、pump のダンプ (gzip JSON) + 連番バッチで同期。欠番は pump のバッファから pull、epoch 変化で再構築。peer は heartbeat (250ms) が lease 1s 途絶えると自発的に DB 経路 (pump の push タイムアウト 3s > lease)。
 - 撤去: 各テーブルの `DROP TRIGGER mem_changelog ON <tbl>`、`DROP TABLE mem_changelog`。フラグ off でもトリガーは残る (1 行 insert/変更行、負荷小)。
 - 検証: ローカル PG (primary のダンプ, 画像除く) で `go test -tags memdiff -run TestMemDiff` (DB 経路 / pump / peer の GET 応答を 1500 ステップの書き込み列で比較、差分 0)。
+## 他チーム考察 (10:55 時点のリーダーボード)
+- 1位 sotozaki 80631 / 2位 Dorayaki 58943 / 3位 KatoMegumi 49407 / 4位 42027 / 5位 35953 … 25位 18936。自チーム 17423 (30位)。
+- スコア ≒ Σ(地域重み × 人数 × 日) × 約 38 点。人数は「前日の出来が良いと約 1.5〜1.75 倍」で増える (調査エージェント)。
+  - 例: 3 地域とも 18/7/6 から毎日 1.6 倍 → 5 日目に 120/45/40 程度 → 4〜5 万点。8 万点は「全地域で毎日増やし切った上に最終日 (20 点/人) も取り切る」水準。
+- 上位チームがやっていると推定されること:
+  1. 3 地域すべての人数を毎日伸ばしている = eu/am の応答も速い (100ms×多数クエリを消している)。
+     書き込み転送 / 読みのキャッシュ (少なくとも user・friend graph・投稿期間のメモリ化) は必須級。
+  2. posting-window 開始 (通知 INSERT 数千行) を速くして、各日の投稿期間 (約 9 秒) を食わないようにしている。
+  3. asia が 1 台に集中して頭打ちになるのを避けている (自チームは GET 転送で asia が 18 人で停滞)。
+- 自チームの差分: asia の伸び (以前 74 人まで伸びた) を取り戻しつつ、eu/am も伸ばす必要がある。
+  → 分散インメモリ (各ホストで読みを返す) が本命。asia1 一極集中を避ける (転送先 asia2 の A/B 中)。
+
+## ゲーム展開予測と方針 (11:05)
+- 人数は前日の出来で 1.5〜1.75 倍に増える → 上位は「3 地域で毎日伸ばし切る」段階へ。次の壁は人数爆発後 (5 日目に地域あたり 150〜300 人、最終日は一斉投稿) の容量:
+  1. フィード計算 (全アクティブ投稿走査 = O(人数²)) の CPU
+  2. 画像取得 (eu/am→asia2 DB, 100ms+150Mbps) の帯域
+  3. 投稿期間開始 (通知 INSERT 数千行) と SSE 一斉配信
+  4. asia1 2vCPU への書き込み集中 (既に isureal 180% CPU を観測)
+  5. グランプリの一斉投稿スパイク
+- 打ち手: 分散インメモリ (フィード索引で O(友達数)) / 画像の全リージョン push 複製 / posting-window O(1) / asia1 CPU プロファイルでホットスポット除去 / (将来) asia1 書き込みのグループコミット

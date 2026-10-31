@@ -1,0 +1,4 @@
+10:53	329fc36	job=1833 state=4 pass=true スコア=17423 種別エラー数=map[]	GET 転送 + PG shared_buffers 1GB
+10:56	c2f63f5	job=1991 state=4 pass=true スコア=15974 種別エラー数=map[]	A/B: 転送先 asia2
+10:59	bcbd1b1	job=2153 state=4 pass=true スコア=17351 種別エラー数=map[]	pprof 有効 (転送先 asia1)
+11:02	31978e3	job=2320 state=4 pass=true スコア=24549 種別エラー数=map[]	HMAC 4x

@@ -87,14 +87,16 @@ func signedImageURL(user User, imageID string) string {
 	var ck signedURLCacheKey
 	copy(ck.key[:], user.ImageKey)
 	ck.imageID = imageID
-	now := time.Now()
+	// exp is floored to a shared 10-minute boundary (lifetime 23h50m-24h), so
+	// every process and host signs/verifies the same (image, exp) pair.
+	exp := time.Now().Add(imageURLLifetime).Unix()
+	exp -= exp % int64((imageURLLifetime-imageURLReuseMargin)/time.Second)
 	signedURLCacheMu.RLock()
 	entry, ok := signedURLCache[ck]
 	signedURLCacheMu.RUnlock()
-	if ok && time.Unix(entry.exp, 0).Sub(now) >= imageURLReuseMargin {
+	if ok && entry.exp == exp {
 		return entry.url
 	}
-	exp := now.Add(imageURLLifetime).Unix()
 	query := url.Values{
 		"exp": {strconv.FormatInt(exp, 10)},
 		"sig": {base64.RawURLEncoding.EncodeToString(imageSignature(user.ImageKey, imageID, exp))},

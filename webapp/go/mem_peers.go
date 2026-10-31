@@ -322,7 +322,9 @@ func (ps *memPeers) invalidateAll(ctx context.Context, wait bool) {
 	wg.Wait()
 }
 
-func (ps *memPeers) resetAll(ctx context.Context) { ps.invalidateAll(ctx, true) }
+// initialize does not wait for the peers to rebuild: a not-ready peer answers
+// from the DB, and a full dump (15-17s each) would push initialize past 60s.
+func (ps *memPeers) resetAll(ctx context.Context) { ps.invalidateAll(ctx, false) }
 
 func memHTTPPost(addr, path string, body any, timeout time.Duration) ([]byte, error) {
 	data, err := json.Marshal(body)

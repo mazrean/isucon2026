@@ -192,6 +192,7 @@ END: 2026-10-31 18:00 JST
 | 12488 | - | **FAIL 0** | PGSSL=prefer + MEMORIES_MEM=0 でも同じ FAIL → 原因は asia1 のディスク満杯 (imgcache 33G、nginx の body 一時ファイルが書けず 500)。全台の imgcache を消去、ディスク上限 6GB を実装 |
 | 12846 | - | **146736** | ディスク上限 + 既定 + MEMORIES_MEM=1 + admin 専用プール。asia5 915 / eu 269 / am 275。GP 587 / 213 / 232。通知 503 あり → MEMORIES_MEM 既定 on |
 | 13083 | - | 133128 | STORE=1 (レーン + fsync 修正) on 既定。asia5 785 / GP asia 437 → 既定 (STORE=0) の 146736 より低い。STORE は不採用 |
+| 13426 | - | **147756** | MEMORIES_CACHE=1 + HEAVY_TARGET=127.0.0.1 + SSE 修正。asia 18/47/131/348/781 (d4→d5 2.24 倍、12846 の 2.41 より悪い = asia1 に重い読みを寄せた分)、eu 297 / am 249、GP 565/277/244 (eu GP +64)。503 は 0 件 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

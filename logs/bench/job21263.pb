@@ -1,0 +1,65 @@
+
+�2����� *����ȭ��2��������:�������B��������Hß	�<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008���/ß	"ß	*�/
+実行終了�/time=2026-10-31T06:11:46.760Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T06:11:49.984Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T06:11:52.751Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T06:11:55.863Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T06:11:58.908Z level=INFO msg="europe 2 日目: 19 人"
+time=2026-10-31T06:12:01.771Z level=INFO msg="america 2 日目: 14 人"
+time=2026-10-31T06:12:04.919Z level=INFO msg="asia 3 日目: 144 人"
+time=2026-10-31T06:12:06.407Z level=INFO msg="user moved" user=evanoaor.5640 from=asia to=america
+time=2026-10-31T06:12:07.275Z level=INFO msg="user moved" user=evanoaor.5640 from=america to=europe
+time=2026-10-31T06:12:07.290Z level=INFO msg="user moved" user=bennuto5774 from=asia to=europe
+time=2026-10-31T06:12:07.761Z level=INFO msg="europe 3 日目: 56 人"
+time=2026-10-31T06:12:08.925Z level=INFO msg="user moved" user=noaben_6222 from=asia to=europe
+time=2026-10-31T06:12:10.762Z level=INFO msg="america 3 日目: 41 人"
+time=2026-10-31T06:12:13.806Z level=INFO msg="asia 4 日目: 414 人"
+time=2026-10-31T06:12:16.781Z level=INFO msg="europe 4 日目: 146 人"
+time=2026-10-31T06:12:19.801Z level=INFO msg="america 4 日目: 112 人"
+time=2026-10-31T06:12:20.709Z level=INFO msg="user moved" user=bennuto5774 from=europe to=america
+time=2026-10-31T06:12:21.238Z level=INFO msg="user moved" user=evanoaor.5640 from=europe to=america
+time=2026-10-31T06:12:21.925Z level=INFO msg="user moved" user=leomaxsa.7654 from=asia to=america
+time=2026-10-31T06:12:22.175Z level=INFO msg="user moved" user=hoha.8644 from=europe to=america
+time=2026-10-31T06:12:22.248Z level=INFO msg="user moved" user=noaben_6222 from=europe to=america
+time=2026-10-31T06:12:22.353Z level=INFO msg="user moved" user=isme.7291 from=asia to=europe
+time=2026-10-31T06:12:22.845Z level=INFO msg="asia 5 日目: 1043 人"
+time=2026-10-31T06:12:22.845Z level=INFO msg="user moved" user=zoere8381 from=asia to=america
+time=2026-10-31T06:12:22.935Z level=INFO msg="user moved" user=ulben8056 from=asia to=america
+time=2026-10-31T06:12:23.055Z level=INFO msg="user moved" user=nure-8715 from=europe to=asia
+time=2026-10-31T06:12:24.904Z level=INFO msg="user moved" user=yamuru-9098 from=america to=asia
+time=2026-10-31T06:12:25.919Z level=INFO msg="europe 5 日目: 357 人"
+time=2026-10-31T06:12:28.789Z level=INFO msg="america 5 日目: 272 人"
+time=2026-10-31T06:12:30.298Z level=INFO msg="user moved" user=ormiho.9289 from=america to=europe
+time=2026-10-31T06:12:37.859Z level=INFO msg="america 最終日（グランプリ）: 270 人"
+time=2026-10-31T06:12:38.048Z level=INFO msg="asia 最終日（グランプリ）: 1043 人"
+time=2026-10-31T06:12:38.129Z level=INFO msg="europe 最終日（グランプリ）: 357 人"
+time=2026-10-31T06:12:46.787Z level=INFO msg="グランプリ: アジア 593 人, ヨーロッパ 294 人, アメリカ 250 人"
+{
+  "pass": true,
+  "score": 151491,
+  "messages": [
+    "mashi-11691: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "lialeo-13109: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "maxnu-11014: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "taro-11469: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "bentosa.11282: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "moleo_14198: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "elyo-11821: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "mialia_11117: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "muteor_6660: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "leoleo-12047: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "vintohe-10786: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "liasu_11561: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "danmiru.9934: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "yutsu_11950: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "ivyne-11546: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "nieva_7164: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "sani.10623: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "waismo12678: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "hihonoa.11443: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "riho13658: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+ ���������(���������2����������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

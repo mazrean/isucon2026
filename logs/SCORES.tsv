@@ -73,3 +73,4 @@
 15:05	4e34776	job=20463 state=4 pass=true スコア=165725 種別エラー数=map[]	bare + LOGIN_BATCH=1 だけ
 15:07	4303c59	job=20730 state=4 pass=true スコア=163611 種別エラー数=map[]	bare + MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32 + MEM_PUSH_STATS=1 (eu/am の WM の待ち: push の枠 4 の順番待ちを解消、反映の前に配信)
 15:11	a5d63a0	job=20956 state=4 pass=true スコア=167525 種別エラー数=map[]	bare + IMG_FRIEND_PUSH=1 + IMG_FRIEND_PUSH_REV=1 (画像の事前転送: 作者の友達のいる地域へ、送信が空いている間だけ、GP 中は停止。逆向きも)
+15:13	6971401	job=21263 state=4 pass=true スコア=151491 種別エラー数=map[]	bare + WM_EARLY 一式 (INFLIGHT 8, IDLE_CONNS 32) + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1、PUSH_STATS off (最終候補の組み合わせ)

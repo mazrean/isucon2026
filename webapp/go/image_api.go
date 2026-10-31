@@ -62,6 +62,7 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 				return NewAPIError(http.StatusForbidden, "image_forbidden")
 			}
 		}
+		imgFriendRecvHit(input.ImageID)
 		owner := ""
 		if obj != nil {
 			owner = obj.Owner

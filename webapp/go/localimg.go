@@ -564,6 +564,7 @@ func localImgPurgePeers(ctx context.Context) {
 // registerLocalImg installs the routes, the asia1-side header check and, on
 // an origin host, the flusher and the journal replay.
 func registerLocalImg(e *echo.Echo, h *HandlerContext) {
+	startImgFriendPush(h)
 	if asiaLocalImgOn && (forwardSecret == "" || h.Config.Region != "asia") {
 		asiaLocalImgOn = false // pullers need the secret; only asia1 commits locally
 	}

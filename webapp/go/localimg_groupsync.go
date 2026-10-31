@@ -54,7 +54,7 @@ func (g *groupSyncer) wait(paths ...string) error {
 		g.kick = make(chan struct{}, 1)
 		go g.loop()
 	})
-	if asiaLocalImgFsync {
+	if localImgUseFsync() {
 		// ISUREAL_ASIA_LOCALIMG_FSYNC: syncfs (ファイルシステム全体の dirty) を使わず、自分のファイルだけを並列に永続化する
 		g.batches.Add(1)
 		g.members.Add(1)
@@ -96,7 +96,7 @@ func (g *groupSyncer) loop() {
 // group sync makes the data and the directory entries durable.
 func writeFileNoSync(path string, data []byte) error {
 	dir := filepath.Dir(path)
-	if asiaLocalImgFsync {
+	if asiaLocalImgFsync || asiaLocalImgFsyncGP {
 		if _, err := os.Stat(dir); err != nil {
 			localImgMarkNewDirs(dir) // MkdirAll が作るディレクトリ: その親のエントリも fsync する
 		}

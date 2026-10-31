@@ -87,3 +87,45 @@ func TestLocalImgMarkNewDirs(t *testing.T) {
 		t.Fatalf("%d marks left", n)
 	}
 }
+
+// ISUREAL_ASIA_LOCALIMG_FSYNC=gp: GP の間だけ fdatasync、それ以外は syncfs のグループ。
+func TestLocalImgFsyncGPMode(t *testing.T) {
+	oldOn, oldGP, oldFn := asiaLocalImgFsync, asiaLocalImgFsyncGP, localImgInGPFn
+	t.Cleanup(func() { asiaLocalImgFsync, asiaLocalImgFsyncGP, localImgInGPFn = oldOn, oldGP, oldFn })
+	asiaLocalImgFsync, asiaLocalImgFsyncGP = false, true
+	inGP := false
+	localImgInGPFn = func() bool { return inGP }
+	if localImgUseFsync() {
+		t.Fatal("outside GP must use syncfs")
+	}
+	inGP = true
+	if !localImgUseFsync() {
+		t.Fatal("in GP must use fdatasync")
+	}
+	localImgInGPFn = nil
+	if localImgUseFsync() {
+		t.Fatal("no GP hook (not the pump) must use syncfs")
+	}
+	asiaLocalImgFsync = true
+	if !localImgUseFsync() {
+		t.Fatal(`"1" must always use fdatasync`)
+	}
+	// 経路の両方で wait が永続化して返る
+	asiaLocalImgFsync = false
+	root := t.TempDir()
+	g := &groupSyncer{dir: func() string { return root }}
+	p := filepath.Join(root, "data", "ab", "x")
+	for _, gp := range []bool{false, true} {
+		inGP = gp
+		localImgInGPFn = func() bool { return inGP }
+		if err := writeFileNoSync(p, []byte("jpeg")); err != nil {
+			t.Fatal(err)
+		}
+		if err := g.wait(p); err != nil {
+			t.Fatalf("gp=%v: %v", gp, err)
+		}
+	}
+	if g.batches.Load() != 2 {
+		t.Fatalf("batches=%d", g.batches.Load())
+	}
+}

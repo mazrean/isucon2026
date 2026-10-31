@@ -654,6 +654,7 @@ func registerLocalImgRoutes(e *echo.Echo) {
 			return c.NoContent(http.StatusForbidden)
 		}
 		localStore.purge()
+		imgFriendPushResume()
 		return c.NoContent(http.StatusNoContent)
 	})
 }

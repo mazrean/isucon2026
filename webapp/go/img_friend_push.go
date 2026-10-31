@@ -67,7 +67,7 @@ var (
 )
 
 var imgFriendStats struct {
-	queuedHi, queuedMid, queuedLo, sent, sentBytes, dropped, evicted, stale, budgetSkip, errs, gpWait, busyWait, recv, recvHit, recvLate atomic.Int64
+	queuedHi, queuedMid, queuedLo, sent, sentBytes, dropped, evicted, stale, budgetSkip, errs, gpWait, busyWait, recv, recvHit, recvLate, stopped atomic.Int64
 }
 
 // friendPusher is non-nil only on asia1 with the flag on.
@@ -221,6 +221,13 @@ func (p *imgFriendPusher) enqueue(id string, obj *imageObject, visibility string
 	if p == nil || !safeImageID(id) || obj == nil || obj.Owner == "" || len(obj.Data) == 0 {
 		return
 	}
+	if imgFriendPushStopAfterGP {
+		p.gpBlocked(p.region) // detects the GP even with an empty queue
+		if imgFriendStopped.Load() {
+			imgFriendStats.stopped.Add(1)
+			return
+		}
+	}
 	regions, win := p.friendRegionsOf(obj.Owner)
 	sig := &imgReplSigOnce{}
 	for _, d := range p.dests {
@@ -293,6 +300,11 @@ func (p *imgFriendPusher) worker(d *imgFriendDest) {
 				}
 			}
 		}
+		if imgFriendStopped.Load() {
+			p.queued.Add(-int64(len(j.obj.Data)))
+			imgFriendStats.stopped.Add(1)
+			continue
+		}
 		if imgFriendPushHiNoWait && j.tier == 0 {
 			for p.gpBlocked(d.region) {
 				time.Sleep(100 * time.Millisecond)
@@ -303,6 +315,10 @@ func (p *imgFriendPusher) worker(d *imgFriendDest) {
 			}
 		}
 		p.queued.Add(-int64(len(j.obj.Data)))
+		if imgFriendStopped.Load() {
+			imgFriendStats.stopped.Add(1)
+			continue
+		}
 		if imgFriendPushFresh && time.Since(j.at) > imgFriendPushMaxAge {
 			imgFriendStats.stale.Add(1)
 			continue
@@ -318,20 +334,35 @@ func (p *imgFriendPusher) worker(d *imgFriendDest) {
 
 // gpBlocked: a GP window is open at the sender or the destination.
 func (p *imgFriendPusher) gpBlocked(dest string) bool {
-	if imgFriendPushGP || p.mem == nil {
+	if p.mem == nil {
 		return false
 	}
 	now := time.Now()
-	if _, gp := p.mem.gpWindowDeadline(p.region, now); gp {
-		imgFriendStats.gpWait.Add(1)
-		return true
+	_, gp := p.mem.gpWindowDeadline(p.region, now)
+	if !gp {
+		_, gp = p.mem.gpWindowDeadline(dest, now)
 	}
-	if _, gp := p.mem.gpWindowDeadline(dest, now); gp {
+	if gp && imgFriendPushStopAfterGP {
+		imgFriendStopped.Store(true)
+	}
+	if gp && !imgFriendPushGP {
 		imgFriendStats.gpWait.Add(1)
 		return true
 	}
 	return false
 }
+
+// ISUREAL_IMG_FRIEND_PUSH_STOP_AFTER_GP=1: once a GP window has been seen, the
+// rest of the run sends nothing (queued jobs are discarded): images pushed
+// after the GP are not viewed any more and the burst overlaps the post-run
+// checks. POST /api/initialize (asia1) / the localimg purge (eu/am) resumes.
+var (
+	imgFriendPushStopAfterGP = os.Getenv("ISUREAL_IMG_FRIEND_PUSH_STOP_AFTER_GP") == "1"
+	imgFriendStopped         atomic.Bool
+)
+
+// imgFriendPushResume is called by initialize.
+func imgFriendPushResume() { imgFriendStopped.Store(false) }
 
 func (p *imgFriendPusher) defaultGate(dest string) bool {
 	if p.gpBlocked(dest) {
@@ -481,7 +512,7 @@ func imgFriendStatsLogger() {
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	s := &imgFriendStats
-	ctrs := []*atomic.Int64{&s.queuedHi, &s.queuedMid, &s.queuedLo, &s.sent, &s.sentBytes, &s.dropped, &s.evicted, &s.stale, &s.budgetSkip, &s.errs, &s.gpWait, &s.busyWait, &s.recv, &s.recvHit, &s.recvLate}
+	ctrs := []*atomic.Int64{&s.queuedHi, &s.queuedMid, &s.queuedLo, &s.sent, &s.sentBytes, &s.dropped, &s.evicted, &s.stale, &s.budgetSkip, &s.errs, &s.gpWait, &s.busyWait, &s.recv, &s.recvHit, &s.recvLate, &s.stopped}
 	var recvT, hitT, lateT int64 // cumulative, for the never-read estimate
 	for range t.C {
 		v := make([]int64, len(ctrs))
@@ -500,7 +531,7 @@ func imgFriendStatsLogger() {
 		recvT, hitT, lateT = recvT+v[12], hitT+v[13], lateT+v[14]
 		slog.Info("imgfriendpush", "queued_hi", v[0], "queued_mid", v[1], "queued_lo", v[2], "sent", v[3], "sent_bytes", v[4],
 			"dropped", v[5], "evicted", v[6], "stale", v[7], "budget_skip", v[8], "err", v[9], "gp_wait_ticks", v[10], "busy_wait_ticks", v[11],
-			"recv", v[12], "recv_hit", v[13], "recv_late", v[14],
+			"recv", v[12], "recv_hit", v[13], "recv_late", v[14], "stopped", v[15], "stopped_now", imgFriendStopped.Load(),
 			"recv_total", recvT, "hit_total", hitT, "late_total", lateT, "unread_total", recvT-hitT-lateT, "tx_mbps", txMbps, "queued_bytes", qBytes)
 	}
 }

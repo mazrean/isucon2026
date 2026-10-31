@@ -3,8 +3,8 @@ package isureal
 import (
 	"context"
 	"net/http"
-	"os"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -296,5 +296,37 @@ func TestFriendRecvLate(t *testing.T) {
 	e.ServeHTTP(rec, req)
 	if rec.Code != http.StatusNoContent || imgFriendStats.recvLate.Load()-before != 1 {
 		t.Fatalf("status %d late +%d", rec.Code, imgFriendStats.recvLate.Load()-before)
+	}
+}
+
+// STOP_AFTER_GP: once a GP is seen, nothing more is queued until initialize.
+func TestFriendPushStopAfterGP(t *testing.T) {
+	old := imgFriendPushStopAfterGP
+	imgFriendPushStopAfterGP = true
+	defer func() { imgFriendPushStopAfterGP = old; imgFriendPushResume() }()
+	p, m := newTestFriendPusher(t, map[string]string{"europe": "e:1"})
+	obj := &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("x")}
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455556661", obj, "")
+	if len(p.dests[0].hi) != 1 {
+		t.Fatal("before GP: should queue")
+	}
+	now := time.Now()
+	for _, r := range gpRegions {
+		m.d.open[r] = &memWindow{PostingWindow: PostingWindow{StartsAt: now.Add(-2 * time.Second), OnTimeDeadline: now.Add(50 * time.Second)}}
+	}
+	m.gp.Store(nil)
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455556662", obj, "")
+	for _, r := range gpRegions {
+		delete(m.d.open, r)
+	}
+	m.gp.Store(nil)
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455556663", obj, "")
+	if len(p.dests[0].hi) != 1 || !imgFriendStopped.Load() {
+		t.Fatalf("after GP: hi %d stopped %v", len(p.dests[0].hi), imgFriendStopped.Load())
+	}
+	imgFriendPushResume()
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455556664", obj, "")
+	if len(p.dests[0].hi) != 2 {
+		t.Fatal("after initialize: should queue again")
 	}
 }

@@ -887,7 +887,7 @@ func lrLoad(ctx context.Context, q sqlx.QueryerContext) (*memData, error) {
 			minDate = &v
 		}
 	}
-	minDate = d.hotLoadFrom(ctx, q, minDate) // ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go)
+	minDate = memFullMinDate(d, d.hotLoadFrom(ctx, q, minDate)) // MEM_FULL wins over ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go)
 	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow

@@ -180,7 +180,9 @@ func (m *memStore) wmOK(ctx context.Context) bool {
 	return !ok || !m.w.pumpWM.Load() || m.w.wm.Load() >= t
 }
 
-func (m *memStore) onCtx(ctx context.Context) bool { return m.on() && m.wmOK(ctx) }
+func (m *memStore) onCtx(ctx context.Context) bool {
+	return m.on() && m.wmOK(ctx) && (!memFull || !memForcedDB(ctx))
+}
 
 func memWMWaitPath(req *http.Request) bool {
 	if req.Method != http.MethodGet && req.Method != http.MethodHead {

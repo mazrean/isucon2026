@@ -21,6 +21,7 @@ import (
 // ISUREAL_MEM_HOT_EXTRA_MAX_POSTS (default 80000): when the extra days hold
 // more posts than this (or the count fails), nothing is extended and the
 // current hot range is used (memory bound for asia1).
+// With ISUREAL_MEM_FULL=1 this does nothing (MEM_FULL loads every period).
 var (
 	memHotExtraDays     = envIntDefault("ISUREAL_MEM_HOT_EXTRA_DAYS", 0)
 	memHotExtraMaxPosts = envIntDefault("ISUREAL_MEM_HOT_EXTRA_MAX_POSTS", 80000)
@@ -46,7 +47,7 @@ func (d *memData) hotBase(minDate *time.Time) (time.Time, bool) {
 // hotLoadFrom returns the date the loaders load posts from (and pass to
 // setHotFrom). With the flag off it returns minDate unchanged.
 func (d *memData) hotLoadFrom(ctx context.Context, q sqlx.QueryerContext, minDate *time.Time) *time.Time {
-	if memHotExtraDays <= 0 {
+	if memHotExtraDays <= 0 || memFullLoaders { // MEM_FULL (mem_full.go) loads every period; it wins
 		return minDate
 	}
 	base, ok := d.hotBase(minDate)

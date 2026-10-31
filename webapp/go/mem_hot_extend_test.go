@@ -31,6 +31,15 @@ func TestMemHotLoadFrom(t *testing.T) {
 	if b, ok := d.hotBase(nil); !ok || !b.Equal(time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)) {
 		t.Fatalf("hotBase(nil) = %v %v", b, ok)
 	}
+	// MEM_FULL on as well: extension is skipped (no query, q nil) and MEM_FULL's earliest period wins
+	func() {
+		defer func(o bool) { memFullLoaders = o }(memFullLoaders)
+		memFullLoaders = true
+		got := memFullMinDate(d, d.hotLoadFrom(context.Background(), nil, &min))
+		if got == nil || !got.Equal(time.Date(2026, 10, 30, 0, 0, 0, 0, time.UTC)) {
+			t.Fatalf("MEM_FULL + extend: got %v", got)
+		}
+	}()
 	// hotBase(nil) must agree with setHotFrom(nil)
 	d.setHotFrom(nil)
 	if b, _ := d.hotBase(nil); !b.Equal(d.hotFrom) {

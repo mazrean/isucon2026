@@ -27,6 +27,7 @@ type jpegRemote struct {
 	addr    string
 	timeout time.Duration
 	slots   chan struct{}
+	label   string // POST_TIMING の段階名 (アドレスの第 3 オクテット: 4=asia2, 2=eu, 3=am)
 }
 
 var (
@@ -60,9 +61,18 @@ func parseJPEGRemotes(s string) []*jpegRemote {
 			}
 		}
 		r.slots = make(chan struct{}, capacity)
+		r.label = remoteLabel(r.addr)
 		out = append(out, r)
 	}
 	return out
+}
+
+func remoteLabel(addr string) string {
+	host, _, _ := strings.Cut(addr, ":")
+	if oct := strings.Split(host, "."); len(oct) == 4 {
+		return oct[2]
+	}
+	return host
 }
 
 // ISUREAL_JPEG_LOCAL_SOCK points at webapp/rust/jpegcheckd (HTTP/1.1 on a
@@ -82,16 +92,16 @@ var (
 	}
 )
 
-var jpegStats struct{ remoteOK, remoteErr, local, sockErr, gpCapped atomic.Int64 }
+var jpegStats struct{ remoteOK, remoteErr, local, sockErr, gpCapped, gpAsia atomic.Int64 }
 
 var jpegRegion = envOrDefault("ISUREAL_REGION", "asia")
 
 func init() {
 	go func() {
 		for range time.Tick(10 * time.Second) {
-			ok, bad, loc, se, gc := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0), jpegStats.sockErr.Swap(0), jpegStats.gpCapped.Swap(0)
+			ok, bad, loc, se, gc, ga := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0), jpegStats.sockErr.Swap(0), jpegStats.gpCapped.Swap(0), jpegStats.gpAsia.Swap(0)
 			if ok+bad+loc > 0 {
-				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc, "sock", jpegLocalSock != "", "sock_err", se, "gp_capped", gc)
+				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc, "sock", jpegLocalSock != "", "sock_err", se, "gp_capped", gc, "gp_asia", ga)
 			}
 		}
 	}()
@@ -112,54 +122,115 @@ func checkJPEGLocal(data []byte) (w, h int, ok bool) {
 	return w, h, err == nil
 }
 
+// ISUREAL_JPEG_GP_ASIA="L/R" (既定 "" = off): 自地域が GP の間、JPEG 検査を asia の中で回す。
+// 委譲先は ISUREAL_JPEG_REMOTES の先頭 max(ISUREAL_GP_JPEG_REMOTES_MAX,1) 個 (asia2) だけ、
+// asia1 のローカル枠は L、asia2 の枠は R (GP 用の別の枠、平時の枠とは独立)。ローカル (jpegcheckd 2.76ms/枚、
+// 回線を使わない) を先に試し、空きが無ければ asia2、どちらも埋まっていれば先に空いた方を待つ。
+// eu/am への 360KB の委譲は GP 以外の窓だけになる。判定 (受理/拒否) は変わらない。
+var jpegGP = parseJPEGGP(os.Getenv("ISUREAL_JPEG_GP_ASIA"))
+
+type jpegGPConf struct {
+	local   chan struct{}
+	remotes []*jpegRemote
+}
+
+func parseJPEGGP(s string) *jpegGPConf {
+	var l, r int
+	if n, _ := fmt.Sscanf(strings.TrimSpace(s), "%d/%d", &l, &r); n < 1 || l <= 0 {
+		return nil
+	}
+	if r <= 0 {
+		r = 2
+	}
+	keep := gpJPEGRemotesMax
+	if keep <= 0 {
+		keep = 1
+	}
+	c := &jpegGPConf{local: make(chan struct{}, l)}
+	for i, base := range jpegRemotes {
+		if i >= keep {
+			break
+		}
+		c.remotes = append(c.remotes, &jpegRemote{addr: base.addr, timeout: base.timeout, slots: make(chan struct{}, r), label: base.label})
+	}
+	return c
+}
+
 // checkJPEG takes the first free slot: remotes in preference order, then the
-// single local slot; when everything is busy it waits for whichever frees up
+// local slots; when everything is busy it waits for whichever frees up
 // first. A failed remote call is redone locally, so the result never depends
 // on a remote.
 func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
 	if w, h, ok, hit := prevalidated(ctx, data); hit {
 		return w, h, ok
 	}
-	jpegRemotes := jpegRemotes
-	if gpJPEGRemotesMax > 0 && len(jpegRemotes) > gpJPEGRemotesMax && gpLocalActive(jpegRegion) {
-		jpegRemotes = jpegRemotes[:gpJPEGRemotesMax]
+	remotes, local, localFirst := jpegRemotes, jpegLocalSlots, false
+	if jpegGP != nil && len(jpegRemotes) > 0 && gpLocalActive(jpegRegion) {
+		remotes, local, localFirst = jpegGP.remotes, jpegGP.local, true
+		jpegStats.gpAsia.Add(1)
+	} else if gpJPEGRemotesMax > 0 && len(remotes) > gpJPEGRemotesMax && gpLocalActive(jpegRegion) {
+		remotes = remotes[:gpJPEGRemotesMax]
 		jpegStats.gpCapped.Add(1)
 	}
-	if len(jpegRemotes) == 0 {
-		return checkJPEGLocal(data)
+	return checkJPEGWith(ctx, data, remotes, local, localFirst)
+}
+
+func checkJPEGWith(ctx context.Context, data []byte, remotes []*jpegRemote, local chan struct{}, localFirst bool) (w, h int, ok bool) {
+	if len(remotes) == 0 {
+		return timedLocal(data)
 	}
-	for _, r := range jpegRemotes {
+	if localFirst {
+		select {
+		case local <- struct{}{}:
+			defer func() { <-local }()
+			return timedLocal(data)
+		default:
+		}
+	}
+	for _, r := range remotes {
 		select {
 		case r.slots <- struct{}{}:
 			return r.run(ctx, data)
 		default:
 		}
 	}
-	cases := make([]reflect.SelectCase, 0, len(jpegRemotes)+2)
-	for _, r := range jpegRemotes {
+	waitStart := time.Now()
+	cases := make([]reflect.SelectCase, 0, len(remotes)+2)
+	for _, r := range remotes {
 		cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(r.slots), Send: reflect.ValueOf(struct{}{})})
 	}
-	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(jpegLocalSlots), Send: reflect.ValueOf(struct{}{})})
+	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(local), Send: reflect.ValueOf(struct{}{})})
 	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())})
 	chosen, _, _ := reflect.Select(cases)
+	postTimingAdd("jpeg_wait", time.Since(waitStart))
 	switch {
-	case chosen < len(jpegRemotes):
-		return jpegRemotes[chosen].run(ctx, data)
-	case chosen == len(jpegRemotes):
-		defer func() { <-jpegLocalSlots }()
-		return checkJPEGLocal(data)
+	case chosen < len(remotes):
+		return remotes[chosen].run(ctx, data)
+	case chosen == len(remotes):
+		defer func() { <-local }()
+		return timedLocal(data)
 	default: // client gone; the result is not used
 		return checkJPEGLocal(data)
 	}
 }
 
+func timedLocal(data []byte) (w, h int, ok bool) {
+	t := time.Now()
+	w, h, ok = checkJPEGLocal(data)
+	postTimingAdd("jpeg_local", time.Since(t))
+	return w, h, ok
+}
+
 func (r *jpegRemote) run(ctx context.Context, data []byte) (w, h int, ok bool) {
+	t := time.Now()
 	w, h, ok, err := r.check(ctx, data)
 	<-r.slots
 	if err != nil {
 		jpegStats.remoteErr.Add(1)
-		return checkJPEGLocal(data)
+		postTimingAdd("jpeg_err_"+r.label, time.Since(t))
+		return timedLocal(data)
 	}
+	postTimingAdd("jpeg_rmt_"+r.label, time.Since(t))
 	jpegStats.remoteOK.Add(1)
 	return w, h, ok
 }

@@ -200,13 +200,15 @@ func (h *notificationHub) pollMem(m *memStore) error {
 			cancel()
 			if err != nil {
 				slog.Error("failed to load notification recipients", "error", err)
-				return err
+			} else {
+				for id, r := range pg {
+					regions[id] = r
+				}
+				h.deliverWith(targets, regions)
 			}
-			for id, r := range pg {
-				regions[id] = r
-			}
+		} else {
+			h.deliverWith(targets, regions)
 		}
-		h.deliverWith(targets, regions)
 	}
 	h.checkUsersMem(m)
 	return nil
@@ -230,15 +232,36 @@ func (h *notificationHub) checkUsersMem(m *memStore) {
 		}
 	}
 	h.mu.Unlock()
-	var closing []*notificationSubscriber
+	var closing, missing []*notificationSubscriber
 	m.mu.RLock()
 	for _, s := range subs {
 		u := m.d.users[s.sub.userID]
-		if u != nil && (u.Status != "active" || u.Region != s.region) {
+		if u == nil {
+			missing = append(missing, s.sub)
+		} else if u.Status != "active" || u.Region != s.region {
 			closing = append(closing, s.sub)
 		}
 	}
 	m.mu.RUnlock()
+	if len(missing) > 0 {
+		// メモリに居ない利用者だけ PG で確かめる (まれ)。
+		ids := make([]string, 0, len(missing))
+		for _, sub := range missing {
+			ids = append(ids, sub.userID)
+		}
+		ctx, cancel := context.WithTimeout(storePGReadCtx(context.Background()), 3*time.Second)
+		pg, err := activeUserRegions(ctx, h.reader(), ids)
+		cancel()
+		if err != nil {
+			slog.Error("notification user check failed", "error", err)
+		} else {
+			for _, sub := range missing {
+				if r, ok := pg[sub.userID]; !ok || r != sub.region {
+					closing = append(closing, sub)
+				}
+			}
+		}
+	}
 	if len(closing) == 0 {
 		return
 	}

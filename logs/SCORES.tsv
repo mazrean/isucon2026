@@ -5,3 +5,5 @@
 11:04	47f74f2	job=2433 state=4 pass=true スコア=20946 種別エラー数=map[]	統合: exp 量子化 + posting-window O(1) + export + 画像 push 複製
 11:06	47f74f2	job=2593 state=4 pass=true スコア=19645 種別エラー数=map[]	再現 + pprof (統合版)
 11:17	a41e963	job=3241 state=4 pass=true スコア=39703 種別エラー数=map[]	分散インメモリ MEM=1 FWD_GET=0 + jpegcheck
+11:21	d793c49	job=3469 state=4 pass=true スコア=38047 種別エラー数=map[]	再現 MEM=1 + GP プローブ
+11:25	c94ae6a	job=3724 state=4 pass=true スコア=38515 種別エラー数=map[]	JPEG 検証を asia2 へオフロード

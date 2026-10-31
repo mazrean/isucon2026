@@ -222,7 +222,7 @@ func TestLogReplDiff(t *testing.T) {
 		if ca != cb || na != nb {
 			mismatches++
 			key := strings.SplitN(path, "?", 2)[0]
-			if len(key) > 20 && strings.HasPrefix(key, "/api/posts/") {
+			if len(key) > 20+36 && strings.HasPrefix(key, "/api/posts/") {
 				key = "/api/posts/X" + key[len("/api/posts/")+36:]
 			}
 			if len(key) > 20 && strings.HasPrefix(key, "/api/users/") {

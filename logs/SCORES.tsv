@@ -63,3 +63,4 @@
 14:22	29928be	job=16951 state=4 pass=false スコア=0 種別エラー数=map[]	新既定のみ (16350 の構成 + ASIA_LOCALIMG=1 + asia1 ディスク off + PGCPU + HOTPART + KEEP_IDLE) の基準 1 本目
 14:37	79ec73a	job=18156 state=4 pass=true スコア=158983 種別エラー数=map[]	新既定 (PGCPU=0、KEEP_IDLE=0、OOM 対策) + POST_BATCH + FRIEND_BATCH (行ロック中の往復 0) + ASIA_LOCALIMG_FAST (eu/am が asia 画像を asia1 から直接) + IPBAN_ASYNC
 14:40	619f89b	job=18394 state=4 pass=true スコア=141355 種別エラー数=map[]	新既定 (POST/FRIEND_BATCH、LOCALIMG_FAST、IPBAN_ASYNC) + DROP_DUP_IDX=1 (重複インデックス 2 つを削除し、投稿 tx を fast-path 16 個以内に)。18156 の再現性も見る
+14:43	ad0d760	job=18619 state=4 pass=true スコア=165858 種別エラー数=map[]	新既定 (インデックス削除済み) で ASIA_LOCALIMG_FAST=0 (asia1 の送信上限 bw_out の仮説を切り分け)

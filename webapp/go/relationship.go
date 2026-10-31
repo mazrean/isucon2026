@@ -3,7 +3,6 @@ package isureal
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"net/http"
 	"time"
 
@@ -20,6 +19,8 @@ type FriendRequest struct {
 	UpdatedAt   time.Time `db:"updated_at"`
 }
 
+const friendRequestColumns = `id, requester_id, recipient_id, status, created_at, updated_at`
+
 func getFriendRequest(ctx context.Context, db sqlx.QueryerContext, id string) (FriendRequest, error) {
 	var request FriendRequest
 	err := sqlx.GetContext(ctx, db, &request, `SELECT id, requester_id, recipient_id, status, created_at, updated_at FROM friend_requests WHERE id=$1`, id)
@@ -34,15 +35,16 @@ func beginRelationshipTx(ctx context.Context, db *sqlx.DB, actor, target string)
 	if err != nil {
 		return nil, err
 	}
-	for _, id := range []string{min(actor, target), max(actor, target)} {
-		var lockedID string
-		if err := tx.GetContext(ctx, &lockedID, `SELECT id FROM users WHERE id=$1 AND status='active' FOR NO KEY UPDATE`, id); err != nil {
-			tx.Rollback()
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, NewAPIError(http.StatusNotFound, "relationship_not_found")
-			}
-			return nil, err
-		}
+	// 2 行を 1 往復でロックする。ロックは Sort の上の LockRows で行が出る順 (= id のバイト順) に取られるので、
+	// 従来の「min → max の順に 1 行ずつ」と同じ順序になる (COLLATE "C" = Go の min/max と同じ比較)。
+	var lockedIDs []string
+	if err := tx.SelectContext(ctx, &lockedIDs, `SELECT id FROM users WHERE id IN ($1, $2) AND status='active' ORDER BY id COLLATE "C" FOR NO KEY UPDATE`, actor, target); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	if len(lockedIDs) != 2 {
+		tx.Rollback()
+		return nil, NewAPIError(http.StatusNotFound, "relationship_not_found")
 	}
 	return tx, nil
 }

@@ -20,7 +20,15 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
-		posts, author, ver, fromMem := h.Mem.exportPostsIfOn(userID)
+		var (
+			posts   []Post
+			author  User
+			ver     uint64
+			fromMem bool
+		)
+		if h.Mem.wmOK(ctx) {
+			posts, author, ver, fromMem = h.Mem.exportPostsIfOn(userID)
+		}
 		exp := currentImageExp(time.Now())
 		if fromMem {
 			if body, ok := memExportCacheGet(userID, ver, exp); ok {

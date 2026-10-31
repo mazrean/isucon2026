@@ -122,6 +122,8 @@ type memStore struct {
 
 	useLease   bool         // peer のみ
 	leaseUntil atomic.Int64 // unix nano
+
+	w memWM // ISUREAL_MEM_WATERMARK (peer のみ使う)
 }
 
 // on は、このリクエストをメモリから返してよいか (フラグ ON かつロード完了、peer は lease 内)。

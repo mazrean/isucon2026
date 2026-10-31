@@ -14,7 +14,7 @@ import (
 
 // memListMemoriesOr はメモリが使えればメモリから、そうでなければ元の listMemories で返す。
 func memListMemoriesOr(h *HandlerContext, ctx context.Context, userID string, start, end time.Time, beforeAt *time.Time, beforeID string) (getMemoriesResponse, error) {
-	if h.Mem.on() {
+	if h.Mem.onCtx(ctx) {
 		if resp, ok, err := h.Mem.listMemories(userID, start, end, beforeAt, beforeID); ok {
 			return resp, err
 		}

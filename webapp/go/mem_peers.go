@@ -43,6 +43,8 @@ type memPushRequest struct {
 	SentAt int64 `json:"t"`
 	// probe: down 扱いの peer への送信。peer は反映するが lease は延ばさない (pump が lease の上界を把握するため)。
 	Probe bool `json:"p,omitempty"`
+	// watermark (ISUREAL_MEM_WATERMARK): Seq までのバッチに、この時刻より前に応答が返ったコミットがすべて含まれる。
+	WM int64 `json:"w,omitempty"`
 }
 
 // peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
@@ -101,6 +103,8 @@ type memPeer struct {
 	lastGrantAt time.Time
 	// この epoch で invalidate (not-ready 化) の成功を確認済み
 	invalidatedEpoch string
+	// dump 取得時に watermark で読みを待つと申告した (ISUREAL_MEM_WATERMARK)。この peer の ack は待たない。
+	wmMode bool
 }
 
 type memPeers struct {
@@ -114,6 +118,7 @@ type memPeers struct {
 	seq       int64
 	buf       []memBatch
 	peers     []*memPeer
+	wm        int64 // seq に対して有効な watermark (unix ns)
 }
 
 func newMemPeersFromEnv(p *memPump) *memPeers {
@@ -161,6 +166,9 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 	}
 	now := time.Now()
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
+	if last == ps.seq {
+		req.WM = ps.wm // ps.wm は ps.seq に対して有効
+	}
 	if !req.Probe {
 		peer.lastGrantAt = now
 	}
@@ -235,6 +243,9 @@ func (ps *memPeers) waitAcked() {
 		var wakeAt time.Time
 		ok := true
 		for _, peer := range ps.peers {
+			if memWatermark && peer.wmMode {
+				continue // peer の読みが watermark を待つ
+			}
 			if ps.epoch == epoch && peer.acked >= target {
 				continue
 			}
@@ -278,6 +289,7 @@ func (ps *memPeers) newEpochKeep(keep bool) {
 	}
 	ps.epoch = memNewEpoch()
 	ps.seq = 0
+	ps.wm = 0
 	ps.buf = nil
 	for _, peer := range ps.peers {
 		peer.pending = nil
@@ -391,6 +403,8 @@ type memDump struct {
 	Posts       []memPostRow          `json:"posts"`
 	Comments    []memCommentRow       `json:"comments"`
 	RealMojis   []memRealMojiRow      `json:"realmojis"`
+	WM          int64                 `json:"wm"`     // Seq に対して有効な watermark
+	WMMode      bool                  `json:"wmMode"` // pump が ack を待たずに返す (peer は watermark を待つ)
 }
 
 func (d *memData) dump(includeCold bool) *memDump {
@@ -502,12 +516,14 @@ func registerMemPumpRoutes(e *echo.Echo, p *memPump) {
 		p.peers.mu.Lock()
 		// peer が直前の epoch の最終連番まで同期していたなら、初期データ行は peer 手元のものを使わせる
 		keep := ce != "" && ce == p.peers.prevEpoch && cs == p.peers.prevSeq
-		epoch, seq := p.peers.epoch, p.peers.seq
+		epoch, seq, wm := p.peers.epoch, p.peers.seq, p.peers.wm
 		p.peers.mu.Unlock()
+		p.peers.markWMMode(c.Request().RemoteAddr, c.QueryParam("wm") == "1")
 		p.m.mu.RLock()
 		dump := p.m.d.dump(!keep)
 		p.m.mu.RUnlock()
 		dump.Epoch, dump.Seq = epoch, seq
+		dump.WM, dump.WMMode = wm, memWatermark
 		p.cycleMu.Unlock()
 		start := time.Now()
 		c.Response().Header().Set("X-Mem-Cold", map[bool]string{true: "keep", false: "full"}[keep])
@@ -586,6 +602,7 @@ func (r *memReceiver) invalidateKeep(keepCold bool) uint64 {
 	}
 	r.m.ready.Store(false)
 	r.epoch = ""
+	r.m.w.set(0)
 	r.gen++
 	g := r.gen
 	r.mu.Unlock()
@@ -632,7 +649,7 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.mu.Lock()
 	ce, cs := r.coldEpoch, r.coldSeq
 	r.mu.Unlock()
-	resp, cancel, err := memGet(r.pumpAddr, fmt.Sprintf("/internal/mem/dump?ce=%s&cs=%d", ce, cs), 180*time.Second)
+	resp, cancel, err := memGet(r.pumpAddr, fmt.Sprintf("/internal/mem/dump?ce=%s&cs=%d&wm=%s", ce, cs, map[bool]string{true: "1", false: "0"}[memWatermark]), 180*time.Second)
 	if err != nil {
 		return err
 	}
@@ -674,6 +691,8 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.mu.Unlock()
 	r.coldEpoch = ""
 	r.epoch, r.seq = dump.Epoch, dump.Seq
+	r.m.w.pumpWM.Store(memWatermark && dump.WMMode)
+	r.m.w.set(dump.WM)
 	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
 	r.m.ready.Store(true)
 	if r.farm != nil {
@@ -828,7 +847,11 @@ func registerMemPeerRoutes(e *echo.Echo, r *memReceiver) {
 			go r.invalidate()
 			return c.NoContent(http.StatusBadRequest)
 		}
-		return c.JSON(http.StatusOK, memPushResponse{OK: r.push(req)})
+		ok := r.push(req)
+		if ok {
+			r.wmAfterPush(req)
+		}
+		return c.JSON(http.StatusOK, memPushResponse{OK: ok})
 	})
 	e.POST("/internal/mem/invalidate", func(c *echo.Context) error {
 		if !memAuthOK(c) {

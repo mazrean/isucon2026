@@ -99,6 +99,9 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		h.Mem = m
 		memCurrentPeerStore = m
 		recv := newMemReceiver(m, newSigFarm(h.Config, m, h.DB))
+		if memWatermark {
+			e.Use(memReadWait(m))
+		}
 		registerMemPeerRoutes(e, recv)
 		registerMemSigRoute(e)
 	}
@@ -180,7 +183,11 @@ func (p *memPump) loop() {
 }
 
 func (p *memPump) ticker() {
-	t := time.NewTicker(200 * time.Millisecond)
+	every := 200 * time.Millisecond
+	if memWatermark && p.peers != nil {
+		every = memWMTick // watermark の鮮度 = サイクル周期
+	}
+	t := time.NewTicker(every)
 	defer t.Stop()
 	for range t.C {
 		p.barrier()
@@ -251,6 +258,8 @@ func fetchChanges(ctx context.Context, db *sqlx.DB, prev string) ([]memChange, s
 func (p *memPump) poll() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	// watermark: クエリを送る直前の時刻 (スナップショット取得より前)。mem_watermark.go 参照。
+	x := memNow().UnixNano()
 	changes, cur, err := fetchChanges(ctx, p.db, p.snap)
 	if err != nil {
 		return err
@@ -261,6 +270,9 @@ func (p *memPump) poll() error {
 	p.snap = cur
 	if p.peers != nil && len(changes) > 0 {
 		p.peers.publish(changes)
+	}
+	if memWatermark && p.peers != nil {
+		p.peers.setWM(x)
 	}
 	return nil
 }

@@ -39,6 +39,7 @@ func NewServer(config *Config) *echo.Echo {
 	e.Use(ActionLogMiddleware(config.LogLevel, os.Stdout))
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = APIErrorHandler
+	registerPrevalidate(e, config.Region)
 
 	db, err := sqlx.Open("pgx", config.DatabaseDSN())
 	if err != nil {

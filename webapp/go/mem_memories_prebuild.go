@@ -19,22 +19,29 @@ import (
 // in applyChange) drops a prebuilt one too.
 //
 // What is built:
-//   - after each (re)load: every user of this host's region present at load,
-//     all such months, when they are at most ISUREAL_MEMORIES_PREBUILD_INIT_USERS
-//     (default 100: europe 23 / america 29 users of the initial data; asia's
-//     ~4,950 users x 12 months would be ~600MB, too much for asia1).
-//   - on a Memories cache miss of a user present at load (the validators log in
-//     as initial-data users and cycle on the same user): that user's other months.
+//   - only right after each (re)load: the users of this host's region present
+//     at load, all such months. A region with more than
+//     ISUREAL_MEMORIES_PREBUILD_INIT_USERS (default 100; europe 23 / america 29
+//     initial users) gets only ISUREAL_MEMORIES_PREBUILD_MAX_USERS of them
+//     (default 0 = none; asia's ~4,950 users x 12 months is ~600MB).
+//   - ISUREAL_MEMORIES_PREBUILD_TOUCH=1 (default 0; job19256: queue 11k and
+//     asia1 stalled at GP): also a user's other months on that user's miss.
 //
 // Bounds: ISUREAL_MEMORIES_PREBUILD_MB (default 48) of built bytes per load
 // (the cache's own ISUREAL_MEMORIES_CACHE_MB still applies), a 16k-job queue
-// (full = drop), ISUREAL_MEMORIES_PREBUILD_PAR workers (default 3).
+// (full = drop), ISUREAL_MEMORIES_PREBUILD_PAR workers (default 2), jobs not
+// started within ISUREAL_MEMORIES_PREBUILD_SECS (default 30) of the load are
+// dropped, and workers pause while any posting window has started and not
+// ended. Always computed by this host's own DB path (never the cache origin).
 
 var (
 	memPrebuildOn        = os.Getenv("ISUREAL_MEMORIES_PREBUILD") == "1"
 	memPrebuildMaxBytes  = int64(envIntDefault("ISUREAL_MEMORIES_PREBUILD_MB", 48)) << 20
 	memPrebuildInitUsers = envIntDefault("ISUREAL_MEMORIES_PREBUILD_INIT_USERS", 100)
-	memPrebuildWorkers   = envIntDefault("ISUREAL_MEMORIES_PREBUILD_PAR", 3)
+	memPrebuildWorkers   = envIntDefault("ISUREAL_MEMORIES_PREBUILD_PAR", 2)
+	memPrebuildMaxUsers  = envIntDefault("ISUREAL_MEMORIES_PREBUILD_MAX_USERS", 0)
+	memPrebuildWindow    = time.Duration(envIntDefault("ISUREAL_MEMORIES_PREBUILD_SECS", 30)) * time.Second
+	memPrebuildTouchOn   = os.Getenv("ISUREAL_MEMORIES_PREBUILD_TOUCH") == "1"
 
 	memPrebuildJobs, memPrebuildPuts, memPrebuildSkip, memPrebuildDrop atomic.Int64 // 観測用
 
@@ -57,6 +64,7 @@ type memPrebuildState struct {
 	initial map[string]struct{} // users present at load
 	months  []time.Time         // month starts served by the DB path, newest first
 	done    map[string]struct{} // users already queued
+	until   time.Time           // jobs not started by then are dropped
 	bytes   atomic.Int64
 }
 
@@ -136,10 +144,16 @@ func memPrebuildLoaded(m *memStore) {
 		return
 	}
 	pb.inited, pb.initial, pb.months, pb.done = true, initial, months, map[string]struct{}{}
+	pb.until = time.Now().Add(memPrebuildWindow)
 	pb.mu.Unlock()
 	if len(local) > memPrebuildInitUsers {
-		slog.Info("mem: memories prebuild: init skipped", "region", region, "users", len(local), "months", len(months))
-		return
+		if len(local) > memPrebuildMaxUsers {
+			local = local[:memPrebuildMaxUsers]
+		}
+		if len(local) == 0 {
+			slog.Info("mem: memories prebuild: init skipped", "region", region, "months", len(months))
+			return
+		}
 	}
 	for _, id := range local {
 		d.memPrebuildUser(id)
@@ -181,7 +195,7 @@ func (d *memData) memPrebuildUser(userID string) {
 
 // memPrebuildTouch: a Memories cache miss of userID (serveMemories).
 func (m *memStore) memPrebuildTouch(userID string) {
-	if !memPrebuildOn || m == nil || memPrebuildCh == nil {
+	if !memPrebuildOn || !memPrebuildTouchOn || m == nil || memPrebuildCh == nil {
 		return
 	}
 	m.mu.RLock()
@@ -202,6 +216,19 @@ func memPrebuildOne(job memPrebuildJob) {
 		return
 	}
 	m := h.Mem
+	for {
+		if time.Now().After(job.d.pb.until) {
+			memPrebuildSkip.Add(1)
+			return
+		}
+		m.mu.RLock()
+		busy := m.d == job.d && job.d.windowStarted(time.Now())
+		m.mu.RUnlock()
+		if !busy {
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 	m.mu.RLock()
 	cur, on := m.d, m.on()
 	m.mu.RUnlock()
@@ -242,4 +269,14 @@ func memPrebuildStatsLoop() {
 		last = j + p
 		slog.Info("mem: memories prebuild", "jobs", j, "puts", p, "skip", memPrebuildSkip.Load(), "drop", memPrebuildDrop.Load(), "queue", len(memPrebuildCh), "originDeadline", memOriginDeadlineHits.Load())
 	}
+}
+
+// windowStarted: some posting window has started and not ended (call with m.mu held).
+func (d *memData) windowStarted(now time.Time) bool {
+	for _, w := range d.open {
+		if !w.StartsAt.After(now) {
+			return true
+		}
+	}
+	return false
 }

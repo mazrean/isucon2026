@@ -74,3 +74,8 @@ END: 2026-10-31 18:00 JST
 
 ## 運用方針 (ユーザー指示 10:45)
 - 環境ロックが詰まるので、スモークテストや実機での個別確認はしない。ローカルで確認できるものはローカルで (build/vet/test)。確認しにくいものは main に取り込み、公式ベンチでまとめて検証する。ベンチは積極的に回してよい (キューは空いている)。
+
+## インフラ
+- scripts/host-tune.sh (冪等, env.lock 取得) で 4 台に適用済み: 不要デーモン停止 (unattended-upgrades, ModemManager, multipathd, udisks2, apt/fwupd/motd/man-db 等 timer)、sysctl `/etc/sysctl.d/99-zz-isucon-tune.conf` (somaxconn 65535, tw_reuse, slow_start_after_idle=0, tcp_rmem 既定 262144)、`isucon-route-tune.service` (192.168.0.0/16 を initcwnd 32 / initrwnd 64)、isureal-go drop-in (LimitNOFILE, GOGC=200, GOMEMLIMIT=1200MiB)、nginx drop-in (LimitNOFILE=65536)。
+- 計測 (europe1→asia1, ルーター経由): RTT 100.8ms、新規接続 HTTP 0.203s / keepalive 再利用 0.101s。80–100KB 応答は初期受信窓 64KB で +1RTT (0.304s) → rmem 既定 + initrwnd で 0.205s。30MB で再送 0、帯域上限は観測されず → BBR 不採用。
+- ルーター↔アプリは 0.2–0.5ms (遅延はホスト間のみ)。ip_local_port_range は公式 90-isucon.conf のまま。

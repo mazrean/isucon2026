@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -135,49 +134,16 @@ func (m *memStore) feed(c *echo.Context, input getFeedRequest) (bool, error) {
 	return true, c.JSON(http.StatusOK, resp)
 }
 
-// ISUREAL_MEM_FEED_UNLOCKED=1 (既定 0): buildFeed は RLock の中では候補の選別・並べ替えと、
-// 応答に要る値 (Post と作者の User) の値コピーだけを行い、newPostResponse (画像署名を含む) と JSON はロックの外で作る。
-// 値コピーはロック中に取るので、全項目が同じ版 (ロックを取った時点) の内容になる (ポインタは持ち出さない)。
-var memFeedUnlocked = os.Getenv("ISUREAL_MEM_FEED_UNLOCKED") == "1"
-
-type memFeedRaw struct {
-	post  Post
-	user  User
-	score *int64
-}
-
 func (m *memStore) buildFeed(viewerID string, input getFeedRequest) (getFeedResponse, bool) {
-	if !memFeedUnlocked {
-		resp, _, ok := m.buildFeedLocked(viewerID, input, false)
-		return resp, ok
-	}
-	resp, raws, ok := m.buildFeedLocked(viewerID, input, true)
-	if !ok || raws == nil {
-		return resp, ok
-	}
-	items := make([]feedItemResponse, len(raws))
-	for i, r := range raws {
-		items[i] = feedItemResponse{createPostResponse: newPostResponse(r.post, r.user), Score: r.score}
-	}
-	resp.Items = items
-	return resp, true
-}
-
-// buildFeedLocked: raw なら Items の代わりに値コピー (raws) を返す (HasMore は resp に入る)。
-func (m *memStore) buildFeedLocked(viewerID string, input getFeedRequest, raw bool) (getFeedResponse, []memFeedRaw, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	var raws []memFeedRaw
-	if raw {
-		raws = make([]memFeedRaw, 0)
-	}
 	if !m.on() {
-		return getFeedResponse{}, nil, false
+		return getFeedResponse{}, false
 	}
 	d := m.d
 	viewer, ok := d.viewer(viewerID)
 	if !ok {
-		return getFeedResponse{Items: []feedItemResponse{}}, nil, true
+		return getFeedResponse{Items: []feedItemResponse{}}, true
 	}
 	vu := d.users[viewerID]
 	ranked := input.Feed == "friends-of-friends"
@@ -244,12 +210,8 @@ func (m *memStore) buildFeedLocked(viewerID string, input getFeedRequest, raw bo
 			if !matches(p) {
 				continue
 			}
-			if raw {
-				raws = append(raws, memFeedRaw{post: p.full(), user: p.author.User})
-			} else {
-				items = append(items, feedItemResponse{createPostResponse: newPostResponse(p.full(), p.author.User)})
-			}
-			if len(items)+len(raws) == 51 {
+			items = append(items, feedItemResponse{createPostResponse: newPostResponse(p.full(), p.author.User)})
+			if len(items) == 51 {
 				break
 			}
 		}
@@ -301,25 +263,17 @@ func (m *memStore) buildFeedLocked(viewerID string, input getFeedRequest, raw bo
 				continue
 			}
 			s := score
-			if raw {
-				raws = append(raws, memFeedRaw{post: p.full(), user: p.author.User, score: &s})
-			} else {
-				items = append(items, feedItemResponse{createPostResponse: newPostResponse(p.full(), p.author.User), Score: &s})
-			}
-			if len(items)+len(raws) == 51 {
+			items = append(items, feedItemResponse{createPostResponse: newPostResponse(p.full(), p.author.User), Score: &s})
+			if len(items) == 51 {
 				break
 			}
 		}
 	}
-	hasMore := len(items)+len(raws) > 50
+	hasMore := len(items) > 50
 	if hasMore {
-		if raw {
-			raws = raws[:50]
-		} else {
-			items = items[:50]
-		}
+		items = items[:50]
 	}
-	return getFeedResponse{Items: items, HasMore: hasMore}, raws, true
+	return getFeedResponse{Items: items, HasMore: hasMore}, true
 }
 
 // ---- posts ----

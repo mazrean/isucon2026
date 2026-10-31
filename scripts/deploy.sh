@@ -39,7 +39,6 @@ MEM_WM_HB=${MEM_WM_HB:-0}   # 1 (needs MEM_WM=1) = shorter wm waits: 10ms poll, 
 MEM_SYNC_VISIBLE=${MEM_SYNC_VISIBLE:-0}   # 1 (needs MEM_WM=1, same on all hosts) = asia1 waits for every peer ack before 2xx; resident GETs on peers skip the wm wait (webapp/go/mem_sync_visible.go)
 MEM_ACK_OWN=${MEM_ACK_OWN:-0}   # 1 = STORE writes wait only for the ack of their own (epoch, seq), in parallel with the PG flush (webapp/go/mem_peers.go waitAckedFor)
 MEM_SYNC_SPLIT=${MEM_SYNC_SPLIT:-0}   # 1 (needs MEM_SYNC_VISIBLE=1) = STORE login without old sessions to invalidate skips peer acks; unknown tokens on eu/am wait for wm (webapp/go/mem_sync_visible.go)
-MEM_FEED_UNLOCKED=${MEM_FEED_UNLOCKED:-0}   # 1 = buildFeed copies values under RLock and signs/builds responses outside the lock (webapp/go/mem_read.go)
 MEM_WM_EARLY=${MEM_WM_EARLY:-0}   # 1 (needs MEM_WM=1) = asia1 pushes a poll's batch + wm to eu/am before applying it locally (cuts asia1 apply time from the eu/am wm wait). Separate knobs, empty/0 = built-in default: MEM_WM_TICK_MS (idle poll period, 20; 10 with HB), MEM_PUSH_INFLIGHT (data pushes per wm peer, 4; 16 with HB), MEM_WM_INFLIGHT (wm-only posts per peer, 8; 16 with HB), MEM_IDLE_CONNS (keep-alive conns per peer, 16; 64 with HB: keep >= push + wm + 2)
 MEM_APPLY_CHUNK=${MEM_APPLY_CHUNK:-200}   # N>0 (all hosts, same value) = asia1 tags changes with their xid; eu/am apply a push batch whole-tx-at-a-time, releasing the memory write lock every ~N changes (never inside a tx; wm/seq advance only after the whole batch) (webapp/go/mem_apply_chunk.go)
 ASIA_POST_CAP=${ASIA_POST_CAP:-0}   # N>0 (asia1 only) = during GP at most N asia-local POST /api/posts run at once (forwarded eu/am posts never wait), so the pump's push/poll goroutines are not queued behind them on 2 CPUs (webapp/go/gp_postcap.go). ASIA_POST_CAP_WAIT_MS (3000, then run uncapped), ASIA_POST_CAP_LAG_MS (0 = always in GP; >0 = only while the last push RTT exceeds it)
@@ -140,7 +139,6 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_SYNC_VISIBLE '"$MEM_SYNC_VISIBLE"'
       setenv ISUREAL_MEM_ACK_OWN '"$MEM_ACK_OWN"'
       setenv ISUREAL_MEM_SYNC_SPLIT '"$MEM_SYNC_SPLIT"'
-      setenv ISUREAL_MEM_FEED_UNLOCKED '"$MEM_FEED_UNLOCKED"'
       setenv ISUREAL_MEM_WM_EARLY '"$MEM_WM_EARLY"'
       setenv ISUREAL_MEM_APPLY_CHUNK '"$MEM_APPLY_CHUNK"'
       if [ "'"$h"'" = asia2 ]; then setenv ISUREAL_COLD_ORIGIN ''; else setenv ISUREAL_COLD_ORIGIN '"${COLD_ORIGIN:-}"'; fi   # e.g. 192.168.4.10:8080: PG fallbacks of public GETs go to asia2 (cold_origin.go)
@@ -226,11 +224,6 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_FWD_PRIORITY_POST_SLOTS '"${FWD_POST_SLOTS:-0}"'   # N>0: asia-local POST /api/posts use their own N slots, so login/friend-requests do not wait behind slow posts (priority.go)
       setenv ISUREAL_FWD_PRIORITY_YIELD '"${FWD_YIELD:-0}"'; setenv ISUREAL_STORE_PRIO '"${STORE_PRIO:-0}"'   # FWD_YIELD=N: give the slot back while waiting on fsync/PG/ack, at most N parked; STORE_PRIO=1: store applier takes non-post writes first (prio_yield.go)
       setenv ISUREAL_ADMIT_MAX_REQ '"${ADMIT_MAX_REQ:-0}"'; setenv ISUREAL_ADMIT_MAX_IMG_MB '"${ADMIT_MAX_IMG_MB:-0}"'; setenv ISUREAL_ADMIT_POST_MIN '"${ADMIT_POST_MIN:-0}"'; setenv ISUREAL_ADMIT_MAX_WAIT_MS '"${ADMIT_MAX_WAIT_MS:-3000}"'   # total admission cap incl. 2s-timeout passes and FWD_YIELD parked; POST_MIN reserves K of it for posts (admit_gate.go)
-      setenv ISUREAL_STORE_OWN_SEQ '"${STORE_OWN_SEQ:-0}"'   # 1: each store write waits only its own image lanes (non-image lanes still wait the whole batch), so login does not wait the image flush of a batched post
-      setenv ISUREAL_STORE_BARRIER_LAZY '"${STORE_BARRIER_LAZY:-0}"'   # 1: PG barrier timeout re-waits instead of reading stale PG (store_pgbarrier.go)
-      setenv ISUREAL_NOTIFY_MEM '"${NOTIFY_MEM:-0}"'   # 1: notification hub polls memStore instead of PG (notification_hub.go)
-      setenv ISUREAL_IMG_MEM_ONLY '"${IMG_MEM_ONLY:-0}"'   # 1: image validity answered from memStore when possible (image_api.go)
-      setenv ISUREAL_EXPORT_MEM '"${EXPORT_MEM:-0}"'   # 1: /api/me/export from memStore when the user has no pre-hot posts (export_mem.go)
       setenv ISUREAL_POST_TIMING '"${POST_TIMING:-0}"'   # 1: 10s slog "post timing" (jpeg / localimg(_sync) / apply / pgflush / ack)
       setenv ISUREAL_ASIA_LOCALIMG_WB '"${ASIA_LOCALIMG_WB:-0}"'   # 1: start writeback at write so the group syncfs is shorter (localimg_groupsync.go)
       setenv ISUREAL_ASIA_LOCALIMG_FSYNC '"${ASIA_LOCALIMG_FSYNC:-0}"'   # 1: per-writer parallel fdatasync of data+meta + parent dir fsync instead of the whole-fs syncfs; gp: only while the asia1 window is a GP (gpWindowDeadline), group syncfs otherwise (localimg_fsync.go)

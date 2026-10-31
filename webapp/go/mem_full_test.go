@@ -212,19 +212,16 @@ func TestMemFullCold(t *testing.T) {
 	probeMu.Unlock()
 	t.Logf("cold paths=%d mismatches=%d paths-with-PG=%d", len(paths), mismatch, pgPaths)
 
-	// 待ちの意味: 届かない seq は memColdMaxWait (既定 300ms) 待って 503 (送り手が自分の経路で答える)。store の系列 (push の SS) も同じ。
+	// 待ちの意味: 届かない seq は 2000ms 待って PG で答える。store の系列 (push の SS) も同じ。
 	p := "/api/posts/" + postIDs[0]
 	ca, ba, _ := get(sa.URL, p, nil)
 	for _, space := range []string{"pump", "store"} {
 		before := probeN.Load()
 		cc, bc, el := get(sc.URL, p, hop(space, 1<<40))
 		n := probeN.Load() - before
-		_ = ca
-		_ = ba
-		_ = bc
-		t.Logf("unreachable %s seq: %v, PG stmts %d, status %d", space, el, n, cc)
-		if el < memColdMaxWait || el > memColdMaxWait+500*time.Millisecond || n != 0 || cc != http.StatusServiceUnavailable {
-			t.Errorf("unreachable %s seq: want ~%v wait then 503", space, memColdMaxWait)
+		t.Logf("unreachable %s seq: %v, PG stmts %d, same=%v", space, el, n, ca == cc && ba == bc)
+		if el < memColdMaxWait || el > memColdMaxWait+time.Second || n == 0 || ca != cc || ba != bc {
+			t.Errorf("unreachable %s seq: want ~2s wait then PG answer", space)
 		}
 	}
 	before := probeN.Load()

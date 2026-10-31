@@ -112,3 +112,4 @@
 17:07	24a9d19	job=32055 state=4 pass=true スコア=185111 種別エラー数=map[]	A の既定 + STORE_OWN_SEQ=1 + MEM_FEED_UNLOCKED=1 (要求ごとの書き戻し待ち、フィードの組み立てをロック外)
 17:09	092add1	job=32381 state=4 pass=false スコア=0 種別エラー数=map[]	A の既定 + MEM_FULL v3 (9b527ac: pgx 直読みでロード 4.4s) COLD_ORIGIN=asia2 CACHE_ORIGIN 空
 17:13	27ba62c	job=32602 state=4 pass=true スコア=159585 種別エラー数=map[]	A の既定 + STORE_WAL + BARRIER_LAZY + NOTIFY_MEM + IMG_MEM_ONLY (WAL 正本化の部品)
+17:15	ecbf2c1	job=32937 state=4 pass=false スコア=0 種別エラー数=map[]	A の既定 + MEM_FULL v4 (d8b8d15: cold の上限と落とし) COLD_ORIGIN=asia2、MEMORIES_CACHE_ORIGIN は既定 (asia2) のまま、EXPORT_MEM=1

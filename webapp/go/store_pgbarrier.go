@@ -38,10 +38,6 @@ var (
 	storePGRolePeer     atomic.Bool // この process が peer (eu/am) か
 	storePGPeer         = newPeerPGState()
 	storePGBarrierStats struct{ waits, timeouts atomic.Int64 }
-	// ISUREAL_STORE_BARRIER_LAZY=1 (既定 0 = 従来どおり): 上限を超えても待ちをやめて PG を読まない (RYW を崩さない)。
-	// 上限ごとに数えて待ち直し、要求の ctx が切れたら取り消し済みの ctx を返して文を失敗させる (古い PG を返さない)。
-	// 待つ場所は従来どおり最初の PG の文の直前だけ (メモリで答える要求は待たない)。
-	storeBarrierLazy = os.Getenv("ISUREAL_STORE_BARRIER_LAZY") == "1"
 )
 
 type pgBarrierKey struct{}
@@ -84,21 +80,11 @@ func storePGReadMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 // pgBarrierWait: QueryTracer から呼ぶ。目標があれば、PG がそこまで反映するのを待つ (要求ごとに 1 回)。
-// 返り値は文に使う ctx (LAZY で待てなかったときは取り消し済み)。
-func pgBarrierWait(ctx context.Context) context.Context {
+func pgBarrierWait(ctx context.Context) {
 	t, ok := ctx.Value(pgBarrierKey{}).(*pgBarrierTarget)
 	if !ok || t.done.Load() {
-		return ctx
+		return
 	}
-	if storeBarrierLazy {
-		return pgBarrierWaitLazy(ctx, t)
-	}
-	pgBarrierWaitOnce(ctx, t)
-	return ctx
-}
-
-// pgBarrierWaitOnce: 従来の挙動 (上限を超えたら待たずに読む)。
-func pgBarrierWaitOnce(ctx context.Context, t *pgBarrierTarget) {
 	wctx, cancel := context.WithTimeout(ctx, storeWALBarrierMax)
 	defer cancel()
 	storePGBarrierStats.waits.Add(1)
@@ -113,32 +99,6 @@ func pgBarrierWaitOnce(ctx context.Context, t *pgBarrierTarget) {
 		return
 	}
 	t.done.Store(true)
-}
-
-// pgBarrierWaitLazy: 上限ごとに待ち直す。要求の ctx が切れたら、取り消し済みの ctx を返す (PG を読ませない)。
-func pgBarrierWaitLazy(ctx context.Context, t *pgBarrierTarget) context.Context {
-	storePGBarrierStats.waits.Add(1)
-	for {
-		if ctx.Err() != nil {
-			return ctx
-		}
-		wctx, cancel := context.WithTimeout(ctx, storeWALBarrierMax)
-		var err error
-		if t.peer {
-			_, err = storePGPeer.wait(wctx, t.at+int64(memWMEps))
-		} else if fn := storePGBarrierFn; fn != nil {
-			err = fn(wctx, t.seq)
-		}
-		cancel()
-		if err == nil {
-			t.done.Store(true)
-			return ctx
-		}
-		storePGBarrierStats.timeouts.Add(1)
-		if ctx.Err() != nil {
-			return ctx // 要求の ctx は切れている: そのまま返せば文は失敗する
-		}
-	}
 }
 
 // ---- asia1 → peer の標本 ----

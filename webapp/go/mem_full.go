@@ -2,9 +2,7 @@ package isureal
 
 import (
 	"context"
-
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"net/http"
 	"os"
@@ -40,15 +38,10 @@ var memFull = os.Getenv("ISUREAL_MEM_FULL") == "1"
 // memFullLoaders: pump / logrepl の loader を全期間にするか (テストで peer だけ全期間にするときに false)
 var memFullLoaders = memFull
 
-// memColdMaxWait: 受け手が seq を待つ上限 (超えたら 503 = 送り手が自分の経路へ)。coldForwardMax: 送り手の転送全体の上限。
-var (
-	memColdMaxWait = time.Duration(envIntOrDefault("ISUREAL_COLD_WAIT_MS", 300)) * time.Millisecond
-	coldForwardMax = time.Duration(envIntOrDefault("ISUREAL_COLD_FORWARD_MAX_MS", 1000)) * time.Millisecond
-)
+const memColdMaxWait = 2000 * time.Millisecond
 
 var (
 	memFullDB    *sqlx.DB // peer の setupMem が設定 (ホット外のロード元 = 自分の PG)
-	memFullDSN   string
 	memColdStats struct{ served, timeout, notOn, forceDB atomic.Int64 }
 )
 
@@ -151,8 +144,8 @@ func memColdWaitMiddleware(r *memReceiver) echo.MiddlewareFunc {
 			} else {
 				memColdStats.notOn.Add(1)
 			}
-			// 待ちの上限を超えた: 自分の PG で答えず断る (送り手は 5xx で自分の経路へ。asia2 の PG に重い読みを足さない)
-			return c.NoContent(http.StatusServiceUnavailable)
+			c.SetRequest(req.WithContext(context.WithValue(req.Context(), memForceDBKey{}, true)))
+			return next(c)
 		}
 	}
 }
@@ -194,23 +187,14 @@ func memLoadCold(ctx context.Context, d *memData) error {
 	start := time.Now()
 	var gc0 runtime.MemStats
 	runtime.ReadMemStats(&gc0)
-	var tSQL, tScan, tApply time.Duration
-	// pgx を直接使う (database/sql の行の変換は 1 行 ~7µs で、全履歴 2.2M 行の律速だった)。専用の接続で jit も切る。
-	conn, err := pgx.Connect(ctx, memFullDSN)
-	if err != nil {
-		return err
-	}
-	defer conn.Close(context.Background())
-	if _, err := conn.Exec(ctx, "SET jit = off"); err != nil {
-		return err
-	}
-	beforeT := time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+	before := "infinity"
 	if d.hotKnown {
-		beforeT = d.hotFrom
+		before = d.hotFrom.Format(time.DateOnly)
 	}
-	stream := func(q string, scan func(pgx.Rows) error) (int, error) {
+	var tSQL, tScan, tApply time.Duration
+	stream := func(q string, scan func(*sqlx.Rows) error) (int, error) {
 		t0 := time.Now()
-		rows, err := conn.Query(ctx, q, beforeT)
+		rows, err := memFullDB.QueryxContext(ctx, q, before)
 		if err != nil {
 			return 0, err
 		}
@@ -238,7 +222,7 @@ func memLoadCold(ctx context.Context, d *memData) error {
    SELECT p.id, p.author_id, p.posting_window_id, p.image_id, p.caption, p.visibility,
           p.location_kind, p.latitude, p.longitude, p.locality, p.posted_at, p.deleted_at
    FROM posts p JOIN posting_windows w ON w.id = p.posting_window_id
-   WHERE w.local_date < $1::date`, func(rows pgx.Rows) error {
+   WHERE w.local_date < $1::date`, func(rows *sqlx.Rows) error {
 		var r memPostRow
 		t0 := time.Now()
 		if err := rows.Scan(&r.ID, &r.AuthorID, &r.PostingWindowID, &r.ImageID, &r.Caption, &r.Visibility, &r.LocationKind, &r.Latitude, &r.Longitude, &r.Locality, &r.PostedAt, &r.DeletedAt); err != nil {
@@ -274,7 +258,7 @@ func memLoadCold(ctx context.Context, d *memData) error {
 	nComments, err := stream(`
    SELECT c.id, c.post_id, c.author_id, c.body, c.created_at, c.deleted_at
    FROM comments c JOIN posts p ON p.id = c.post_id JOIN posting_windows w ON w.id = p.posting_window_id
-   WHERE w.local_date < $1::date AND c.deleted_at IS NULL`, func(rows pgx.Rows) error {
+   WHERE w.local_date < $1::date AND c.deleted_at IS NULL`, func(rows *sqlx.Rows) error {
 		var r memCommentRow
 		t0 := time.Now()
 		if err := rows.Scan(&r.ID, &r.PostID, &r.AuthorID, &r.Body, &r.CreatedAt, &r.DeletedAt); err != nil {
@@ -298,7 +282,7 @@ func memLoadCold(ctx context.Context, d *memData) error {
 	nRealMojis, err := stream(`
    SELECT r.id, r.post_id, r.reactor_id, r.image_id, r.reaction_type, r.created_at, r.replaced_at, r.deleted_at
    FROM realmojis r JOIN posts p ON p.id = r.post_id JOIN posting_windows w ON w.id = p.posting_window_id
-   WHERE w.local_date < $1::date AND r.replaced_at IS NULL AND r.deleted_at IS NULL`, func(rows pgx.Rows) error {
+   WHERE w.local_date < $1::date AND r.replaced_at IS NULL AND r.deleted_at IS NULL`, func(rows *sqlx.Rows) error {
 		var r memRealMojiRow
 		t0 := time.Now()
 		if err := rows.Scan(&r.ID, &r.PostID, &r.ReactorID, &r.ImageID, &r.ReactionType, &r.CreatedAt, &r.ReplacedAt, &r.DeletedAt); err != nil {

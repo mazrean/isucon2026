@@ -73,7 +73,7 @@ func (t *dbTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.Tr
 		return ctx // ISUREAL_COLD_ORIGIN: この要求は asia2 へ転送する (ctx は取り消し済み。cold_origin.go)
 	}
 	if storeWALOn && t.pool != "store" {
-		ctx = pgBarrierWait(ctx) // ISUREAL_STORE_WAL: 到着時刻までの書き込みが PG に入るまで待つ (store_pgbarrier.go)
+		pgBarrierWait(ctx) // ISUREAL_STORE_WAL: 到着時刻までの書き込みが PG に入るまで待つ (store_pgbarrier.go)
 	}
 	if dbTraceObserve != nil {
 		dbTraceObserve(ctx, data.SQL)

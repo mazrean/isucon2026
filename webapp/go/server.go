@@ -107,7 +107,6 @@ func NewServer(config *Config) *echo.Echo {
 		storeWALRecover(traceDSN(config.DatabaseDSN(), "storewal")) // pump のロード前に WAL の未適用分を PG へ
 	}
 	setupMem(handlerContext, e)
-	handlerContext.Notifications.setMem(handlerContext.Mem) // ISUREAL_NOTIFY_MEM
 	memPrebuildSetup(handlerContext)
 	registerLocalImg(e, handlerContext)
 	setupStore(handlerContext)

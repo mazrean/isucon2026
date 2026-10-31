@@ -222,37 +222,3 @@ func TestPeerPGStateWaitAndRestart(t *testing.T) {
 		t.Fatal("stale PA from before the restart satisfied the barrier")
 	}
 }
-
-// LAZY: 上限を超えても待ちをやめず、PG が追いついたら通す。要求の ctx が切れたら取り消し済みの ctx を返す。
-func TestStorePGBarrierLazyTimeout(t *testing.T) {
-	oldLazy, oldMax, oldFn := storeBarrierLazy, storeWALBarrierMax, storePGBarrierFn
-	t.Cleanup(func() { storeBarrierLazy, storeWALBarrierMax, storePGBarrierFn = oldLazy, oldMax, oldFn })
-	storeBarrierLazy, storeWALBarrierMax = true, 5*time.Millisecond
-	var applied atomic.Int64
-	storePGBarrierFn = func(ctx context.Context, seq int64) error {
-		for applied.Load() < seq {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(time.Millisecond):
-			}
-		}
-		return nil
-	}
-	tg := &pgBarrierTarget{seq: 1}
-	ctx := context.WithValue(context.Background(), pgBarrierKey{}, tg)
-	go func() { time.Sleep(30 * time.Millisecond); applied.Store(1) }()
-	if got := pgBarrierWait(ctx); got.Err() != nil || !tg.done.Load() {
-		t.Fatalf("lazy: want pass after catch-up, err=%v done=%v", got.Err(), tg.done.Load())
-	}
-	if applied.Load() < 1 {
-		t.Fatal("lazy: passed before PG applied")
-	}
-	tg2 := &pgBarrierTarget{seq: 2}
-	rctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
-	defer cancel()
-	ctx2 := context.WithValue(rctx, pgBarrierKey{}, tg2)
-	if got := pgBarrierWait(ctx2); got.Err() == nil || tg2.done.Load() {
-		t.Fatalf("lazy: want cancelled ctx, err=%v done=%v", got.Err(), tg2.done.Load())
-	}
-}

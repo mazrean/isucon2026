@@ -94,12 +94,6 @@ type mdUser struct {
 func TestMemDiff(t *testing.T) {
 	config := ConfigFromEnv()
 	memoriesMem = true
-	// export も mem 経路 (export_mem.go) で答え、DB 経路 (sa) と比べる
-	defer func(o bool) { exportMem = o }(exportMem)
-	exportMem = os.Getenv("MD_EXPORT_MEM") != "0"
-	defer func() {
-		t.Logf("export from mem: %d served, %d fell (cold)", exportMemServed.Load(), exportMemFell.Load())
-	}()
 	// MD_RESP_CACHE=1: Memories/export go through mem_respcache.go instead of the mem path
 	respCache := os.Getenv("MD_RESP_CACHE") == "1"
 	// MD_HOT_EXTRA_DAYS=N: ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go); past months inside the extended range come from memory
@@ -306,7 +300,7 @@ func TestMemDiff(t *testing.T) {
 				"/api/memories/2026-11-01", "/api/memories/2026-11-02", "/api/memories/2026-11-03"} {
 				compare(step, u, p)
 			}
-			if respCache || exportMem {
+			if respCache {
 				compare(step, u, "/api/me/export")
 			}
 			for i := 0; i < 3; i++ {

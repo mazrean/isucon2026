@@ -383,10 +383,6 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 	errs := make([]error, len(batch))
 	work := make([]bool, len(batch))
 	noAck := make([]bool, len(batch))
-	var ownImg [][]bool // STORE_OWN_SEQ: 要求ごとに、自分の ops がある画像レーン
-	if storeOwnSeq {
-		ownImg = make([][]bool, len(batch))
-	}
 	var changes []memChange
 	var ops []storeOp
 	partial := false
@@ -410,16 +406,6 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 		if len(t.changes) > 0 || len(t.ops) > 0 {
 			work[i] = true
 			noAck[i] = t.noAck
-			if ownImg != nil {
-				for _, op := range t.ops {
-					if isImageLane(op.Lane) {
-						if ownImg[i] == nil {
-							ownImg[i] = make([]bool, len(e.lanes))
-						}
-						ownImg[i][op.Lane] = true
-					}
-				}
-			}
 			changes = append(changes, t.changes...)
 			ops = append(ops, t.ops...)
 		}
@@ -461,9 +447,6 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 			res := storeRes{err: errs[i]}
 			if work[i] {
 				res.seqs = seqs
-				if ownImg != nil {
-					res.seqs = storeOwnSeqs(seqs, ownImg[i], len(e.lanes))
-				}
 				res.ack = ack
 				res.ack.skip = noAck[i]
 			}
@@ -509,27 +492,6 @@ func (e *storeEngine) enqueue(ops []storeOp) storeSeqs {
 	storeSeqNow.Store(e.gseq)
 	e.trackPG(e.gseq, seqs)
 	return seqs
-}
-
-// ISUREAL_STORE_OWN_SEQ=1 (既定 0): バッチの各要求は、バッチ全体ではなく自分の画像レーンだけを待つ。
-// 画像レーンの行 (image_objects) はその投稿だけのもので、ほかの要求はそれに依存しない。
-// 画像以外のレーン (users・relationships・posts のメタデータ、表ごとのレーン) は今までどおりバッチ全体を待つので、
-// 同じ user・関係・投稿に触る要求どうしの依存 (後の要求が先の要求の結果を読む) は保たれる。
-// login と投稿が同じバッチに入っても、login は投稿の画像の書き戻しを待たない。
-var storeOwnSeq = os.Getenv("ISUREAL_STORE_OWN_SEQ") == "1"
-
-func storeOwnSeqs(seqs storeSeqs, own []bool, lanes int) storeSeqs {
-	if len(seqs) > lanes { // WAL の失敗の印: 全レーンを待つ
-		return seqs
-	}
-	out := make(storeSeqs, len(seqs))
-	for l, seq := range seqs {
-		if isImageLane(l) && (own == nil || !own[l]) {
-			continue
-		}
-		out[l] = seq
-	}
-	return out
 }
 
 func (e *storeEngine) waitFlushed(seqs storeSeqs) {

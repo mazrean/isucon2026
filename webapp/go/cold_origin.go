@@ -160,9 +160,7 @@ func (p *peerPGState) first(ctx context.Context, t int64) (int64, bool) {
 // coldForward: asia2 へ転送して応答を書く。false なら呼び出し側がローカルで走らせ直す。
 func coldForward(c *echo.Context, seq int64, space string) bool {
 	in := c.Request()
-	fctx, fcancel := context.WithTimeout(in.Context(), coldForwardMax) // 上限を超えたら自分の経路で走らせ直す
-	defer fcancel()
-	req, err := http.NewRequestWithContext(fctx, in.Method, "http://"+coldOrigin+in.URL.RequestURI(), nil)
+	req, err := http.NewRequestWithContext(in.Context(), in.Method, "http://"+coldOrigin+in.URL.RequestURI(), nil)
 	if err != nil {
 		return false
 	}
@@ -216,10 +214,6 @@ func coldMiddleware(peer bool) echo.MiddlewareFunc {
 		return func(c *echo.Context) error {
 			in := c.Request()
 			if !coldTarget(in) || forwardSecret == "" {
-				return next(c)
-			}
-			if !coldOriginGate() {
-				// 冷たい読みのノードが未準備 / 遅れている: 取り消し付きの試し走りも二度走りもせず、COLD_ORIGIN 無しと同じ経路 (mem_full.go)
 				return next(c)
 			}
 			st := coldArrival(peer)

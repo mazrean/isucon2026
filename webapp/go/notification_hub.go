@@ -3,9 +3,7 @@ package isureal
 import (
 	"context"
 	"log/slog"
-	"os"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,10 +11,6 @@ import (
 )
 
 const notificationPollInterval = 100 * time.Millisecond
-
-// ISUREAL_NOTIFY_MEM=1: 期間と利用者をメモリ (memStore) から読む。PG を読まないので STORE_WAL の barrier が掛からない。
-// メモリが使えない (未ロード・lease 切れ) 間と、メモリに居ない利用者は従来どおり PG を読む。
-var notifyMemOn = os.Getenv("ISUREAL_NOTIFY_MEM") == "1"
 
 // notificationHub は、SSE 接続ごとの DB ポーリングをプロセス内 1 本にまとめる。
 // アクティブな投稿期間の一覧を読み取り接続でポーリングし、新しい期間が見えたら該当リージョンの接続へ配る。
@@ -29,7 +23,6 @@ var notifyMemOn = os.Getenv("ISUREAL_NOTIFY_MEM") == "1"
 // ID は (user_id, posting_window_id) から UUID v5 で決定的に作り、createdAt は期間の starts_at。
 type notificationHub struct {
 	reader func() *sqlx.DB
-	mem    atomic.Pointer[memStore] // ISUREAL_NOTIFY_MEM
 
 	mu      sync.Mutex
 	windows map[string]notificationWindow // window id -> window
@@ -66,13 +59,6 @@ func newNotificationHub(reader func() *sqlx.DB) *notificationHub {
 	}
 	go hub.run()
 	return hub
-}
-
-// setMem: setupMem の後に呼ぶ。nil なら何もしない。
-func (h *notificationHub) setMem(m *memStore) {
-	if h != nil && m != nil {
-		h.mem.Store(m)
-	}
 }
 
 func (h *notificationHub) subscribe(userID, region string, connectedAt time.Time) *notificationSubscriber {
@@ -143,137 +129,19 @@ func (h *notificationHub) run() {
 	}
 }
 
-type notificationActiveWindow struct {
-	ID string `db:"id"`
-	notificationWindow
-}
-
 func (h *notificationHub) poll() error {
-	if notifyMemOn {
-		if m := h.mem.Load(); m.on() {
-			return h.pollMem(m)
-		}
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	ctx = storePGReadCtx(ctx) // ISUREAL_STORE_WAL: poll 開始までの書き込みが PG に入ってから読む
 	db := h.reader()
 
-	var active []notificationActiveWindow
+	var active []struct {
+		ID string `db:"id"`
+		notificationWindow
+	}
 	if err := db.SelectContext(ctx, &active, `SELECT id, region, starts_at FROM posting_windows WHERE ended_at IS NULL`); err != nil {
 		return err
 	}
-	targets := h.applyActive(active)
-	h.deliver(ctx, db, targets)
-	return h.checkUsers(ctx, db)
-}
-
-// pollMem: poll と同じ処理を memStore から行う (ISUREAL_NOTIFY_MEM)。
-func (h *notificationHub) pollMem(m *memStore) error {
-	m.mu.RLock()
-	d := m.d
-	active := make([]notificationActiveWindow, 0, len(d.open))
-	for _, w := range d.windows {
-		if w.EndedAt == nil {
-			active = append(active, notificationActiveWindow{ID: w.ID, notificationWindow: notificationWindow{Region: w.Region, StartsAt: w.StartsAt}})
-		}
-	}
-	m.mu.RUnlock()
-	targets := h.applyActive(active)
-	if len(targets) > 0 {
-		regions := map[string]string{}
-		var missing []string
-		m.mu.RLock()
-		for _, sub := range targets {
-			u := m.d.users[sub.userID]
-			if u == nil {
-				missing = append(missing, sub.userID)
-			} else if u.active() {
-				regions[sub.userID] = u.Region
-			}
-		}
-		m.mu.RUnlock()
-		if len(missing) > 0 {
-			// メモリに居ない利用者だけ PG で確かめる (まれ)。
-			ctx, cancel := context.WithTimeout(storePGReadCtx(context.Background()), 3*time.Second)
-			pg, err := activeUserRegions(ctx, h.reader(), missing)
-			cancel()
-			if err != nil {
-				slog.Error("failed to load notification recipients", "error", err)
-			} else {
-				for id, r := range pg {
-					regions[id] = r
-				}
-				h.deliverWith(targets, regions)
-			}
-		} else {
-			h.deliverWith(targets, regions)
-		}
-	}
-	h.checkUsersMem(m)
-	return nil
-}
-
-// checkUsersMem: checkUsers と同じく、退会・リージョン変更をした利用者の接続を閉じる。
-func (h *notificationHub) checkUsersMem(m *memStore) {
-	h.mu.Lock()
-	if len(h.subs) == 0 {
-		h.mu.Unlock()
-		return
-	}
-	type subState struct {
-		sub    *notificationSubscriber
-		region string
-	}
-	subs := make([]subState, 0, len(h.subs))
-	for _, ss := range h.subs {
-		for sub := range ss {
-			subs = append(subs, subState{sub: sub, region: sub.region})
-		}
-	}
-	h.mu.Unlock()
-	var closing, missing []*notificationSubscriber
-	m.mu.RLock()
-	for _, s := range subs {
-		u := m.d.users[s.sub.userID]
-		if u == nil {
-			missing = append(missing, s.sub)
-		} else if u.Status != "active" || u.Region != s.region {
-			closing = append(closing, s.sub)
-		}
-	}
-	m.mu.RUnlock()
-	if len(missing) > 0 {
-		// メモリに居ない利用者だけ PG で確かめる (まれ)。
-		ids := make([]string, 0, len(missing))
-		for _, sub := range missing {
-			ids = append(ids, sub.userID)
-		}
-		ctx, cancel := context.WithTimeout(storePGReadCtx(context.Background()), 3*time.Second)
-		pg, err := activeUserRegions(ctx, h.reader(), ids)
-		cancel()
-		if err != nil {
-			slog.Error("notification user check failed", "error", err)
-		} else {
-			for _, sub := range missing {
-				if r, ok := pg[sub.userID]; !ok || r != sub.region {
-					closing = append(closing, sub)
-				}
-			}
-		}
-	}
-	if len(closing) == 0 {
-		return
-	}
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	for _, sub := range closing {
-		h.deliverLocked(sub, nil)
-	}
-}
-
-// applyActive: 有効な期間の一覧を取り込み、新しい期間で届ける通知がある接続を返す。
-func (h *notificationHub) applyActive(active []notificationActiveWindow) []*notificationSubscriber {
 	activeSet := make(map[string]bool, len(active))
 	freshRegions := map[string]bool{}
 	h.mu.Lock()
@@ -304,7 +172,8 @@ func (h *notificationHub) applyActive(active []notificationActiveWindow) []*noti
 		}
 	}
 	h.mu.Unlock()
-	return targets
+	h.deliver(ctx, db, targets)
+	return h.checkUsers(ctx, db)
 }
 
 // deliver は、元実装と同じく送信直前に受信者が有効かつ同じリージョンであることを確認してから送る。
@@ -321,11 +190,6 @@ func (h *notificationHub) deliver(ctx context.Context, db *sqlx.DB, targets []*n
 		slog.Error("failed to load notification recipients", "error", err)
 		return
 	}
-	h.deliverWith(targets, regions)
-}
-
-// deliverWith: regions (有効な受信者の id -> リージョン) で確認して送る。
-func (h *notificationHub) deliverWith(targets []*notificationSubscriber, regions map[string]string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for _, sub := range targets {

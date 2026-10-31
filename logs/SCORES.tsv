@@ -54,3 +54,4 @@
 13:57	76ba903	job=14901 state=4 pass=true スコア=135075 種別エラー数=map[]	既定 + ASIA_LOCALIMG=1 (グループコミット 47be60c + fsync を tx の前に 09efdd9) + MEM_PUSH_STATS=1。WM_HB=0、JPEG は既定
 14:01	7f5c665	job=15134 state=4 pass=true スコア=145177 種別エラー数=map[]	13426 の構成 (MEMORIES_CACHE=1 + HEAVY_TARGET=127.0.0.1) + 往復削減 + 画像の読み別プール + 組ごとの advisory lock (ea1ffec)
 14:03	65f0931	job=15345 state=4 pass=true スコア=144584 種別エラー数=map[]	前の回と同じ構成 + JC=1 (Rust jpegcheckd) + JPEG_LOCAL_SLOTS=2 (GP 中 asia1 CPU 38% でローカル枠 1 待ち)
+14:05	13e69a7	job=15544 state=4 pass=true スコア=148713 種別エラー数=map[]	ea1ffec を revert + POST_SLOT_EXEMPT=0 + JC=1 + JPEG_LOCAL_SLOTS=2 + HEAVY_TARGET=127.0.0.1 + MEMORIES_CACHE=1

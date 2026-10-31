@@ -10,7 +10,7 @@ if [[ -z ${LOCK_HELD:-} ]]; then exec 9>>/tmp/isucon/env.lock; flock -w 600 9 ||
 HOSTS=("$@"); [[ ${#HOSTS[@]} -gt 0 ]] || HOSTS=(asia1 europe1 america1)
 OUT=$(mktemp -d)
 ( cd webapp/go && GOOS=linux GOARCH=amd64 GOAMD64=v3 CGO_ENABLED=0 go build -o "$OUT/isureal" ./cmd/isureal )
-JC=${JC:-0}   # 1 = Rust jpegcheckd (webapp/rust/jpegcheckd) does the local JPEG check on every app host; 0 = in-process Go
+JC=${JC:-1}   # 1 = Rust jpegcheckd (webapp/rust/jpegcheckd) does the local JPEG check on every app host; 0 = in-process Go
 JC_SOCK=""
 if [[ $JC == 1 ]]; then
   # +nightly is explicit: RUSTUP_TOOLCHAIN in the env overrides rust-toolchain.toml
@@ -67,7 +67,7 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/systemd/isureal-go.service.d/10-tune.conf "$h:/tmp/10-tune.conf"
     scp -q etc/systemd/isureal-go.service.d/30-front.conf "$h:/tmp/30-front.conf"
     jc_scp "$h"
-    r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-192.168.4.10}; [[ $f == 1 ]] || pvt=""; mt=$ht; [[ $h == asia1 ]] && mt=${MEMORIES_TARGET-$ht}
+    r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-127.0.0.1}; [[ $f == 1 ]] || pvt=""; mt=$ht; [[ $h == asia1 ]] && mt=${MEMORIES_TARGET-$ht}
     ls=$LOCAL_SESSION; { [[ $h == asia1 || $f != 1 || $MEM != 1 || $MEM_WM != 1 || $LOGREPL == 1 || $STORE == 1 ]]; } && ls=0
     sed -e "s/__MEMORIES_TARGET__/$mt/" -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
@@ -105,7 +105,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN ""; fi
       setenv ISUREAL_HEAVY_LIMIT '"$HEAVY_LIMIT"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
-      setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-1}"'
+      setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-2}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi

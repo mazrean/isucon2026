@@ -224,6 +224,8 @@ END: 2026-10-31 18:00 JST
 | 21833 | - | **170531** | **新最高**。bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし。asia 1013 / eu 323 / am 331、GP 674/263/265 (1202、過去最多)。先置き: asia1 sent 1549 / 553MB、eu/am から各 1300〜1600 件。これを既定にする |
 | 22111 | - | 161903 | bare (新既定: APPLY_CHUNK=200 + IMG_FRIEND_PUSH 一式) の再現 1 本目。asia 1077 / eu 333 / am 325、GP 503/165/306 (974、eu 50%)。pass。揺れの範囲 (21833 は 170,531) |
 | 22736 | - | 163382 | bare (新既定 + STOP_AFTER_GP=1) の再現 2 本目。asia 1035 / eu 328 / am 335、GP 433/281/237 (951)。pass。新既定 3 本: 170.5 / 161.9 / 163.4 (平均 165.3k) |
+| 22980 | - | 166276 | 新既定 + LOGIN_BATCH=1。asia 1051 / eu 366 / am 243。pass。揺れの範囲 (新既定は平均 165.3k)。不採用でも可 |
+| 23341 | - | **180766** | **新最高**。新既定 + STORE=1 (AWAIT_PG=1、WAL なし)。asia 1105 / eu 321 / am 255。write-behind op dropped 0。asia の書き込みの律速 (users 行のロック) を STORE が外す。STORE を最終候補の本命に |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -340,3 +342,11 @@ END: 2026-10-31 18:00 JST
 - 正本を asia2 に移さない理由: asia2 はメモリが逼迫している (OOM の FAIL が 1 回、OOMScoreAdjust=500)。それに、ルーターは asia の書き込みを asia1 に送る。17:00 までに安定させられない。
 - フラグ: ISUREAL_STORE_WAL (既定 off)。PG を読む経路には pgApplied の待ちを入れる (RYW、slack 0)。担当は 2 つで、期限は 16:15。
 - 採用の基準: pass、整合性のメッセージ 0、点が ≥ 約 165k、Memories の最大が悪化しない、asia2 の空きメモリが減らない。満たさなければ off のまま。STORE=1 だけの回は 2 回負けている (13083、15806)。
+
+### PG 撤去の版を最終に使う条件 (15:38)
+- 退避先: 今の新既定 (bare。3 本平均 165k、全 pass)。新しい経路は全部フラグの後ろ (既定 off) のまま作る。凍結時点で、退避先を必ず再現できる状態に保つ。
+- PG 撤去の版 (STORE + STORE_WAL / MEM_FULL / COLD_ORIGIN) を最終に使うのは、17:30 までに次の 3 つを満たしたときだけ。
+  - (a) 全台を再起動 (asia2 → asia1 → eu → am) した後に、再起動前の投稿・画像・セッション・友達関係が全部残っている。
+  - (b) initialize で初期状態に戻る。
+  - (c) 同じ版で、公式ベンチ 2 本が pass。
+- 満たせなければ、迷わず退避先で最後の 2 本を流す。点が上がっても、再起動の回復の試験を通していない版は出さない (追試は 75% 以下か FAIL で再実行、3 回目で失格)。

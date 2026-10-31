@@ -78,3 +78,5 @@
 15:20	328da3c	job=21833 state=4 pass=true スコア=170531 種別エラー数=map[]	bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし (最終候補)
 15:23	f9639fb	job=22111 state=4 pass=true スコア=161903 種別エラー数=map[]	bare (新既定: APPLY_CHUNK=200 + IMG_FRIEND_PUSH 一式) の再現 1 本目
 15:30	0163b32	job=22736 state=4 pass=true スコア=163382 種別エラー数=map[]	bare (新既定 + IMG_FRIEND_PUSH_STOP_AFTER_GP=1) の再現 2 本目
+15:34	bc0d428	job=22980 state=4 pass=true スコア=166276 種別エラー数=map[]	新既定 + LOGIN_BATCH=1 (台本の律速 3 位 login を 1 往復化)
+15:38	e482103	job=23341 state=4 pass=true スコア=180766 種別エラー数=map[]	新既定 + STORE=1 (AWAIT_PG=1、WAL なし。WAL の土台の確認)

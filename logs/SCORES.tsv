@@ -104,3 +104,4 @@
 16:44	def2fd7	job=29771 state=4 pass=true スコア=189935 種別エラー数=map[]	B: 今の既定 (2 本目)
 16:47	f974a7f	job=30055 state=4 pass=true スコア=189147 種別エラー数=map[]	今の既定 + ASIA_LOCALIMG_ASYNC=1 (ユーザー承認済み)
 16:50	bb7823d	job=30326 state=4 pass=true スコア=191164 種別エラー数=map[]	今の既定 + ASIA_LOCALIMG_SEG=1 (画像の追記セグメント)
+16:53	d06470c	job=30587 state=4 pass=true スコア=178908 種別エラー数=map[]	A の既定 + FWD_LOCAL_SLOTS=256 (asia の枠待ち p50 1.79s の対策)

@@ -98,3 +98,4 @@
 16:28	07aac13	job=28200 state=4 pass=true スコア=192638 種別エラー数=map[]	既定 (画像 403 修正込み) + MEM_SYNC_VISIBLE=1 MEM_ACK_OWN=1
 16:30	0e244ec	job=28421 state=4 pass=false スコア=0 種別エラー数=map[]	既定 + MEM_FULL=1 COLD_ORIGIN=asia2 MEMORIES_CACHE_ORIGIN 空 PG_SB_MB=256 (見張り付き)
 16:32	231a4a4	job=28603 state=4 pass=true スコア=166020 種別エラー数=map[]	既定 + FWD_YIELD=16 STORE_PRIO=1 ASIA_LOCALIMG_FSYNC=1 (枠と列の分離 + 常時 fdatasync)
+16:35	d0fdcf2	job=28890 state=4 pass=true スコア=178813 種別エラー数=map[]	既定 + MEMCACHE_FINE=1

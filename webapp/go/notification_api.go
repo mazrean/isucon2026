@@ -21,10 +21,11 @@ func getNotificationsHandler(h *HandlerContext) echo.HandlerFunc {
 		ctx := c.Request().Context()
 		session := GetSession(c)
 		userID := session.UserID
-		var connectedAt time.Time
-		if err := h.DB.GetContext(ctx, &connectedAt, `SELECT clock_timestamp()`); err != nil {
-			return err
-		}
+		// 接続時刻はローカル時計で取る (ホストは NTP 同期済み)。以前は primary へ
+		// SELECT clock_timestamp() を投げており、europe1/america1 では primary が別リージョン
+		// (往復 ~100ms) かつプール 25 本のため、グランプリ時の一斉再接続で数秒待ち →
+		// クライアント切断 (499 / action log 500) やルーター側 503 の原因になっていた。
+		connectedAt := time.Now()
 		response := c.Response()
 		response.Header().Set("Content-Type", "text/event-stream")
 		response.WriteHeader(http.StatusOK)

@@ -226,6 +226,7 @@ END: 2026-10-31 18:00 JST
 | 22736 | - | 163382 | bare (新既定 + STOP_AFTER_GP=1) の再現 2 本目。asia 1035 / eu 328 / am 335、GP 433/281/237 (951)。pass。新既定 3 本: 170.5 / 161.9 / 163.4 (平均 165.3k) |
 | 22980 | - | 166276 | 新既定 + LOGIN_BATCH=1。asia 1051 / eu 366 / am 243。pass。揺れの範囲 (新既定は平均 165.3k)。不採用でも可 |
 | 23341 | - | **180766** | **新最高**。新既定 + STORE=1 (AWAIT_PG=1、WAL なし)。asia 1105 / eu 321 / am 255。write-behind op dropped 0。asia の書き込みの律速 (users 行のロック) を STORE が外す。STORE を最終候補の本命に |
+| 23734 | - | 168944 | 退避先 (新既定 bare)、4 台同時の再起動の後に、デプロイなしで 1 本。asia 926 / eu 356 / am 331、GP 526/305/200。pass。画像の正本のスナップショットは一致 (PG 側の照合はこの回は SQL 誤りで未実施) |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

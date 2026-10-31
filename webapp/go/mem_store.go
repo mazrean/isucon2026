@@ -131,8 +131,19 @@ func (m *memStore) on() bool {
 	return !m.useLease || time.Now().UnixNano() < m.leaseUntil.Load()
 }
 
-func (m *memStore) extendLease() {
-	m.leaseUntil.Store(time.Now().Add(memLease).UnixNano())
+// extendLeaseFrom: lease を min(今, pump の送信時刻) + memLease まで延ばす (縮めない)。
+func (m *memStore) extendLeaseFrom(sentAt int64) {
+	base := time.Now().UnixNano()
+	if sentAt > 0 && sentAt < base {
+		base = sentAt
+	}
+	until := base + int64(memLease)
+	for {
+		cur := m.leaseUntil.Load()
+		if until <= cur || m.leaseUntil.CompareAndSwap(cur, until) {
+			return
+		}
+	}
 }
 
 // ---- row types (shared by primary load, changelog jsonb and peer dump) ----

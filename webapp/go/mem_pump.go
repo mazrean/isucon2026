@@ -118,6 +118,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		m := &memStore{d: newMemData(), useLease: true}
 		h.Mem = m
 		memCurrentPeerStore = m
+		memLocalRegion = h.Config.Region
 		if memWatermark {
 			e.Use(memReadWait(m))
 		}
@@ -576,7 +577,8 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 // session (RegionMiddleware), and moving region is itself a write whose full
 // barrier first waits for every earlier change, these sessions included.
 func localOnlyWrite(req *http.Request) bool {
-	if !localOnlyWriteOn || req.Header.Get(forwardedRegionHeader) != "" {
+	// ISUREAL_MEM_SYNC_VISIBLE: login は古いセッションを無効化する (「見えてはいけない」側) ので同期にする。
+	if memSyncVisible || !localOnlyWriteOn || req.Header.Get(forwardedRegionHeader) != "" {
 		return false
 	}
 	switch req.URL.Path {

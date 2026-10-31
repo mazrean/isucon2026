@@ -259,6 +259,9 @@ func (ps *memPeers) heartbeatLoop() {
 //   - epoch が変わった場合は新 epoch での invalidate 成功確認
 //   - いずれでもなければ lastGrantAt + memLease + memClockSkew を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
 func (ps *memPeers) waitAcked() {
+	if memSyncVisible {
+		defer memSyncStats.since(time.Now())
+	}
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 	target, epoch := ps.seq, ps.epoch
@@ -279,7 +282,7 @@ func (ps *memPeers) waitAcked() {
 		var wakeAt time.Time
 		ok := true
 		for _, peer := range ps.peers {
-			if memWatermark && peer.wmMode {
+			if memWatermark && peer.wmMode && !memSyncVisible {
 				continue // peer の読みが watermark を待つ
 			}
 			if ps.epoch == epoch && peer.acked >= target {
@@ -445,6 +448,7 @@ type memDump struct {
 	RealMojis   []memRealMojiRow      `json:"realmojis"`
 	WM          int64                 `json:"wm,omitempty"`      // Seq に対して有効な watermark
 	WMMode      bool                  `json:"wmMode,omitempty"`  // pump が ack を待たずに返す (peer は watermark を待つ)
+	SyncVisible bool                  `json:"sv,omitempty"`      // ISUREAL_MEM_SYNC_VISIBLE: pump は wm モードの peer の ack も待つ
 	HotFrom     string                `json:"hotFrom,omitempty"` // memData.hotFrom (DateOnly); 無ければ不明
 }
 
@@ -556,6 +560,7 @@ func registerMemPumpRoutes(e *echo.Echo, p *memPump) {
 		p.peers.mu.Lock()
 		dump.Epoch, dump.Seq = p.peers.epoch, p.peers.seq
 		dump.WM, dump.WMMode = p.peers.wm, memWatermark
+		dump.SyncVisible = memSyncVisible
 		p.peers.mu.Unlock()
 		p.peers.markWMMode(c.Request().RemoteAddr, c.QueryParam("wm") == "1")
 		p.cycleMu.Unlock()
@@ -714,6 +719,9 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.setApplied()
 	r.wmPending = nil
 	r.m.w.pumpWM.Store(memWatermark && dump.WMMode)
+	r.m.w.pumpSync.Store(memSyncVisible && dump.SyncVisible)
+	r.m.w.knownSeq = 0                 // epoch が変わると seq の系列が変わる
+	r.m.w.syncSeen(dump.Seq, dump.Seq) // dump の Seq まで反映済み
 	r.m.w.set(dump.WM)
 	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
 	r.m.ready.Store(true)
@@ -834,6 +842,7 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 			return false
 		}
 	}
+	r.m.w.syncSeen(req.Seq, r.seq)
 	if req.SS > 0 && r.seq >= req.Seq && req.SS > r.appliedStore.Load() {
 		r.appliedStore.Store(req.SS)
 		r.coldNotify.wake()

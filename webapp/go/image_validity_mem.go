@@ -40,6 +40,13 @@ var imgvMemOn = os.Getenv("ISUREAL_IMGV_MEM") != "0"
 // fed in place by the pump's pushes (applyBatch); a resync swaps the pointer.
 var imgvPeerIndex = os.Getenv("ISUREAL_IMGV_PEER_INDEX") == "1"
 
+// ISUREAL_IMG_MEM_ONLY=1 (default 0): the read model also answers "owner not
+// active" (found=false -> 403) when it holds the owner row with a non-active
+// status. users rows are never reactivated and the model is fed before PG
+// (STORE) or from the same changelog, so this equals the PG answer
+// (no row for u.status = 'active'). Unknown owners still ask the DB.
+var imgMemOnly = os.Getenv("ISUREAL_IMG_MEM_ONLY") == "1"
+
 type imgPostRef struct {
 	postID   string
 	authorID string
@@ -67,6 +74,9 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 	}
 	d := m.d
 	u := d.users[owner]
+	if imgMemOnly && u != nil && !u.active() {
+		return imageValidity{found: false}, true
+	}
 	if !u.active() || u.SecretKeyHash == "" {
 		return imageValidity{}, false
 	}
@@ -100,10 +110,103 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 			}
 		}
 	}
+	if !ok && imgMemOnly {
+		if ok = memRealMojiImageValid(d, imageID, owner); !ok && h.BG != nil && !imgRealMojiHint.loading.Load() &&
+			time.Now().UnixNano()-imgRealMojiHint.lastTry.Load() >= int64(time.Second) {
+			go loadImgRealMojiHint(h)
+		}
+	}
 	if !ok {
 		return imageValidity{}, false
 	}
 	return imageValidity{found: true, secretKeyHash: u.SecretKeyHash, valid: true}, true
+}
+
+// imgRealMojiHint (ISUREAL_IMG_MEM_ONLY): image_id -> post_id of active
+// realmojis. Only a hint: the answer is decided by the post held in memory.
+var imgRealMojiHint struct {
+	mu      sync.RWMutex
+	m       map[string]string
+	since   time.Time
+	loading atomic.Bool
+	lastTry atomic.Int64
+}
+
+// memRealMojiImageValid: the realmoji branch of imageValidityQuery, answered
+// only when the post is in d.posts (hot posts carry every active realmoji,
+// changelog-fed, so replacement / deletion is reflected). Caller holds m.mu.
+func memRealMojiImageValid(d *memData, imageID, owner string) bool {
+	imgRealMojiHint.mu.RLock()
+	postID, hit := imgRealMojiHint.m[imageID]
+	imgRealMojiHint.mu.RUnlock()
+	if !hit {
+		return false
+	}
+	p := d.posts[postID]
+	if p == nil || p.deleted || !p.author.active() {
+		return false
+	}
+	for _, x := range p.realmojis {
+		if x.ImageID == imageID && x.reactor != nil && x.reactor.ID == owner {
+			return true
+		}
+	}
+	return false
+}
+
+// loadImgRealMojiHint merges active realmojis created at or after the last
+// load (all of them the first time). Throttled to one load per second; a
+// miss in memRealMojiImageValid kicks it, so new realmojis become hints once
+// PG has them. Replaced / deleted ones stay as hints (verified in memory).
+func loadImgRealMojiHint(h *HandlerContext) {
+	now := time.Now().UnixNano()
+	if now-imgRealMojiHint.lastTry.Load() < int64(time.Second) || h.BG == nil {
+		return
+	}
+	if !imgRealMojiHint.loading.CompareAndSwap(false, true) {
+		return
+	}
+	defer imgRealMojiHint.loading.Store(false)
+	imgRealMojiHint.lastTry.Store(now)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	since := imgRealMojiHint.since
+	rows, err := h.BG.QueryContext(ctx, `SELECT image_id, post_id, created_at FROM realmojis WHERE created_at >= $1 AND replaced_at IS NULL AND deleted_at IS NULL`, since)
+	if err != nil {
+		slog.Warn("imgv: realmoji hint load failed", "error", err)
+		return
+	}
+	defer rows.Close()
+	type ent struct{ img, post string }
+	var add []ent
+	maxAt := since
+	for rows.Next() {
+		var e ent
+		var at time.Time
+		if err := rows.Scan(&e.img, &e.post, &at); err != nil {
+			slog.Warn("imgv: realmoji hint scan failed", "error", err)
+			return
+		}
+		add = append(add, e)
+		if at.After(maxAt) {
+			maxAt = at
+		}
+	}
+	if rows.Err() != nil {
+		return
+	}
+	imgRealMojiHint.mu.Lock()
+	if imgRealMojiHint.m == nil {
+		imgRealMojiHint.m = make(map[string]string, len(add))
+	}
+	for _, e := range add {
+		imgRealMojiHint.m[e.img] = e.post
+	}
+	imgRealMojiHint.mu.Unlock()
+	// re-read the last 10 s: STORE writes rows back to PG after created_at.
+	if maxAt.After(since) {
+		imgRealMojiHint.since = maxAt.Add(-10 * time.Second) // only the loader touches since
+	}
 }
 
 func rebuildImgPostIndex(h *HandlerContext) {

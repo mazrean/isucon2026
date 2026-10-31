@@ -1,0 +1,10 @@
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "プロフィール画像を設定できません: PUT /api/me/profile-image: ステータスコード 500 が返りました（期待値 204、unknown）"
+  ]
+}
+
+reason= プロフィール画像を設定できません
+job=12063 state=4 pass=false スコア=0 種別エラー数=map[]

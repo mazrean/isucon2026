@@ -16,7 +16,7 @@ func TestOpsTraceObservesWithoutChangingResponses(t *testing.T) {
 	run := func(trace bool) []string {
 		e := echo.New()
 		if trace {
-			e.Use(opsTraceMiddleware(h))
+			e.Pre(opsTraceMiddleware(h)) // 本番と同じ Pre
 		}
 		e.POST("/api/auth/login", func(c *echo.Context) error {
 			return c.JSON(http.StatusOK, map[string]string{"token": "secret-token-1"})
@@ -53,6 +53,12 @@ func TestOpsTraceObservesWithoutChangingResponses(t *testing.T) {
 		do("POST", "/api/posts/p1/realmojis")
 		return out
 	}
+	defer func(v any) {
+		if v != nil {
+			opsCur.Store(v)
+		}
+	}(opsCur.Load())
+	opsCur.Store("2026-11")
 	plain := run(false)
 	traced := run(true)
 	for i := range plain {
@@ -74,8 +80,40 @@ func TestOpsTraceObservesWithoutChangingResponses(t *testing.T) {
 	if len(ops.loginMem) != 1 || ops.views != 1 || ops.comments != 1 || ops.realmojis != 0 {
 		t.Fatalf("loginMem=%d views=%d comments=%d realmojis=%d", len(ops.loginMem), ops.views, ops.comments, ops.realmojis)
 	}
+	if len(ops.loginDur) != 1 || len(ops.loginMemS) != 1 || ops.loginMemS[0] < ops.loginMem[0] {
+		t.Fatalf("login start/response not both recorded: dur=%d memS=%d", len(ops.loginDur), len(ops.loginMemS))
+	}
 	ws := ops.waits["asia"]
 	if ws == nil || len(ws[0]) != 1 || ws[0][0] != 3*time.Millisecond || ws[1][0] != 2*time.Millisecond || ws[2][0] != time.Millisecond {
 		t.Fatalf("waits %+v", ws)
+	}
+}
+
+func TestOpsPastMonthUsesAppPeriod(t *testing.T) {
+	r := func(u string) *http.Request { return httptest.NewRequest("GET", u, nil) }
+	// 実時間 (10 月) ではなく、アプリの最新の投稿期間の月 (11 月) で判定する
+	cases := []struct {
+		u, cur string
+		want   bool
+	}{
+		{"/api/memories?month=2026-10", "2026-11", true},
+		{"/api/memories?month=2026-11", "2026-11", false},
+		{"/api/memories/2026-10-31", "2026-11", true},
+		{"/api/memories/2026-11-01", "2026-11", false},
+		{"/api/memories?month=2026-10", "", false},
+	}
+	for _, cs := range cases {
+		if got := opsPastMonth(r(cs.u), cs.cur); got != cs.want {
+			t.Errorf("%s cur=%q: %v", cs.u, cs.cur, got)
+		}
+	}
+}
+
+func TestOpsKeyFromForwardSecret(t *testing.T) {
+	if forwardSecret == "" {
+		t.Skip("ISUREAL_FWD_SECRET unset: random key")
+	}
+	if a, b := opsCID("t"), opsCID("t"); a != b {
+		t.Fatal("cid not stable")
 	}
 }

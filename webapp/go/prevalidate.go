@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
-	"errors"
 	"io"
 	"log/slog"
 	"mime"
@@ -241,10 +240,8 @@ func newPrevalidateProxy(target, region string) *httputil.ReverseProxy {
 		BufferPool:     proxyBufPool{},
 		ModifyResponse: localImgModifyResponse,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			// a timeout/cancel leaves the outcome at asia1 unknown: keep the bytes (an orphan is harmless)
-			if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-				localImgAbort(r)
-			}
+			// a transport error (cancel, timeout, EOF, reset) leaves the outcome at
+			// asia1 unknown: keep the bytes (an orphan without meta is never served)
 			slog.Warn("prevalidate proxy", "error", err)
 			w.WriteHeader(http.StatusBadGateway)
 		},

@@ -33,6 +33,9 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 		after = t.after
 		return err
 	}, name != "createPost")
+	if opsTraceOn {
+		opsAdd(c.Request().Context(), opsApply, time.Since(applyStart))
+	}
 	if err == errStoreFallback {
 		e.count(name, 1)
 		e.syncPG()
@@ -99,6 +102,9 @@ func (e *storeEngine) login(c *echo.Context, input loginRequest) (bool, error) {
 				old = append(old, th)
 			}
 		}
+		// ISUREAL_MEM_SYNC_SPLIT: 旧セッションの無効化が無い login は、本人しか知らない新しいトークンを足すだけ。
+		// 他の閲覧者に見えてはいけないものは増えない。eu/am は未知のトークンを住人と判定しないので wm を待つ。
+		t.noAck = memSyncSplit && len(old) == 0
 		if len(old) > 0 {
 			t.exec(`UPDATE login_sessions SET active = false, invalidated_at = $2, reason = 'replaced' WHERE user_id = $1 AND active = true AND token_hash = ANY($3)`, u.ID, t.now, old)
 		}

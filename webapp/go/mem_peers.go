@@ -270,6 +270,7 @@ type memAckTarget struct {
 	epoch string
 	seq   int64
 	ok    bool
+	skip  bool // ISUREAL_MEM_SYNC_SPLIT: ack を待たない (store の noAck)
 }
 
 // ISUREAL_MEM_ACK_OWN=1 (既定 0): STORE の書き込みは、自分の publish 直後の (epoch, seq) の ack だけを待ち、

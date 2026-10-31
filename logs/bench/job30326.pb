@@ -1,0 +1,49 @@
+
+�!����� *��������2��������:�������B�������H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T07:48:06.490Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T07:48:09.635Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T07:48:12.486Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T07:48:15.545Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T07:48:18.488Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T07:48:21.514Z level=INFO msg="america 2 日目: 16 人"
+time=2026-10-31T07:48:24.557Z level=INFO msg="asia 3 日目: 145 人"
+time=2026-10-31T07:48:27.490Z level=INFO msg="europe 3 日目: 49 人"
+time=2026-10-31T07:48:30.501Z level=INFO msg="america 3 日目: 46 人"
+time=2026-10-31T07:48:33.488Z level=INFO msg="asia 4 日目: 420 人"
+time=2026-10-31T07:48:35.672Z level=INFO msg="user moved" user=iszoeka.6363 from=europe to=asia
+time=2026-10-31T07:48:35.945Z level=INFO msg="user moved" user=orfutor-6379 from=europe to=america
+time=2026-10-31T07:48:36.121Z level=INFO msg="user moved" user=elmaha6647 from=asia to=america
+time=2026-10-31T07:48:36.689Z level=INFO msg="europe 4 日目: 136 人"
+time=2026-10-31T07:48:37.664Z level=INFO msg="user moved" user=noahima-5669 from=asia to=america
+time=2026-10-31T07:48:38.759Z level=INFO msg="user moved" user=sulia-7482 from=asia to=america
+time=2026-10-31T07:48:39.010Z level=INFO msg="user moved" user=nura5850 from=asia to=europe
+time=2026-10-31T07:48:39.706Z level=INFO msg="america 4 日目: 134 人"
+time=2026-10-31T07:48:40.104Z level=INFO msg="user moved" user=sulia-7482 from=america to=asia
+time=2026-10-31T07:48:41.091Z level=INFO msg="user moved" user=horu_8824 from=europe to=asia
+time=2026-10-31T07:48:42.120Z level=INFO msg="user moved" user=holia.9070 from=america to=europe
+time=2026-10-31T07:48:42.495Z level=INFO msg="asia 5 日目: 1165 人"
+time=2026-10-31T07:48:42.752Z level=INFO msg="user moved" user=miawari9378 from=america to=europe
+time=2026-10-31T07:48:43.022Z level=INFO msg="user moved" user=masefu-8537 from=europe to=america
+time=2026-10-31T07:48:45.930Z level=INFO msg="europe 5 日目: 336 人"
+time=2026-10-31T07:48:48.637Z level=INFO msg="america 5 日目: 316 人"
+time=2026-10-31T07:48:49.187Z level=INFO msg="user moved" user=orfutor-6379 from=america to=europe
+time=2026-10-31T07:48:57.643Z level=INFO msg="europe 最終日（グランプリ）: 336 人"
+time=2026-10-31T07:48:57.733Z level=INFO msg="asia 最終日（グランプリ）: 1165 人"
+time=2026-10-31T07:48:57.741Z level=INFO msg="america 最終日（グランプリ）: 314 人"
+time=2026-10-31T07:49:06.555Z level=INFO msg="グランプリ: アジア 700 人, ヨーロッパ 234 人, アメリカ 209 人"
+{
+  "pass": true,
+  "score": 191164,
+  "messages": [
+    "ankusol_9884: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "ivyanmi.5211: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "ivyni-8505: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "orkuse-8347: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "zoeelku.7178: 友達申請を承認できません: POST /api/friend-requests/b0927d3a-ae03-489c-8552-e792c22179fa/accept: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/friend-requests/b0927d3a-ae03-489c-8552-e792c22179fa/accept\": EOF",
+    "funesol.11361: 投稿できません: POST /api/posts: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/posts\": EOF",
+    "tsuri_15804: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+ ���������(���������2���������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

@@ -48,6 +48,7 @@ type fwdPriority struct {
 	timeoutBy map[string]int64
 	parked    atomic.Int64 // ISUREAL_FWD_PRIORITY_YIELD で枠を返して待ち中の要求
 	regionOf  func(*echo.Context) string
+	admit     *admitGate // ISUREAL_ADMIT_* (nil = off)
 }
 
 func (p *fwdPriority) timeoutKey(c *echo.Context) string {
@@ -67,6 +68,7 @@ func newFwdPriority(region string, slots int, maxWait, idle time.Duration) *fwdP
 	if fwdPriorityPostSlots > 0 {
 		p.postSlots = make(chan struct{}, fwdPriorityPostSlots)
 	}
+	p.admit = newAdmitGate(admitMaxReq, admitMaxBytes, admitPostMin, admitMaxWait)
 	return p
 }
 
@@ -123,6 +125,11 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 				p.record(&p.fwdDur, time.Since(start))
 				return err
 			}
+			if p.admit != nil {
+				// ISUREAL_ADMIT_*: 入場の総量 (2 秒で枠なしに通すものも含む) を抑える
+				leave := p.admit.enter(c.Request().Context(), isPostReq(c.Request()), c.Request().ContentLength, p.timeoutKey(c))
+				defer leave()
+			}
 			if (p.inflight.Load() == 0 && start.UnixNano()-p.lastFwd.Load() > int64(p.idle)) || fwdPriorityLocalExempt(c.Request()) {
 				p.mu.Lock()
 				p.bypass++
@@ -147,6 +154,9 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 				t.Stop()
 			}
 			wait := time.Since(start)
+			if opsTraceOn {
+				opsAdd(c.Request().Context(), opsFwdPrio, wait)
+			}
 			if !acquired {
 				p.mu.Lock()
 				p.timeouts++
@@ -190,6 +200,9 @@ func (p *fwdPriority) statsLoop() {
 		fd, lw, ld, to, bp, tb := p.fwdDur, p.localWt, p.localDur, p.timeouts, p.bypass, p.timeoutBy
 		p.fwdDur, p.localWt, p.localDur, p.timeouts, p.bypass, p.timeoutBy = nil, nil, nil, 0, 0, nil
 		p.mu.Unlock()
+		if p.admit != nil {
+			p.admit.logStats()
+		}
 		if len(fd) == 0 && len(ld) == 0 {
 			continue
 		}

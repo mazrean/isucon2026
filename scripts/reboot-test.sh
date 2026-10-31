@@ -16,7 +16,7 @@ fi
 HOSTS=(asia2 asia1 europe1 america1)
 snap() {
   timeout 30 "${SSH[@]}" asia2 "sudo -u postgres psql -d isureal -Atc \"select 'posts', count(*), max(created_at) from posts union all select 'comments', count(*), max(created_at) from comments union all select 'friendships', count(*), null from friendships union all select 'sessions', count(*), null from login_sessions union all select 'friend_requests', count(*), null from friend_requests\"" </dev/null
-  timeout 30 "${SSH[@]}" asia1 'cd /home/isucon/asialocalimg && ls -t meta/*/* 2>/dev/null | head -5 | while read f; do id=${f##*/}; echo "$id $(cat data/${id:0:2}/$id 2>/dev/null | sha256sum | cut -c1-16) $(cat $f | sha256sum | cut -c1-16)"; done; find data -type f | wc -l' </dev/null
+  timeout 30 "${SSH[@]}" asia1 'cd /home/isucon/asialocalimg && ls -t meta/*/* 2>/dev/null | head -5 | while read f; do id=${f##*/}; echo "$id $(cat data/${id:0:2}/$id 2>/dev/null | sha256sum | cut -c1-16) $(cat $f | sha256sum | cut -c1-16)"; done; find data -type f | wc -l; ls seg/*.seg 2>/dev/null | while read f; do echo "$f $(stat -c %s $f) $(sha256sum < $f | cut -c1-16)"; done' </dev/null
 }
 before=$(snap); echo "$before"
 declare -A old

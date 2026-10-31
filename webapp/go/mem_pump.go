@@ -188,7 +188,7 @@ func (p *memPump) loop() {
 func (p *memPump) ticker() {
 	every := 200 * time.Millisecond
 	if memWatermark && p.peers != nil {
-		every = memWMTick // watermark の鮮度 = サイクル周期
+		every = memWMTick // watermark の鮮度 = サイクル周期 (ISUREAL_MEM_WM_HB=1 なら既定 10ms)
 	}
 	t := time.NewTicker(every)
 	defer t.Stop()
@@ -272,7 +272,11 @@ func (p *memPump) poll() error {
 	}
 	p.snap = cur
 	if p.peers != nil && len(changes) > 0 {
-		p.peers.publish(changes)
+		if memWMHB {
+			p.peers.publishWM(changes, x) // wm をデータ push に同梱 (wm 単独メッセージとの突き合わせ待ちを省く)
+		} else {
+			p.peers.publish(changes)
+		}
 	}
 	if memWatermark && p.peers != nil {
 		p.peers.setWM(x)

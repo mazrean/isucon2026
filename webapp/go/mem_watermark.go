@@ -39,10 +39,49 @@ var (
 	memWatermark  = os.Getenv("ISUREAL_MEM_WATERMARK") == "1"
 	memWMEps      = envDurationMS("ISUREAL_MEM_WM_EPS_MS", 3*time.Millisecond)
 	memWMMaxWait  = envDurationMS("ISUREAL_MEM_WM_MAXWAIT_MS", 300*time.Millisecond)
-	memWMTick     = envDurationMS("ISUREAL_MEM_WM_TICK_MS", 20*time.Millisecond)
+	memWMTick     = envDurationMS("ISUREAL_MEM_WM_TICK_MS", memWMTickDefault())
 	memNow        = time.Now // テストで差し替える
 	memWMStatsLog sync.Once
 )
+
+// ISUREAL_MEM_WM_HB=1 (既定 0): watermark の待ちを短くする (読み手は限定しない。すべての GET が従来どおり待つ)。
+//   - poll (= wm の heartbeat) の周期を 20ms → 10ms。wm は poll のスナップショットに結び付くので、poll 無しの
+//     時刻だけの heartbeat では進められない (送信時刻を wm にすると x〜送信の間のコミットを取りこぼす)。
+//   - wm モードの peer へのデータ push の並列上限を 4 → 16、wm 通知の並列上限を 8 → 16。
+//     wm モードの peer の ack は書き込みの完了条件ではない (waitAcked が飛ばす) ので、変わるのは届く速さだけ。
+//     上限 4 だと RTT 100ms / 周期 20ms ≒ 5 本の push のうち 1 本以上が ack 待ちで 1 RTT 遅れ、その seq の wm も保留される。
+//   - wm をデータ push に同梱する (publishWM)。
+//
+// 正しさ (変わらない): wm=x は「x の後に取ったスナップショットまでを seq S に publish した」後にだけ S に対して有効になり、
+// peer は seq S まで適用してから wm を x に進める。読みは到着時刻 T_r に対し wm >= T_r + ε − slack を待つ。
+// slack = 0 なら、2xx が T_r より前に返ったすべての書き込み (書いた人を問わない) が、読みの前に peer のメモリに入っている。
+// slack > 0 (ISUREAL_MEM_WM_SLACK_MS) は T_r の直前 slack 以内に完了した書き込みを見落としうる (「見えるべき」違反の危険) ので既定 0。
+var (
+	memWMHB    = os.Getenv("ISUREAL_MEM_WM_HB") == "1"
+	memWMSlack = envDurationMS("ISUREAL_MEM_WM_SLACK_MS", 0)
+)
+
+func memWMTickDefault() time.Duration {
+	if os.Getenv("ISUREAL_MEM_WM_HB") == "1" {
+		return 10 * time.Millisecond
+	}
+	return 20 * time.Millisecond
+}
+
+// memPushInflight: peer ごとのデータ push の並列上限。
+func memPushInflight(peer *memPeer) int {
+	if memWMHB && memWatermark && peer.wmMode {
+		return 16
+	}
+	return memMaxInflight
+}
+
+func memWMInflightLimit() int {
+	if memWMHB {
+		return 16
+	}
+	return memWMInflight
+}
 
 func envDurationMS(key string, def time.Duration) time.Duration {
 	if v, err := strconv.Atoi(os.Getenv(key)); err == nil && v > 0 {
@@ -131,7 +170,7 @@ func memReadWait(m *memStore) echo.MiddlewareFunc {
 			}
 			// 目標は常に付ける (ガードが読む時点の pumpWM で判断する)。待つのは pump が wm モードのときだけ。
 			start := memNow()
-			target := start.Add(memWMEps).UnixNano()
+			target := start.Add(memWMEps - memWMSlack).UnixNano()
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(), memWMTargetKey{}, target)))
 			if m.w.pumpWM.Load() {
 				memWMStats.record(m.waitWM(target, start))
@@ -246,7 +285,7 @@ func (ps *memPeers) setWM(wm int64) {
 	}
 	msg := memWMMsg{Epoch: ps.epoch, Seq: ps.seq, WM: ps.wm}
 	for _, peer := range ps.peers {
-		if !peer.wmMode || peer.wmInflight >= memWMInflight {
+		if !peer.wmMode || peer.wmInflight >= memWMInflightLimit() {
 			continue
 		}
 		peer.wmInflight++

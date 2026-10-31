@@ -135,10 +135,17 @@ func newMemPeersFromEnv(p *memPump) *memPeers {
 }
 
 // publish は cycleMu 保持中に呼ばれる (連番順)。
-func (ps *memPeers) publish(changes []memChange) {
+func (ps *memPeers) publish(changes []memChange) { ps.publishWM(changes, 0) }
+
+// publishWM: wm > 0 なら、このバッチ (新しい ps.seq) に対して有効な watermark を同じ push に載せる
+// (ISUREAL_MEM_WM_HB)。wm は「このバッチを作った poll のスナップショット取得より前の asia1 時刻」であること。
+func (ps *memPeers) publishWM(changes []memChange, wm int64) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 	ps.seq++
+	if wm > ps.wm {
+		ps.wm = wm // 新しい ps.seq に対して有効: x より前に応答したコミットはこのバッチ以前に含まれる
+	}
 	b := memBatch{Seq: ps.seq, Changes: changes}
 	ps.buf = append(ps.buf, b)
 	if len(ps.buf) > memBufferBatches {
@@ -152,7 +159,7 @@ func (ps *memPeers) publish(changes []memChange) {
 
 // kick は ps.mu 保持中に呼ぶ。未送信分 (または heartbeat) を新しい並列 push として送る。
 func (ps *memPeers) kick(peer *memPeer, beat bool) {
-	if peer.inflight >= memMaxInflight || (len(peer.pending) == 0 && !beat) {
+	if peer.inflight >= memPushInflight(peer) || (len(peer.pending) == 0 && !beat) {
 		return
 	}
 	batches := peer.pending

@@ -103,9 +103,17 @@ func TestMemDiff(t *testing.T) {
 	}
 	if respCache {
 		memoriesMem, memRespCacheOn = false, true
+		// MD_CACHE_FINE=1: ISUREAL_MEMCACHE_FINE (mem_respcache_fine.go)
+		if os.Getenv("MD_CACHE_FINE") == "1" {
+			defer func(o bool) { memCacheFine = o }(memCacheFine)
+			memCacheFine = true
+		}
 		defer func() {
 			memRespCacheOn = false
 			t.Logf("resp cache: hits %d miss %d puts %d veto %d", memRespHits.Load(), memRespMiss.Load(), memRespPuts.Load(), memRespVeto.Load())
+			for i := range rcWhyN {
+				t.Logf("  invalidate %s: %d calls, %d removed", rcWhyName[i], memRespInvN[i].Load(), memRespInvRemoved[i].Load())
+			}
 		}()
 	}
 	defer func() {

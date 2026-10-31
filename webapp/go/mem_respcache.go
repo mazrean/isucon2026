@@ -153,6 +153,7 @@ func (c *memRespCache) putAux(k memRespKey, f memRespFill, body []byte, tags []s
 	if len(body) > memRespCacheMaxEntry || memURLBucket() != f.bucket {
 		return
 	}
+	tags = fineTags(k, tags) // ISUREAL_MEMCACHE_FINE (mem_respcache_fine.go)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if f.seq < c.floor {
@@ -229,9 +230,19 @@ func (c *memRespCache) removeLocked(k memRespKey, e *memRespEntry) {
 	}
 }
 
-func (c *memRespCache) invalidate(tags ...string) {
+func (c *memRespCache) invalidate(tags ...string) { c.invalidateWhy(-1, tags...) }
+
+// invalidateWhy: why >= 0 counts the call and the entries it removed (mem_respcache_fine.go).
+func (c *memRespCache) invalidateWhy(why int, tags ...string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	removed := 0
+	defer func() {
+		if why >= 0 {
+			memRespInvN[why].Add(1)
+			memRespInvRemoved[why].Add(int64(removed))
+		}
+	}()
 	c.seq++
 	if len(c.tagSeq) > 1<<18 {
 		// forget old tag versions; fills begun before now are dropped instead
@@ -246,6 +257,7 @@ func (c *memRespCache) invalidate(tags ...string) {
 		for k := range c.byTag[t] {
 			if e := c.entries[k]; e != nil {
 				c.removeLocked(k, e)
+				removed++
 			}
 		}
 	}
@@ -254,6 +266,8 @@ func (c *memRespCache) invalidate(tags ...string) {
 func (c *memRespCache) clearAll() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	memRespInvN[rcWhyClear].Add(1)
+	memRespInvRemoved[rcWhyClear].Add(int64(len(c.entries)))
 	c.seq++
 	c.floor = c.seq
 	c.entries, c.byTag, c.tagSeq, c.bytes, c.exBytes = nil, nil, nil, 0, 0
@@ -273,7 +287,8 @@ func (m *memStore) respCache(ctx context.Context) *memRespCache {
 }
 
 // memChangeInvalidate is called by applyChange with the parsed row, before it is applied.
-func (d *memData) respInvalidateUser(id, status string) {
+func (d *memData) respInvalidateUser(r memUserRow) {
+	id, status := r.ID, r.Status
 	if !memRespCacheOn {
 		return
 	}
@@ -281,10 +296,20 @@ func (d *memData) respInvalidateUser(id, status string) {
 		d.rc.clearAll()
 		return
 	}
+	if memCacheFine {
+		if memUserSame(d.users[id], r) {
+			memRespInvN[rcWhyUserNoop].Add(1)
+			return
+		}
+		d.rc.invalidateWhy(rcWhyUser, "o"+id, "u"+id)
+		return
+	}
 	d.rc.invalidate("o"+id, "u"+id)
 }
 
-func (d *memData) respInvalidatePost(postID string) {
+func (d *memData) respInvalidatePost(postID string) { d.respInvalidatePostWhy(-1, postID) }
+
+func (d *memData) respInvalidatePostWhy(why int, postID string) {
 	if !memRespCacheOn {
 		return
 	}
@@ -292,7 +317,7 @@ func (d *memData) respInvalidatePost(postID string) {
 		d.rc.clearAll()
 		return
 	}
-	d.rc.invalidate("p" + postID)
+	d.rc.invalidateWhy(why, "p"+postID)
 }
 
 // memoriesTags lists what a Memories response depends on.

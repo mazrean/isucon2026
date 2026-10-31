@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -31,6 +33,7 @@ var errStoreFallback = errors.New("store: fallback")
 const storeHandledKey = "storeHandled"
 
 type storeOp struct {
+	Lane int
 	SQL  string
 	Args []any
 }
@@ -51,12 +54,28 @@ type storeEngine struct {
 
 	stats sync.Map // name -> *[2]atomic.Int64
 
-	wbMu       sync.Mutex
-	wbCond     *sync.Cond
+	// PG 書き戻しのレーン: 0 = 画像以外すべて (1 本で順序を保つ)、1..N = image_objects (画像 ID でシャード、各 1 本)。
+	// 画像の INSERT/DELETE は同じ ID なら同じレーンなので順序が保たれる。大きい画像が小さい書き込みを待たせない。
+	lanes []*storeLane
+}
+
+type storeLane struct {
+	mu         sync.Mutex
+	cond       *sync.Cond
 	queue      []storeOp
 	queuedSeq  uint64
 	flushedSeq uint64
 }
+
+// storeSeqs[i] = レーン i で待つべき seq (0 = 待たない)
+type storeSeqs []uint64
+
+var storeImageLanes = func() int {
+	if n, err := strconv.Atoi(os.Getenv("ISUREAL_STORE_IMG_LANES")); err == nil && n > 0 {
+		return n
+	}
+	return 4
+}()
 
 var storeCurrent *storeEngine // テスト用
 
@@ -69,14 +88,18 @@ func setupStore(h *HandlerContext) {
 		slog.Error("store: open db failed; store disabled", "error", err)
 		return
 	}
-	configurePool(db, 2)
+	configurePool(db, 2+storeImageLanes)
 	e := &storeEngine{p: h.memPump, m: h.memPump.m, db: db}
-	e.wbCond = sync.NewCond(&e.wbMu)
+	for i := 0; i <= storeImageLanes; i++ {
+		l := &storeLane{}
+		l.cond = sync.NewCond(&l.mu)
+		e.lanes = append(e.lanes, l)
+		go e.flusher(l)
+	}
 	h.Store = e
 	h.memPump.preReload = e.syncPG
 	storeCurrent = e
-	go e.flusher()
-	slog.Info("store: enabled", "await_pg", storeAwaitPG)
+	slog.Info("store: enabled", "await_pg", storeAwaitPG, "image_lanes", storeImageLanes)
 }
 
 type storeTx struct {
@@ -128,6 +151,13 @@ func (t *storeTx) exec(sql string, args ...any) {
 	t.ops = append(t.ops, storeOp{SQL: sql, Args: args})
 }
 
+// execImage は image_objects の文 (画像 ID のレーンへ)。
+func (t *storeTx) execImage(imageID, sql string, args ...any) {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(imageID))
+	t.ops = append(t.ops, storeOp{Lane: 1 + int(h.Sum32()%uint32(storeImageLanes)), SQL: sql, Args: args})
+}
+
 func (e *storeEngine) ensureIndex(d *memData) {
 	if e.idxD == d {
 		return
@@ -154,14 +184,14 @@ func (e *storeEngine) ensureIndex(d *memData) {
 
 // write は fn を排他の中で実行する。fn はエラーを返すなら変更を emit する前に返すこと。
 // 戻り値の seq を commitWait に渡す。errStoreFallback なら元の DB 経路へ。
-func (e *storeEngine) write(fn func(t *storeTx) error) (uint64, error) {
+func (e *storeEngine) write(fn func(t *storeTx) error) (storeSeqs, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	p := e.p
 	p.cycleMu.Lock()
 	defer p.cycleMu.Unlock()
 	if !p.m.ready.Load() || p.loadedGen != p.wantGen.Load() {
-		return 0, errStoreFallback
+		return nil, errStoreFallback
 	}
 	m := p.m
 	m.mu.Lock()
@@ -184,10 +214,10 @@ func (e *storeEngine) write(fn func(t *storeTx) error) (uint64, error) {
 		slog.Error("store: partial write; reloading", "error", err)
 		e.enqueue(nil)
 		p.invalidate()
-		return 0, err
+		return nil, err
 	}
 	if len(t.changes) == 0 && len(t.ops) == 0 {
-		return 0, err
+		return nil, err
 	}
 	if p.peers != nil && len(t.changes) > 0 {
 		p.peers.publish(t.changes)
@@ -195,64 +225,87 @@ func (e *storeEngine) write(fn func(t *storeTx) error) (uint64, error) {
 	return e.enqueue(t.ops), err
 }
 
-func (e *storeEngine) enqueue(ops []storeOp) uint64 {
-	e.wbMu.Lock()
-	defer e.wbMu.Unlock()
-	e.queue = append(e.queue, ops...)
-	e.queuedSeq++
-	e.wbCond.Broadcast()
-	return e.queuedSeq
+// enqueue は e.mu 保持中に呼ばれる (各レーン内の順序 = 書き込み順)。レーン 0 には常に 1 つ積む。
+func (e *storeEngine) enqueue(ops []storeOp) storeSeqs {
+	seqs := make(storeSeqs, len(e.lanes))
+	for i, l := range e.lanes {
+		var mine []storeOp
+		for _, op := range ops {
+			if op.Lane == i {
+				mine = append(mine, op)
+			}
+		}
+		if i != 0 && len(mine) == 0 {
+			continue
+		}
+		l.mu.Lock()
+		l.queue = append(l.queue, mine...)
+		l.queuedSeq++
+		seqs[i] = l.queuedSeq
+		l.cond.Broadcast()
+		l.mu.Unlock()
+	}
+	return seqs
 }
 
-func (e *storeEngine) waitFlushed(seq uint64) {
-	e.wbMu.Lock()
-	for e.flushedSeq < seq {
-		e.wbCond.Wait()
+func (e *storeEngine) waitFlushed(seqs storeSeqs) {
+	for i, seq := range seqs {
+		if seq == 0 {
+			continue
+		}
+		l := e.lanes[i]
+		l.mu.Lock()
+		for l.flushedSeq < seq {
+			l.cond.Wait()
+		}
+		l.mu.Unlock()
 	}
-	e.wbMu.Unlock()
 }
 
 // syncPG は現在までの書き込みが PG に入るのを待つ (DB 経路へのフォールバック前)。
 func (e *storeEngine) syncPG() {
-	e.wbMu.Lock()
-	seq := e.queuedSeq
-	e.wbMu.Unlock()
-	e.waitFlushed(seq)
+	seqs := make(storeSeqs, len(e.lanes))
+	for i, l := range e.lanes {
+		l.mu.Lock()
+		seqs[i] = l.queuedSeq
+		l.mu.Unlock()
+	}
+	e.waitFlushed(seqs)
 }
 
 // commitWait: 書き込み seq が全ホストで読めるようになるまで待つ。memWriteBarrier の pump バリアは省略させる。
-func (e *storeEngine) commitWait(c *echo.Context, seq uint64) {
+func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
 	c.Set(storeHandledKey, true)
-	if seq == 0 {
+	if seqs == nil {
 		return
 	}
 	if storeAwaitPG {
-		e.waitFlushed(seq)
+		e.waitFlushed(seqs)
 	}
 	if e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		e.p.peers.waitAcked()
 	}
 }
 
-func (e *storeEngine) flusher() {
+func (e *storeEngine) flusher(l *storeLane) {
 	for {
-		e.wbMu.Lock()
-		for e.flushedSeq == e.queuedSeq {
-			e.wbCond.Wait()
+		l.mu.Lock()
+		for l.flushedSeq == l.queuedSeq {
+			l.cond.Wait()
 		}
-		ops := e.queue
-		e.queue = nil
-		upto := e.queuedSeq
-		e.wbMu.Unlock()
+		ops := l.queue
+		l.queue = nil
+		upto := l.queuedSeq
+		l.mu.Unlock()
 
 		if len(ops) > 0 {
 			e.flushOps(ops)
 		}
 
-		e.wbMu.Lock()
-		e.flushedSeq = upto
-		e.wbCond.Broadcast()
-		e.wbMu.Unlock()
+		l.mu.Lock()
+		l.flushedSeq = upto
+		l.cond.Broadcast()
+		l.mu.Unlock()
 	}
 }
 

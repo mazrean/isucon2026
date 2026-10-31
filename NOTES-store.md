@@ -17,7 +17,9 @@
   → peers.publish(changes) → 書き戻しキューへ。画像の複製 (replicateImage) はロック外・バリア待ちの前に開始。
 - 応答前の待ち: PG 書き戻し ≥ seq (ISUREAL_STORE_AWAIT_PG=1, 既定) ∧ 全 peer ack。両者は並行に進むので
   待ち時間は max(PG 書き戻し 数 ms, peer ack)。store が処理したリクエストでは memWriteBarrier の pump バリアは呼ばない。
-- PG 書き戻し: 単一 goroutine、溜まった文を 1 トランザクション・1 pgx batch (1 往復) で送る。
+- PG 書き戻し: レーン 0 (画像以外の全表、1 本で順序維持) + 画像レーン N 本 (ISUREAL_STORE_IMG_LANES, 既定 4。image_objects を画像 ID でシャード、各 1 本)。
+  各レーンは溜まった文を 1 トランザクション・1 pgx batch で送る。書き込みは自分が積んだレーンだけ待つ
+  (job10322 の 4 日目崩れ = 361KB 画像のバッチに友達申請・login が同じ列で待たされていた、という見立てへの対策)。
   `SET LOCAL session_replication_role = replica` でトリガー (mem_changelog) と FK を止める → pump が二重適用しない。
   接続系の失敗は成功するまで再試行 (その間 書き込み応答は止まる = PG なしでは応答しない、元実装と同じ)。
   文そのものの失敗 (PgError) のときだけ 1 文ずつ実行し、失敗文はログを出して捨てる (`store: write-behind op dropped` を監視)。

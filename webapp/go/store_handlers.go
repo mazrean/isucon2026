@@ -146,7 +146,7 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		external := externalImage(c, userID)
 		postID := uuid.NewString()
 		if !external {
-			t.exec(`INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt)
+			t.execImage(imageID, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt)
 		}
 		t.exec(`INSERT INTO posts (id, author_id, posting_window_id, image_id, caption, visibility,
                       location_kind, latitude, longitude, locality, posted_at, created_at)
@@ -263,7 +263,7 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, actor)
 		if !external {
-			t.exec(`INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES($1,$2,$3,'image/jpeg',$4)`, imageID, actor, data, t.now)
+			t.execImage(imageID, `INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES($1,$2,$3,'image/jpeg',$4)`, imageID, actor, data, t.now)
 		}
 		id := uuid.NewString()
 		t.exec(`INSERT INTO realmojis(id,post_id,reactor_id,image_id,reaction_type,created_at) VALUES($1,$2,$3,$4,$5,$6)`, id, p.ID, actor, imageID, input.ReactionType, t.now)

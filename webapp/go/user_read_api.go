@@ -39,6 +39,11 @@ func searchUsersHandler(h *HandlerContext) echo.HandlerFunc {
 		if (input.BeforeUsername == "") != (input.BeforeID == "") {
 			return NewAPIError(http.StatusBadRequest, "invalid_pagination")
 		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.searchUsers(c, input); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		viewer := GetSession(c).UserID
 		var users []User
@@ -88,6 +93,11 @@ func getUserHandler(h *HandlerContext) echo.HandlerFunc {
 		var input getUserRequest
 		if err := c.Bind(&input); err != nil {
 			return err
+		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.getUser(c, input.UserID); ok {
+				return err
+			}
 		}
 		ctx := c.Request().Context()
 		viewer := GetSession(c).UserID

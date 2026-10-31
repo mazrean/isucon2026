@@ -110,6 +110,14 @@ END: 2026-10-31 18:00 JST
 - 対応: 3 台の postgresql を stop+disable、asia2 のスロット全削除、pg-sync-watchdog disable。READ_HOST は primary (192.168.4.10)。
 - 代替: GET も asia1 へ転送 (画像/SSE はローカル) → インメモリ読みモデル (行データ付きイベント, replica 非依存) へ。
 
+## インメモリ読みモデル (ISUREAL_MEM=1, branch worktree-agent-a2367fe4e56a03cd4)
+- 仕組み: primary の 10 テーブル (users, login_sessions, friendships, follows, block_relations, friend_requests, posting_windows, posts, comments, realmojis) に AFTER ROW トリガー → `mem_changelog(seq, xid xid8, tbl, op, row jsonb)`。asia1 起動時に冪等 DDL を自動適用 (ISUREAL_MEM=1 のときだけ)。
+- asia1 (pump) が `pg_current_snapshot()` 差分で changelog を tail (単一文で取得、欠番問題なし) しメモリ適用。非 GET /api/* はレスポンスをバッファし「ハンドラ完了後に開始したサイクル」(+分散時は全 peer の ack) を待ってから返す → RYW。
+- メモリに持つもの: 全ユーザー/有効セッション/関係/保留申請/全投稿期間/ホット投稿 (開いている期間の最小 local_date 以降) とその有効コメント・RealMoji。ホット外は終了済み期間のみ → DB へフォールバック。Memories/export/SSE は DB のまま。
+- ロード前・initialize 中・poll 失敗時は not-ready → 全て元の DB 経路。initialize は init.sh → TRUNCATE mem_changelog → 再ロード → peer 再構築完了待ち。
+- 分散モード: asia1 に `ISUREAL_MEM_PEERS=192.168.2.10:8080,192.168.3.10:8080`、europe1/america1 に `ISUREAL_MEM=1 ISUREAL_MEM_PUMP=192.168.1.10:8080` (ISUREAL_FWD_SECRET 共有, /internal/mem/* は 192.168.x + secret のみ)。peer は DB を読まず、pump のダンプ (gzip JSON) + 連番バッチで同期。欠番は pump のバッファから pull、epoch 変化で再構築。peer は heartbeat (250ms) が lease 1s 途絶えると自発的に DB 経路 (pump の push タイムアウト 3s > lease)。
+- 撤去: 各テーブルの `DROP TRIGGER mem_changelog ON <tbl>`、`DROP TABLE mem_changelog`。フラグ off でもトリガーは残る (1 行 insert/変更行、負荷小)。
+- 検証: ローカル PG (primary のダンプ, 画像除く) で `go test -tags memdiff -run TestMemDiff` (DB 経路 / pump / peer の GET 応答を 1500 ステップの書き込み列で比較、差分 0)。
 ## 他チーム考察 (10:55 時点のリーダーボード)
 - 1位 sotozaki 80631 / 2位 Dorayaki 58943 / 3位 KatoMegumi 49407 / 4位 42027 / 5位 35953 … 25位 18936。自チーム 17423 (30位)。
 - スコア ≒ Σ(地域重み × 人数 × 日) × 約 38 点。人数は「前日の出来が良いと約 1.5〜1.75 倍」で増える (調査エージェント)。

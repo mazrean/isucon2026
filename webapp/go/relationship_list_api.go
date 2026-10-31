@@ -58,6 +58,11 @@ func getRelationshipsHandler(h *HandlerContext) echo.HandlerFunc {
 		default:
 			return NewAPIError(http.StatusBadRequest, "invalid_relationship")
 		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.relationships(c, input); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		actor := GetSession(c).UserID
 		var records []struct {

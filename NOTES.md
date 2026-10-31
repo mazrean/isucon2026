@@ -249,6 +249,7 @@ END: 2026-10-31 18:00 JST
 | 29455 | - | 191380 | A: 26530 構成 + PG_SB 512 + 403 修正 (SYNC_VISIBLE/ACK_OWN off)。pass、エラー 0。GP 746/155/199、総要求 109.6k |
 | 29771 | - | 189935 | B: SYNC 系の既定 (SYNC_VISIBLE+ACK_OWN+PG_SB 512) の 2 本目。pass。d5 984/443/344、GP 570/416/317。SYNC 系の 3 本平均 約 187k、A 系 2 本平均 約 195.6k |
 | 30055 | - | 189147 | A 系 (SYNC_VISIBLE/ACK_OWN=0、asia1 の env.sh で確認) + ASIA_LOCALIMG_ASYNC=1。pass。asia の GP 759 は A 系 (746) と同等、総点は A 系の平均 約 195.6k を下回る。+1 万に届かないので不採用 |
+| 30326 | - | 191164 | A の既定 + ASIA_LOCALIMG_SEG=1。pass。d5 1165/336/316、GP 700/234/209。A 系の平均 (約 195.6k) と同等。+1 万に届かないので不採用 (画像の保存形式を変える危険に見合わない) |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

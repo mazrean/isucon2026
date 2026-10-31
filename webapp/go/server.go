@@ -98,6 +98,7 @@ func NewServer(config *Config) *echo.Echo {
 	e.Use(IPBanMiddleware(handlerContext))
 	e.Use(FwdPriorityMiddleware(handlerContext))
 	setupMem(handlerContext, e)
+	memPrebuildSetup(handlerContext)
 	registerLocalImg(e, handlerContext)
 	setupStore(handlerContext)
 	registerLocalSession(e, handlerContext)

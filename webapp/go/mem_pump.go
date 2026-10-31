@@ -339,6 +339,7 @@ func (p *memPump) reload() error {
 		return fmt.Errorf("mem: invalidated during reload")
 	}
 	p.m.ready.Store(true)
+	go memPrebuildLoaded(p.m)
 	slog.Info("mem: loaded", "users", len(d.users), "posts", len(d.posts), "windows", len(d.windows), "elapsed", time.Since(start))
 	return nil
 }

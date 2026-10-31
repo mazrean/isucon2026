@@ -1,11 +1,13 @@
 package isureal
 
 import (
+	"context"
 	"crypto/subtle"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -47,14 +49,39 @@ type memOriginResp struct {
 	tags []string // nil = not cacheable
 }
 
+// ISUREAL_MEMORIES_ORIGIN_DEADLINE_MS > 0: a Memories miss sent to the origin
+// that has not answered within this time is cancelled and computed locally
+// (same DB path as without an origin; the fill taken before still applies).
+var (
+	memOriginDeadline     = time.Duration(envIntDefault("ISUREAL_MEMORIES_ORIGIN_DEADLINE_MS", 0)) * time.Millisecond
+	memOriginDeadlineHits atomic.Int64
+)
+
+// fetchOriginDeadline is fetchOrigin bounded by d (0 = no bound).
+func fetchOriginDeadline(c *echo.Context, d time.Duration) (memOriginResp, bool) {
+	if d <= 0 || memRespOrigin == "" || forwardSecret == "" {
+		return fetchOrigin(c)
+	}
+	ctx, cancel := context.WithTimeout(c.Request().Context(), d)
+	defer cancel()
+	r, ok := fetchOriginCtx(ctx, c.Request())
+	if !ok && ctx.Err() == context.DeadlineExceeded && c.Request().Context().Err() == nil {
+		memOriginDeadlineHits.Add(1)
+	}
+	return r, ok
+}
+
 // fetchOrigin: ok=false = origin unusable, compute locally.
 func fetchOrigin(c *echo.Context) (memOriginResp, bool) {
+	return fetchOriginCtx(c.Request().Context(), c.Request())
+}
+
+func fetchOriginCtx(ctx context.Context, in *http.Request) (memOriginResp, bool) {
 	var r memOriginResp
 	if memRespOrigin == "" || forwardSecret == "" {
 		return r, false
 	}
-	in := c.Request()
-	req, err := http.NewRequestWithContext(in.Context(), http.MethodGet, "http://"+memRespOrigin+in.URL.RequestURI(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+memRespOrigin+in.URL.RequestURI(), nil)
 	if err != nil {
 		return r, false
 	}

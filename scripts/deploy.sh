@@ -45,6 +45,7 @@ PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and f
 MEMORIES_PAR=${MEMORIES_PAR:-1}   # 1 = Memories run posts/RealMojis/comments queries at once (1 DB round trip instead of 3)
 MEMORIES_MEM=${MEMORIES_MEM:-1}   # 1 (needs MEM=1) = Memories for periods inside the in-memory hot range come from memory (webapp/go/mem_memories.go)
 MEMORIES_CACHE=${MEMORIES_CACHE:-1}   # 1 (needs MEM=1) = Memories/export DB-path answers cached per viewer, dropped by the mem change stream (webapp/go/mem_respcache.go). For asia also set HEAVY_TARGET=127.0.0.1 (asia2 has no mem model)
+# MEMORIES_PREBUILD=1 (needs MEMORIES_CACHE=1) = past-month Memories prebuilt into the cache: eu/am all region users at load, asia per user on first miss (webapp/go/mem_memories_prebuild.go); MEMORIES_PREBUILD_MB cap (48). MEMORIES_ORIGIN_DEADLINE_MS (asia1, e.g. 1500) = origin misses slower than this are computed locally
 # MEMORIES_CACHE_ORIGIN (asia1 only, with MEMORIES_CACHE=1 HEAVY_TARGET=127.0.0.1): e.g. 192.168.4.10:8080 = cache misses are computed by the asia2 app (webapp/go/mem_respcache_origin.go)
 # MEMORIES_TARGET (asia1 only): where nginx sends /api/memories; default = HEAVY_TARGET. 127.0.0.1 = asia1's own app (memory path)
 HEAVY_LIMIT=${HEAVY_LIMIT:-0}   # N>0 = at most N heavy DB reads (export, Memories/search DB path) at once per app (webapp/go/heavy_limit.go)
@@ -121,6 +122,9 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_IMG_DEDUP '"$IMG_DEDUP"'
       setenv ISUREAL_MEMORIES_MEM '"$MEMORIES_MEM"'
       setenv ISUREAL_MEMORIES_CACHE '"$MEMORIES_CACHE"'
+      setenv ISUREAL_MEMORIES_PREBUILD '"${MEMORIES_PREBUILD:-0}"'
+      setenv ISUREAL_MEMORIES_PREBUILD_MB '"${MEMORIES_PREBUILD_MB:-48}"'
+      setenv ISUREAL_MEMORIES_ORIGIN_DEADLINE_MS '"${MEMORIES_ORIGIN_DEADLINE_MS:-0}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-192.168.4.10:8080}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN ""; fi
       setenv ISUREAL_HEAVY_LIMIT '"$HEAVY_LIMIT"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi

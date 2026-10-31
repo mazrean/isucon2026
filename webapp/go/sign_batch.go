@@ -48,7 +48,7 @@ func appendUserProfileImageReq(reqs []imageURLReq, user User) []imageURLReq {
 }
 
 func currentImageExp() int64 {
-	exp := time.Now().Add(imageURLLifetime).Unix()
+	exp := imageURLNow().Add(imageURLLifetime).Unix()
 	exp -= exp % int64((imageURLLifetime-imageURLReuseMargin)/time.Second)
 	return exp
 }

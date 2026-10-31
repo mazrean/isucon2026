@@ -79,6 +79,7 @@ type memRespEntry struct {
 	body   []byte
 	tags   []string
 	bucket int64
+	aux    any // ISUREAL_EXPORT_REBUILD: *exportSkel the body was assembled from
 }
 
 type memRespCache struct {
@@ -93,7 +94,7 @@ type memRespCache struct {
 
 // memURLBucket is the exp signedImageURL uses now.
 func memURLBucket() int64 {
-	exp := time.Now().Add(imageURLLifetime).Unix()
+	exp := imageURLNow().Add(imageURLLifetime).Unix()
 	return exp - exp%int64((imageURLLifetime-imageURLReuseMargin)/time.Second)
 }
 
@@ -106,6 +107,17 @@ func (c *memRespCache) get(k memRespKey) []byte {
 		return e.body
 	}
 	memRespMiss.Add(1)
+	return nil
+}
+
+// staleAux returns the aux of an entry built in an earlier URL bucket (still
+// valid: any change to its tags removes it). Call after begin().
+func (c *memRespCache) staleAux(k memRespKey) any {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if e := c.entries[k]; e != nil {
+		return e.aux
+	}
 	return nil
 }
 
@@ -122,6 +134,10 @@ func (c *memRespCache) begin() memRespFill {
 }
 
 func (c *memRespCache) put(k memRespKey, f memRespFill, body []byte, tags []string) {
+	c.putAux(k, f, body, tags, nil)
+}
+
+func (c *memRespCache) putAux(k memRespKey, f memRespFill, body []byte, tags []string, aux any) {
 	if len(body) > memRespCacheMaxEntry || memURLBucket() != f.bucket {
 		return
 	}
@@ -153,7 +169,7 @@ func (c *memRespCache) put(k memRespKey, f memRespFill, body []byte, tags []stri
 			c.removeLocked(ek, e)
 		}
 	}
-	c.entries[k] = &memRespEntry{body: body, tags: tags, bucket: f.bucket}
+	c.entries[k] = &memRespEntry{body: body, tags: tags, bucket: f.bucket, aux: aux}
 	c.bytes += len(body)
 	for _, t := range tags {
 		s := c.byTag[t]

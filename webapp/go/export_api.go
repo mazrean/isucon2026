@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"sync/atomic"
 
 	"github.com/labstack/echo/v5"
 	"golang.org/x/sync/errgroup"
@@ -29,6 +31,17 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 				return writeExport(c, b)
 			}
 			fill = rc.begin()
+			if exportRebuildOn {
+				// signed-URL bucket rolled over: re-assemble with new signatures, no DB.
+				if sk, _ := rc.staleAux(key).(*exportSkel); sk != nil {
+					body, tags, err := assembleExport(sk)
+					if err == nil && tags != nil {
+						rc.putAux(key, fill, body, tags, sk)
+						exportRebuilds.Add(1)
+						return writeExport(c, body)
+					}
+				}
+			}
 			if r, ok := fetchOrigin(c); ok {
 				if r.tags != nil {
 					rc.put(key, fill, r.body, r.tags)
@@ -37,12 +50,15 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 		}
 		defer heavyAcquire(ctx)()
-		body, tags, err := buildExport(h, c, userID)
+		body, tags, sk, err := buildExportSkel(h, c, userID)
 		if err != nil {
 			return err
 		}
 		if rc != nil && tags != nil {
-			rc.put(key, fill, body, tags)
+			if !exportRebuildOn {
+				sk = nil
+			}
+			rc.putAux(key, fill, body, tags, sk)
 		}
 		if rc == nil {
 			memRespSetTags(c, tags)
@@ -60,10 +76,31 @@ func writeExport(c *echo.Context, body []byte) error {
 // buildExport returns the zip and, when every post's image was found, the
 // cache tags it depends on (nil = do not cache).
 func buildExport(h *HandlerContext, c *echo.Context, userID string) ([]byte, []string, error) {
+	body, tags, _, err := buildExportSkel(h, c, userID)
+	return body, tags, err
+}
+
+// exportSkel is what an export zip is assembled from (DB rows + image bytes).
+// ISUREAL_EXPORT_REBUILD=1 keeps it next to the cached zip so that, when the
+// signed-URL bucket rolls over, the zip is re-assembled with the new
+// signatures without touching the DB (same assembleExport, same bytes).
+type exportSkel struct {
+	userID string
+	author User
+	posts  []Post
+	objs   []*imageObject
+}
+
+var (
+	exportRebuildOn = os.Getenv("ISUREAL_EXPORT_REBUILD") == "1"
+	exportRebuilds  atomic.Int64 // テスト / 観測用
+)
+
+func buildExportSkel(h *HandlerContext, c *echo.Context, userID string) ([]byte, []string, *exportSkel, error) {
 	ctx := c.Request().Context()
 	author, err := getUser(ctx, h.Reader(), userID)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	var posts []Post
 	if err := h.Reader().SelectContext(ctx, &posts, `
@@ -73,7 +110,7 @@ func buildExport(h *HandlerContext, c *echo.Context, userID string) ([]byte, []s
    WHERE p.author_id = $1 AND p.deleted_at IS NULL
    ORDER BY p.posted_at, p.id
   `, userID); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	// 画像の中身は不変なので、image_cache.go のキャッシュ (メモリ → ディスク → DB) から並列に取る。
 	objs := make([]*imageObject, len(posts))
@@ -87,8 +124,20 @@ func buildExport(h *HandlerContext, c *echo.Context, userID string) ([]byte, []s
 		})
 	}
 	if err := g.Wait(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
+	skel := &exportSkel{userID: userID, author: author, posts: posts, objs: objs}
+	b, tags, err := assembleExport(skel)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return b, tags, skel, nil
+}
+
+// assembleExport builds the zip and its cache tags (nil = do not cache) from a skeleton.
+func assembleExport(sk *exportSkel) ([]byte, []string, error) {
+	author, posts, objs := sk.author, sk.posts, sk.objs
+	userID := sk.userID
 	total := 0
 	for _, obj := range objs {
 		if obj != nil {

@@ -45,6 +45,7 @@ func searchUsersHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 		}
 		ctx := c.Request().Context()
+		defer heavyAcquire(ctx)()
 		viewer := GetSession(c).UserID
 		var users []User
 		if err := h.Reader().SelectContext(ctx, &users, `SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE status='active' AND id<>$1 AND ($2='' OR (username,id)>($2,$3)) ORDER BY username, id`, viewer, input.BeforeUsername, input.BeforeID); err != nil {

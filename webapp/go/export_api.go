@@ -19,6 +19,7 @@ type exportPostResponse struct {
 func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
+		defer heavyAcquire(ctx)()
 		userID := GetSession(c).UserID
 		author, err := getUser(ctx, h.Reader(), userID)
 		if err != nil {

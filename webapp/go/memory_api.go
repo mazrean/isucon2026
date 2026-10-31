@@ -44,7 +44,17 @@ func getMemoriesHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return NewAPIError(http.StatusBadRequest, "invalid_memory_period")
 		}
-		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, start.AddDate(0, 1, 0), input.BeforePostedAt, input.BeforeID)
+		end := start.AddDate(0, 1, 0)
+		if h.Mem.on() {
+			if ok, response, err := h.Mem.memories(c, GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID); ok {
+				if err != nil {
+					return err
+				}
+				return c.JSON(http.StatusOK, response)
+			}
+		}
+		defer heavyAcquire(c.Request().Context())()
+		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID)
 		if err != nil {
 			return err
 		}
@@ -62,7 +72,17 @@ func getMemoriesByDateHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return NewAPIError(http.StatusBadRequest, "invalid_memory_period")
 		}
-		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, start.AddDate(0, 0, 1), input.BeforePostedAt, input.BeforeID)
+		end := start.AddDate(0, 0, 1)
+		if h.Mem.on() {
+			if ok, response, err := h.Mem.memories(c, GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID); ok {
+				if err != nil {
+					return err
+				}
+				return c.JSON(http.StatusOK, getMemoriesByDateResponse(response))
+			}
+		}
+		defer heavyAcquire(c.Request().Context())()
+		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID)
 		if err != nil {
 			return err
 		}

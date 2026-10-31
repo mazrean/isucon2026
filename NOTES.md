@@ -208,6 +208,7 @@ END: 2026-10-31 18:00 JST
 | 16572 | - | 113787 | 新既定 (ASIA_LOCALIMG=1) + eu/am 一式 (PEER_IMAGE_MEM 600、EXPORT_REBUILD、EXPORT_CACHE 256、WM_HB + PULL_UNLOCKED、PREEXTEND 1500)。asia 18/43/117/319/793、eu 259 / am 184、GP 430/228/171 → eu/am が崩れた。一式は不採用、切り分けへ |
 | 16951 | 29928be | FAIL 0 | 新既定のみの基準。asia 18/49/144/412/1004 (最多)、eu 269 / am 266。走行後の整合性チェックで Memories がタイムアウト (走行中 182 件)。05:21:57 に asia2 の PG が OOM kill。疑い: DB_KEEP_IDLE (idle 接続を保持、backend 約 220) + max_wal_size 12GB → DB_KEEP_IDLE を既定 0 に |
 | 18156 | - | 158983 | 新既定 (PGCPU=0、KEEP_IDLE=0、OOM 対策) + POST_BATCH + FRIEND_BATCH + ASIA_LOCALIMG_FAST + IPBAN_ASYNC。d5 は asia 1007 / eu 370 / am 344 (3 地域とも過去最多)。GP 483/186/292 (eu の GP が 50% に崩れた)。503 あり、OOM なし → 4 つを既定に。eu の GP を切り分け |
+| 18394 | - | 141355 | 新既定 + DROP_DUP_IDX=1 (重複インデックス削除、戻していない)。asia 18/52/154/442/1038、eu 7/15/42/114/263、am 6/11/?/76/177、GP 306/258/173。eu/am が d2 から低い。asia1 の bw_out_allowance_exceeded がこの回で +667 (3836→4503) → 次は ASIA_LOCALIMG_FAST=0 で送信上限の仮説を見る |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

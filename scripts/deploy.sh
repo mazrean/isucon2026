@@ -37,7 +37,7 @@ MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers
 MEM_WM=${MEM_WM:-1}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
 MEM_WM_HB=${MEM_WM_HB:-0}   # 1 (needs MEM_WM=1) = shorter wm waits: 10ms poll, 16 in-flight pushes to wm peers, wm rides the data push (webapp/go/mem_watermark.go); MEM_WM_SLACK_MS (default 0) loosens the read target
 MEM_WM_EARLY=${MEM_WM_EARLY:-0}   # 1 (needs MEM_WM=1) = asia1 pushes a poll's batch + wm to eu/am before applying it locally (cuts asia1 apply time from the eu/am wm wait). Separate knobs, empty/0 = built-in default: MEM_WM_TICK_MS (idle poll period, 20; 10 with HB), MEM_PUSH_INFLIGHT (data pushes per wm peer, 4; 16 with HB), MEM_WM_INFLIGHT (wm-only posts per peer, 8; 16 with HB), MEM_IDLE_CONNS (keep-alive conns per peer, 16; 64 with HB: keep >= push + wm + 2)
-MEM_APPLY_CHUNK=${MEM_APPLY_CHUNK:-0}   # N>0 (all hosts, same value) = asia1 tags changes with their xid; eu/am apply a push batch whole-tx-at-a-time, releasing the memory write lock every ~N changes (never inside a tx; wm/seq advance only after the whole batch) (webapp/go/mem_apply_chunk.go)
+MEM_APPLY_CHUNK=${MEM_APPLY_CHUNK:-200}   # N>0 (all hosts, same value) = asia1 tags changes with their xid; eu/am apply a push batch whole-tx-at-a-time, releasing the memory write lock every ~N changes (never inside a tx; wm/seq advance only after the whole batch) (webapp/go/mem_apply_chunk.go)
 ASIA_POST_CAP=${ASIA_POST_CAP:-0}   # N>0 (asia1 only) = during GP at most N asia-local POST /api/posts run at once (forwarded eu/am posts never wait), so the pump's push/poll goroutines are not queued behind them on 2 CPUs (webapp/go/gp_postcap.go). ASIA_POST_CAP_WAIT_MS (3000, then run uncapped), ASIA_POST_CAP_LAG_MS (0 = always in GP; >0 = only while the last push RTT exceeds it)
 # IPBAN_ASYNC=1: ip_bans reload in a 200ms background loop, requests never wait for it (webapp/go/ip_ban.go). MEM_WM_MAXWAIT_MS (default 300): peer GET waits up to this for the wm before falling back to the primary (1 RTT per query from eu/am). DBTRACE=1: every 10s slog the SQL this app sent, per pool + 80-char prefix (webapp/go/dbtrace.go)
 MEM_PUSH_STATS=${MEM_PUSH_STATS:-0}   # 1 = 10s slog "mem: push stats" (pump: bytes/batches/ack; peer: net/lock/apply/pulls) (webapp/go/mem_push_stats.go)
@@ -59,7 +59,7 @@ LOCAL_SESSION=${LOCAL_SESSION:-0}   # 1 = europe1/america1 commit login/logout i
 STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 # ASIA_LOCALIMG_FAST (all hosts, default 0): 1 = eu/am/asia2 pull asia1-tagged images from asia1 before PG (skips the replica + cross-region primary miss, ~1 RTT); asia1 answers pulls from its memory LRU first (webapp/go/localimg.go)
-IMG_FRIEND_PUSH=${IMG_FRIEND_PUSH:-0}   # 1 = asia1 pre-pushes each committed image to eu/am apps where the owner has friends, only while asia1 tx < IMG_FRIEND_PUSH_MAX_MBPS (300) and outside GP (IMG_FRIEND_PUSH_GP=1 = also in GP); IMG_FRIEND_PUSH_ALL=1 = also the other regions at low priority (public/fof posts first); IMG_FRIEND_PUSH_REV=1 = europe1/america1 push their LOCALIMG images the same way (to asia1 + each other); asia1 (no disk cache) keeps received pushes in a separate IMG_FRIEND_PUSH_RECV_MB (128) LRU; IMG_FRIEND_PUSH_FRESH=1 = full queue evicts the oldest + skip jobs older than IMG_FRIEND_PUSH_MAX_AGE_MS (10000); IMG_FRIEND_PUSH_MIN_FRIENDS (1) = friends needed in the dest region; IMG_FRIEND_PUSH_HI_NOWAIT=1 = friend jobs ignore the busy-NIC wait (GP still stops); IMG_FRIEND_PUSH_WINDOW_MB (0=off, e.g. 50) = per dest per window cap; 10s slog "imgfriendpush" (webapp/go/img_friend_push.go; set on all app hosts)
+IMG_FRIEND_PUSH=${IMG_FRIEND_PUSH:-1}   # 1 = asia1 pre-pushes each committed image to eu/am apps where the owner has friends, only while asia1 tx < IMG_FRIEND_PUSH_MAX_MBPS (300) and outside GP (IMG_FRIEND_PUSH_GP=1 = also in GP); IMG_FRIEND_PUSH_ALL=1 = also the other regions at low priority (public/fof posts first); IMG_FRIEND_PUSH_REV=1 = europe1/america1 push their LOCALIMG images the same way (to asia1 + each other); asia1 (no disk cache) keeps received pushes in a separate IMG_FRIEND_PUSH_RECV_MB (128) LRU; IMG_FRIEND_PUSH_FRESH=1 = full queue evicts the oldest + skip jobs older than IMG_FRIEND_PUSH_MAX_AGE_MS (10000); IMG_FRIEND_PUSH_MIN_FRIENDS (1) = friends needed in the dest region; IMG_FRIEND_PUSH_HI_NOWAIT=1 = friend jobs ignore the busy-NIC wait (GP still stops); IMG_FRIEND_PUSH_WINDOW_MB (0=off, e.g. 50) = per dest per window cap; 10s slog "imgfriendpush" (webapp/go/img_friend_push.go; set on all app hosts)
 IMG_PUSH_FILTER=${IMG_PUSH_FILTER:-0}   # 1 = asia1 pushes post/RealMoji images only to regions with a likely viewer (author's friends; public = all); others pull from PG
 FWD_PRIORITY=${FWD_PRIORITY:-1}   # 1 = asia1 runs forwarded (eu/am) writes first; local writes go through a semaphore (webapp/go/priority.go)
 IMG_DEDUP=${IMG_DEDUP:-0}   # 1 = image bytes cross asia->eu/am once: push asks the peer first (/have), viewers wait for an in-flight push, initialize purges eu/am image caches, 10s slog "imgcache" (webapp/go/imgdedup.go; set on asia1 = sender and europe1/america1 = receivers)
@@ -152,13 +152,13 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_IMG_FRIEND_PUSH_GP '"${IMG_FRIEND_PUSH_GP:-0}"'
       setenv ISUREAL_IMG_FRIEND_PUSH_ALL '"${IMG_FRIEND_PUSH_ALL:-0}"'
       setenv ISUREAL_IMG_FRIEND_PUSH_MAX_MBPS '"${IMG_FRIEND_PUSH_MAX_MBPS:-300}"'
-      setenv ISUREAL_IMG_FRIEND_PUSH_REV '"${IMG_FRIEND_PUSH_REV:-0}"'
+      setenv ISUREAL_IMG_FRIEND_PUSH_REV '"${IMG_FRIEND_PUSH_REV:-1}"'
       setenv ISUREAL_IMG_FRIEND_PUSH_RECV_MB '"${IMG_FRIEND_PUSH_RECV_MB:-128}"'
-      setenv ISUREAL_IMG_FRIEND_PUSH_FRESH '"${IMG_FRIEND_PUSH_FRESH:-0}"'
+      setenv ISUREAL_IMG_FRIEND_PUSH_FRESH '"${IMG_FRIEND_PUSH_FRESH:-1}"'
       setenv ISUREAL_IMG_FRIEND_PUSH_MAX_AGE_MS '"${IMG_FRIEND_PUSH_MAX_AGE_MS:-10000}"'
       setenv ISUREAL_IMG_FRIEND_PUSH_MIN_FRIENDS '"${IMG_FRIEND_PUSH_MIN_FRIENDS:-1}"'
       setenv ISUREAL_IMG_FRIEND_PUSH_HI_NOWAIT '"${IMG_FRIEND_PUSH_HI_NOWAIT:-0}"'
-      setenv ISUREAL_IMG_FRIEND_PUSH_WINDOW_MB '"${IMG_FRIEND_PUSH_WINDOW_MB:-0}"'
+      setenv ISUREAL_IMG_FRIEND_PUSH_WINDOW_MB '"${IMG_FRIEND_PUSH_WINDOW_MB:-50}"'
       setenv ISUREAL_MEMORIES_MEM '"$MEMORIES_MEM"'
       setenv ISUREAL_MEMORIES_CACHE '"$MEMORIES_CACHE"'
       setenv ISUREAL_MEMORIES_PREBUILD '"${MEMORIES_PREBUILD:-0}"'

@@ -183,3 +183,4 @@ END: 2026-10-31 18:00 JST
 | 8353 | - | **112338** | lease を送信時刻で上限 (ドライバー版) + LOCALIMG。asia 728 / eu 206 / am 92、GP 543/175/85。フィードの誤り 0、409 0 |
 | 8506 | - | 110123 | push パイプライン化 (mem-pipeline)。112k とノイズの範囲。エラー無し。バリア p50 220ms / p90 316〜459ms |
 | 8713 | - | **113783** | MEM_WM=1 (watermark)。asia 5 日目 944 / eu 192 / am 111。GP は asia 199 に崩れ (asia1 飽和)、eu 171、am 103。wm 待ち p50 63〜144ms、fallback 少 → 既定 on |
+| 8957 | - | 111710 | JC=1 (Rust JPEG)。asia5 823 / eu 182 / am 118。GP asia 0 人 (崩壊)、eu 174、am 116。jpeg remote_err 33 |

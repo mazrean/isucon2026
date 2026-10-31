@@ -30,3 +30,4 @@
 12:32	428c7d2	job=8353 state=4 pass=true スコア=112338 種別エラー数=map[]	lease 修正 (送信時刻で上限) + LOCALIMG
 12:34	99291db	job=8506 state=4 pass=true スコア=110123 種別エラー数=map[]	push パイプライン化 + 送信時刻 lease (mem-pipeline) + LOCALIMG
 12:37	68526a9	job=8713 state=4 pass=true スコア=113783 種別エラー数=map[]	watermark (MEM_WM=1): eu/am の書き込みは peer ack を待たず、読みが wm を待つ
+12:40	32fb316	job=8957 state=4 pass=true スコア=111710 種別エラー数=map[]	既定 (WM + LOCALIMG + MEMORIES_PAR) + JC=1 (Rust JPEG)

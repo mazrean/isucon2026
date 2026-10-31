@@ -126,7 +126,7 @@ func replaceRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		committed = true
 		if !external {
-			replicateImageTo(imageID, actor, "image/jpeg", data, memPushRegionsForPost(h.Mem, post.AuthorID, post.Visibility, actor))
+			replicateImageVis(imageID, actor, "image/jpeg", data, memPushRegionsForPost(h.Mem, post.AuthorID, post.Visibility, actor), post.Visibility)
 		}
 		return c.JSON(http.StatusCreated, newRealMojiResponse(reaction, user))
 	}

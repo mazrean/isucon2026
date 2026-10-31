@@ -376,7 +376,9 @@ func localImgModifyResponse(resp *http.Response) error {
 		slog.Error("localimg meta", "id", pend.id, "error", err)
 	}
 	if data, err := os.ReadFile(localStore.p("data", pend.id)); err == nil {
-		images.put(pend.id, &imageObject{Owner: owner, MediaType: "image/jpeg", Data: data})
+		obj := &imageObject{Owner: owner, MediaType: "image/jpeg", Data: data}
+		images.put(pend.id, obj)
+		friendPusher.enqueue(pend.id, obj, "") // ISUREAL_IMG_FRIEND_PUSH_REV (nil = off)
 	}
 	localImgStats.stored.Add(1)
 	localStore.enqueue(pend.id)
@@ -564,6 +566,7 @@ func localImgPurgePeers(ctx context.Context) {
 // registerLocalImg installs the routes, the asia1-side header check and, on
 // an origin host, the flusher and the journal replay.
 func registerLocalImg(e *echo.Echo, h *HandlerContext) {
+	startImgFriendPush(h)
 	if asiaLocalImgOn && (forwardSecret == "" || h.Config.Region != "asia") {
 		asiaLocalImgOn = false // pullers need the secret; only asia1 commits locally
 	}

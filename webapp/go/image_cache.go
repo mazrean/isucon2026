@@ -98,6 +98,22 @@ func (l *imageLRU) add(id string, obj *imageObject) {
 	}
 }
 
+// take removes and returns id (nil if absent).
+func (l *imageLRU) take(id string) *imageObject {
+	s := l.shard(id)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e, ok := s.items[id]
+	if !ok {
+		return nil
+	}
+	s.ll.Remove(e)
+	delete(s.items, id)
+	obj := e.Value.(*imageLRUEntry).obj
+	s.bytes -= obj.size()
+	return obj
+}
+
 type imageCall struct {
 	wg  sync.WaitGroup
 	obj *imageObject
@@ -259,6 +275,10 @@ func (s *imageStore) get(ctx context.Context, db, primary *sqlx.DB, id string) (
 }
 
 func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) (*imageObject, error) {
+	if obj := imgFriendRecvTake(id); obj != nil { // ISUREAL_IMG_FRIEND_PUSH, no-disk receiver
+		s.put(id, obj)
+		return obj, nil
+	}
 	if obj := s.readDisk(id); obj != nil {
 		imgStats.diskHit.Add(1)
 		s.mem.add(id, obj)

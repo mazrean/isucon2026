@@ -196,6 +196,7 @@ END: 2026-10-31 18:00 JST
 | 13667 | - | 139684 | 既定 + 画像 INSERT 専用プール + login 7→4 + 友達申請 9→5 + ASIA_LOCALIMG=1。asia 18/51/149/419/946 (2.83/2.92/2.81/2.26、d5 過去最高)、eu 269 / am 250。GP asia 291 (31%) に崩壊 → ASIA_LOCALIMG が第一容疑。503 20 件 |
 | 13916 | - | 67391 | LOGREPL=1 (eb992f8 修正版、公式) on 既定 (往復削減 3 つ、ASIA_LOCALIMG=0)。asia 18/45/123/322/322、eu 121 / am 89、GP 273/120/84。remote_apply で全体が遅くなり半減 → LOGREPL は不採用で確定。invalid_session 401 が 3 件。後始末は確認済み (slot 0、synchronous_standby_names 空、watchdog 2 つとも inactive) |
 | 14134 | - | 146362 | 既定の確認 (MEMORIES_CACHE=1、往復削減 3 つ、ASIA_LOCALIMG=0)。asia 18/52/153/415/618 (d4→d5 1.49 倍)、eu 223 / am 310。GP 368/212/297。画像 GET の 500 が 6 件 (専用プール 12 本を INSERT と取り合って 10s 超え) → 409612f で読みを別プールに |
+| 14564 | - | 131600 | 409612f (画像の読みを別プール、投稿は枠外) + MEM_WM_HB=1 + JPEG 委譲から asia2 を外す。asia 18/48/135/350/428、eu 173 / am 249、GP 268/170/235。投稿タイムアウト 3。eu d2-d3 も悪化 → WM_HB と JPEG の振り分けは既定に戻す |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

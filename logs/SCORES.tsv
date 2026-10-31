@@ -50,3 +50,4 @@
 13:42	9c584a7	job=13667 state=4 pass=true スコア=139684 種別エラー数=map[]	既定 (MEMORIES_CACHE=1、重い読みは asia2) + 画像 INSERT 専用プール (5aaecc5) + login 往復 7→4 (c26b4c0) + ASIA_LOCALIMG=1
 13:45	67c8678	job=13916 state=4 pass=true スコア=67391 種別エラー数=map[]	LOGREPL=1
 13:48	6e589d6	job=14134 state=4 pass=true スコア=146362 種別エラー数=map[]	既定 (MEMORIES_CACHE=1、往復削減 3 つ、ASIA_LOCALIMG=0、LOGREPL=0) の確認
+13:53	0b5d6a9	job=14564 state=4 pass=true スコア=131600 種別エラー数=map[]	既定 + 画像の読み専用プール/投稿は枠外 (409612f) + MEM_WM_HB=1 + JPEG 委譲から asia2 を外す (GP の PG に CPU を空ける)

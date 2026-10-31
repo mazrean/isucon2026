@@ -46,6 +46,7 @@ type storeEngine struct {
 	comments  map[string]string // comment id -> post id
 	realmojis map[string]string // realmoji id -> post id
 	requests  map[string]*memReq
+	finalized map[string]memFriendRequestRow // store が確定させた申請 (403/404 をメモリで返す)
 
 	stats sync.Map // name -> *[2]atomic.Int64
 
@@ -83,6 +84,7 @@ type storeTx struct {
 	now     time.Time
 	changes []memChange
 	ops     []storeOp
+	after   []func() // コミット後 (ロック外・バリア待ちの前) に実行
 }
 
 func storeNow() time.Time { return time.Now().Truncate(time.Microsecond).In(time.Local) }
@@ -116,6 +118,7 @@ func (t *storeTx) emit(tbl, op string, row any) {
 			t.e.requests[r.ID] = t.d.users[r.RequesterID].outgoing[r.ID]
 		} else {
 			delete(t.e.requests, r.ID)
+			t.e.finalized[r.ID] = r
 		}
 	}
 }
@@ -132,6 +135,7 @@ func (e *storeEngine) ensureIndex(d *memData) {
 	e.comments = map[string]string{}
 	e.realmojis = map[string]string{}
 	e.requests = map[string]*memReq{}
+	e.finalized = map[string]memFriendRequestRow{}
 	for _, p := range d.posts {
 		for _, c := range p.comments {
 			e.comments[c.ID] = p.ID

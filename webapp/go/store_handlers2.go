@@ -75,8 +75,8 @@ func (e *storeEngine) putProfileImage(c *echo.Context, userID string, data []byt
 		next := u.User
 		next.ProfileImageID = strPtr(imageID)
 		t.emit("users", "U", userRow(next))
+		t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", data) })
 		return func() error {
-			replicateImage(imageID, userID, "image/jpeg", data)
 			return c.NoContent(http.StatusNoContent)
 		}, nil
 	})

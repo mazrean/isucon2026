@@ -24,9 +24,11 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 		name = name[strings.LastIndexByte(name, '.')+1:]
 	}
 	var respond func() error
+	var after []func()
 	seq, err := e.write(func(t *storeTx) error {
 		var err error
 		respond, err = fn(t)
+		after = t.after
 		return err
 	})
 	if err == errStoreFallback {
@@ -35,6 +37,12 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 		return false, nil
 	}
 	e.count(name, 0)
+	if err == nil {
+		// 画像の複製などはバリア待ちと並行に始める (元実装もコミット直後・応答前に開始していた)
+		for _, f := range after {
+			f()
+		}
+	}
 	e.commitWait(c, seq)
 	if err != nil {
 		return true, err
@@ -142,8 +150,8 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 			Longitude: location.Longitude, Locality: location.Locality, PostedAt: postedAt,
 		})
 		resp := newPostResponse(d.posts[postID].full(), u.User)
+		t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", imageData) })
 		return func() error {
-			replicateImage(imageID, userID, "image/jpeg", imageData)
 			return c.JSON(http.StatusCreated, resp)
 		}, nil
 	})
@@ -244,8 +252,8 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 		t.exec(`INSERT INTO realmojis(id,post_id,reactor_id,image_id,reaction_type,created_at) VALUES($1,$2,$3,$4,$5,$6)`, id, p.ID, actor, imageID, input.ReactionType, t.now)
 		t.emit("realmojis", "I", memRealMojiRow{ID: id, PostID: p.ID, ReactorID: actor, ImageID: imageID, ReactionType: input.ReactionType, CreatedAt: t.now})
 		resp := newRealMojiResponse(RealMoji{ID: id, PostID: p.ID, ReactorID: actor, ImageID: imageID, ReactionType: input.ReactionType, CreatedAt: t.now}, au.User)
+		t.after = append(t.after, func() { replicateImage(imageID, actor, "image/jpeg", data) })
 		return func() error {
-			replicateImage(imageID, actor, "image/jpeg", data)
 			return c.JSON(http.StatusCreated, resp)
 		}, nil
 	})
@@ -352,7 +360,18 @@ func (e *storeEngine) transitionFriendRequest(c *echo.Context, actor, requestID,
 		d := t.d
 		r := e.requests[requestID]
 		if r == nil || d.users[r.RequesterID].outgoing[requestID] != r {
-			return nil, errStoreFallback // 確定済み / 不明 → DB 経路
+			f, ok := e.finalized[requestID]
+			if !ok {
+				return nil, errStoreFallback // 不明 (ロード前に確定済み等) → DB 経路
+			}
+			// 元実装: 権限 → 403、当事者が退会済み → 404、pending でない → 403
+			if (status == "cancelled" && actor != f.RequesterID) || (status != "cancelled" && actor != f.RecipientID) {
+				return nil, NewAPIError(http.StatusForbidden, "relationship_action_forbidden")
+			}
+			if !d.users[f.RequesterID].active() || !d.users[f.RecipientID].active() {
+				return nil, NewAPIError(http.StatusNotFound, "relationship_not_found")
+			}
+			return nil, NewAPIError(http.StatusForbidden, "relationship_action_forbidden")
 		}
 		if (status == "cancelled" && actor != r.RequesterID) || (status != "cancelled" && actor != r.RecipientID) {
 			return nil, NewAPIError(http.StatusForbidden, "relationship_action_forbidden")

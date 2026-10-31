@@ -15,7 +15,29 @@ import (
 //   - rename / create のディレクトリのエントリは、親ディレクトリの fsync で永続化する。
 //   - MkdirAll が新しく作ったディレクトリは、そのエントリが親に入るので、親 (の親…) も fsync する (localImgMarkNewDirs)。
 //   - 書き手は、自分のファイルとディレクトリの sync が全部終わってから返る (グループを待たず、各自が並列に)。
-var asiaLocalImgFsync = os.Getenv("ISUREAL_ASIA_LOCALIMG_FSYNC") == "1"
+//
+// ISUREAL_ASIA_LOCALIMG_FSYNC=gp: GP の窓 (gpWindowDeadline が真) の間だけ fdatasync の経路、それ以外は従来の syncfs のグループ。
+// job25603: =1 は asia の GP を過去最多 (682 人) にしたが、d5 の開始の書き込みの山が大きくなって am の転送の書き込みを
+// 押しのけた (am d5 119 人)。GP の外では syncfs のグループが書き込みの速さを自然に抑えていた。
+var (
+	asiaLocalImgFsyncMode = os.Getenv("ISUREAL_ASIA_LOCALIMG_FSYNC") // "1" / "gp" / それ以外 = off
+	asiaLocalImgFsync     = asiaLocalImgFsyncMode == "1"
+	asiaLocalImgFsyncGP   = asiaLocalImgFsyncMode == "gp"
+	localImgInGPFn        func() bool // setupMem (pump) が設定: asia1 の地域の窓が GP か
+)
+
+// localImgUseFsync: この永続化を fdatasync の経路にするか (呼ぶたびに判定する)。
+func localImgUseFsync() bool {
+	if asiaLocalImgFsync {
+		return true
+	}
+	if asiaLocalImgFsyncGP {
+		if fn := localImgInGPFn; fn != nil {
+			return fn()
+		}
+	}
+	return false
+}
 
 var localImgNewDirs sync.Map // dir -> struct{}: 作ったばかりで、親のエントリをまだ fsync していない
 

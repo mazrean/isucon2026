@@ -92,6 +92,10 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		}
 		e.Use(memWriteBarrier(p))
 		setupStorePGBarrier(e, false)
+		if asiaLocalImgFsyncGP {
+			region := h.Config.Region
+			localImgInGPFn = func() bool { _, gp := m.gpWindowDeadline(region, time.Now()); return gp }
+		}
 		if coldOrigin != "" {
 			if ps := p.peers; ps != nil {
 				coldPumpSeqFn = func() int64 { ps.mu.Lock(); defer ps.mu.Unlock(); return ps.seq }

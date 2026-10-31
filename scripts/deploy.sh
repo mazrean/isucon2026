@@ -105,7 +105,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_DB_KEEP_IDLE '"${DB_KEEP_IDLE:-0}"'
       setenv ISUREAL_POST_BATCH '"${POST_BATCH:-1}"'
       setenv ISUREAL_GP_FAIR '"${GP_FAIR:-0}"'
-      setenv ISUREAL_GP_FAIR_SLOTS '"${GP_FAIR_SLOTS:-32}"'
+      setenv ISUREAL_GP_FAIR_SLOTS '"${GP_FAIR_SLOTS:-52}"'
       setenv ISUREAL_GP_FAIR_FWD_LEAD_MS '"${GP_FAIR_FWD_LEAD_MS:-1000}"'
       setenv ISUREAL_GP_FAIR_POST_EXEMPT '"${GP_FAIR_POST_EXEMPT:-0}"'
       setenv ISUREAL_FRIEND_BATCH '"${FRIEND_BATCH:-1}"'

@@ -32,6 +32,7 @@ type memReq struct {
 
 type memUser struct {
 	User
+	exportVer    uint64 // export zip キャッシュの版 (投稿・ユーザー行が変わるたびに全体で一意な値へ更新)
 	normUsername string
 	normDisplay  string
 	friends      map[string]memEdge // other user id -> friendship
@@ -54,6 +55,7 @@ type memWindow struct {
 type memPost struct {
 	Post
 	deleted   bool
+	cold      bool // 初期データ (initialize で消えない行)
 	author    *memUser
 	window    *memWindow
 	comments  []*memComment  // active, asc by (CreatedAt, ID)
@@ -74,6 +76,7 @@ type memComment struct {
 	author    *memUser
 	Body      string
 	CreatedAt time.Time
+	cold      bool
 }
 
 type memRealMoji struct {
@@ -83,6 +86,7 @@ type memRealMoji struct {
 	ImageID      string
 	ReactionType string
 	CreatedAt    time.Time
+	cold         bool
 }
 
 type memSession struct {
@@ -201,6 +205,7 @@ type memPostRow struct {
 	Locality        *string    `db:"locality" json:"locality"`
 	PostedAt        time.Time  `db:"posted_at" json:"posted_at"`
 	DeletedAt       *time.Time `db:"deleted_at" json:"deleted_at"`
+	Cold            bool       `db:"cold" json:"-"`
 }
 
 type memCommentRow struct {
@@ -210,6 +215,7 @@ type memCommentRow struct {
 	Body      string     `db:"body" json:"body"`
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	DeletedAt *time.Time `db:"deleted_at" json:"deleted_at"`
+	Cold      bool       `db:"cold" json:"-"`
 }
 
 type memRealMojiRow struct {
@@ -221,6 +227,7 @@ type memRealMojiRow struct {
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	ReplacedAt   *time.Time `db:"replaced_at" json:"replaced_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	Cold         bool       `db:"cold" json:"-"`
 }
 
 // memChange は changelog の 1 行 (トリガーが記録した行変更)。
@@ -246,7 +253,7 @@ func memLocalPtr(t *time.Time) *time.Time {
 func (d *memData) user(id string) *memUser {
 	u := d.users[id]
 	if u == nil {
-		u = &memUser{User: User{ID: id, Status: "deleted"}}
+		u = &memUser{User: User{ID: id, Status: "deleted"}, exportVer: memExportVerSeq.Add(1)}
 		d.users[id] = u
 		d.sortedDirty = true
 	}
@@ -255,6 +262,7 @@ func (d *memData) user(id string) *memUser {
 
 func (d *memData) applyUser(r memUserRow) {
 	u := d.user(r.ID)
+	u.exportVer = memExportVerSeq.Add(1)
 	if u.Username != r.Username {
 		d.sortedDirty = true
 	}
@@ -394,6 +402,7 @@ func (d *memData) applyPost(r memPostRow) {
 	if p := d.posts[r.ID]; p != nil {
 		p.Post = post
 		p.deleted = r.DeletedAt != nil
+		p.author.exportVer = memExportVerSeq.Add(1)
 		return
 	}
 	w := d.windows[r.PostingWindowID]
@@ -401,7 +410,8 @@ func (d *memData) applyPost(r memPostRow) {
 		return
 	}
 	author := d.user(r.AuthorID)
-	p := &memPost{Post: post, deleted: r.DeletedAt != nil, author: author, window: w}
+	author.exportVer = memExportVerSeq.Add(1)
+	p := &memPost{Post: post, deleted: r.DeletedAt != nil, cold: r.Cold, author: author, window: w}
 	d.posts[r.ID] = p
 	w.posts = insertPostSorted(w.posts, p)
 	author.posts = append(author.posts, p)
@@ -419,8 +429,10 @@ func (d *memData) applyComment(r memCommentRow) {
 	if p == nil {
 		return
 	}
+	cold := r.Cold
 	for i, c := range p.comments {
 		if c.ID == r.ID {
+			cold = cold || c.cold
 			p.comments = append(p.comments[:i:i], p.comments[i+1:]...)
 			break
 		}
@@ -428,7 +440,7 @@ func (d *memData) applyComment(r memCommentRow) {
 	if r.DeletedAt != nil {
 		return
 	}
-	c := &memComment{ID: r.ID, PostID: r.PostID, author: d.user(r.AuthorID), Body: r.Body, CreatedAt: memLocal(r.CreatedAt)}
+	c := &memComment{ID: r.ID, PostID: r.PostID, author: d.user(r.AuthorID), Body: r.Body, CreatedAt: memLocal(r.CreatedAt), cold: cold}
 	list := p.comments
 	i := sort.Search(len(list), func(i int) bool { return memTimeIDLess(c.CreatedAt, c.ID, list[i].CreatedAt, list[i].ID) })
 	list = append(list, nil)
@@ -442,8 +454,10 @@ func (d *memData) applyRealMoji(r memRealMojiRow) {
 	if p == nil {
 		return
 	}
+	cold := r.Cold
 	for i, x := range p.realmojis {
 		if x.ID == r.ID {
+			cold = cold || x.cold
 			p.realmojis = append(p.realmojis[:i:i], p.realmojis[i+1:]...)
 			break
 		}
@@ -451,7 +465,7 @@ func (d *memData) applyRealMoji(r memRealMojiRow) {
 	if r.DeletedAt != nil || r.ReplacedAt != nil {
 		return
 	}
-	x := &memRealMoji{ID: r.ID, PostID: r.PostID, reactor: d.user(r.ReactorID), ImageID: r.ImageID, ReactionType: r.ReactionType, CreatedAt: memLocal(r.CreatedAt)}
+	x := &memRealMoji{ID: r.ID, PostID: r.PostID, reactor: d.user(r.ReactorID), ImageID: r.ImageID, ReactionType: r.ReactionType, CreatedAt: memLocal(r.CreatedAt), cold: cold}
 	list := p.realmojis
 	i := sort.Search(len(list), func(i int) bool { return memTimeIDLess(x.CreatedAt, x.ID, list[i].CreatedAt, list[i].ID) })
 	list = append(list, nil)
@@ -551,3 +565,47 @@ func (d *memData) sortedUsers() []*memUser {
 	}
 	return d.sorted
 }
+
+// adoptCold は old の初期データ行 (cold) を d (小テーブルをロード済み) に移す。old は以後使わない。
+// initialize は初期データ行を消さず、変更 (削除等) も戻さないので、同期済みのメモリの cold 行はリセット後もそのまま正しい。
+// 呼び出し側は old を読む者が居ないことを保証する (m.mu の書きロック中)。
+func (d *memData) adoptCold(old *memData) {
+	touched := map[*memWindow]bool{}
+	for id, p := range old.posts {
+		if !p.cold {
+			continue
+		}
+		w := d.windows[p.PostingWindowID]
+		if w == nil {
+			continue
+		}
+		p.author = d.user(p.AuthorID)
+		p.AuthorID = p.author.ID
+		p.window = w
+		comments := p.comments[:0]
+		for _, c := range p.comments {
+			if c.cold {
+				c.author = d.user(c.author.ID)
+				comments = append(comments, c)
+			}
+		}
+		p.comments = comments
+		realmojis := p.realmojis[:0]
+		for _, x := range p.realmojis {
+			if x.cold {
+				x.reactor = d.user(x.reactor.ID)
+				realmojis = append(realmojis, x)
+			}
+		}
+		p.realmojis = realmojis
+		d.posts[id] = p
+		w.posts = append(w.posts, p)
+		touched[w] = true
+		p.author.posts = append(p.author.posts, p)
+	}
+	for w := range touched {
+		sort.Slice(w.posts, func(i, j int) bool { return memPostLess(w.posts[i], w.posts[j]) })
+	}
+}
+
+var memExportVerSeq atomic.Uint64

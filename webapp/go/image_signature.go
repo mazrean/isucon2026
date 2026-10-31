@@ -62,6 +62,18 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 	if ok {
 		return cached
 	}
+	value := computeImageSignature(key, imageID, exp)
+	signatureCacheMu.Lock()
+	if len(signatureCache) >= signatureCacheLimit {
+		signatureCache = make(map[signatureCacheKey][]byte)
+	}
+	signatureCache[ck] = value
+	signatureCacheMu.Unlock()
+	return value
+}
+
+// computeImageSignature はキャッシュを使わずに署名を計算する (署名ファームと共用)。
+func computeImageSignature(key []byte, imageID string, exp int64) []byte {
 	// one HMAC reused via Reset: the padded key blocks are hashed once, so each
 	// round costs 2 SHA-256 compressions instead of 4 and allocates nothing.
 	mac := hmac.New(sha256.New, key)
@@ -73,14 +85,7 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 		mac.Write(value)
 		value = mac.Sum(value[:0])
 	}
-	value = append([]byte(nil), value...)
-	signatureCacheMu.Lock()
-	if len(signatureCache) >= signatureCacheLimit {
-		signatureCache = make(map[signatureCacheKey][]byte)
-	}
-	signatureCache[ck] = value
-	signatureCacheMu.Unlock()
-	return value
+	return append([]byte(nil), value...)
 }
 
 func signedImageURL(user User, imageID string) string {

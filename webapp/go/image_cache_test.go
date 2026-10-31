@@ -55,7 +55,7 @@ func TestImageLRUBudget(t *testing.T) {
 }
 
 func BenchmarkImageLRUGet(b *testing.B) {
-	l := newImageLRU(imageMemCacheBudget)
+	l := newImageLRU(imageMemCacheBudgetDefMB << 20)
 	l.add("x", &imageObject{Data: make([]byte, 8000)})
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

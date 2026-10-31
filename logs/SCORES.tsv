@@ -47,3 +47,4 @@
 13:31	75aef94	job=12846 state=4 pass=true スコア=146736 種別エラー数=map[]	ディスク上限の修正 + 既定 (枠 128、PGSSL=allow) + MEMORIES_MEM=1 + admin 専用プール
 13:34	4f41e2a	job=13083 state=4 pass=true スコア=133128 種別エラー数=map[]	STORE=1 (レーン版 + fsync 修正) on 既定 (FWD_PRIORITY 枠 128、push 停止、MEMORIES_MEM、KEY SHARE)
 13:39	aece7d6	job=13426 state=4 pass=true スコア=147756 種別エラー数=map[]	MEMORIES_CACHE=1 + HEAVY_TARGET=127.0.0.1 (asia の重い読みを asia1 のキャッシュで) + SSE connectedAt 修正 on 既定
+13:42	9c584a7	job=13667 state=4 pass=true スコア=139684 種別エラー数=map[]	既定 (MEMORIES_CACHE=1、重い読みは asia2) + 画像 INSERT 専用プール (5aaecc5) + login 往復 7→4 (c26b4c0) + ASIA_LOCALIMG=1

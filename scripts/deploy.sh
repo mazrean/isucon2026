@@ -69,7 +69,7 @@ IMG_DEDUP=${IMG_DEDUP:-0}   # 1 = image bytes cross asia->eu/am once: push asks 
 FRONT=${FRONT:-0}   # 1 = Go listens on :80 itself (webapp/go/frontproxy.go) and nginx is stopped+disabled
 PACE=${PACE:-0}   # 1 = asia1 shapes egress to europe/america /24s at PACE_RATE (130mbit) with small-packet priority (scripts/pace.sh); 0 = qdisc removed
 CWND=${CWND:-0}   # 1 = per-region /24 routes with initcwnd 64 initrwnd 64 + tcp_slow_start_after_idle=0 on all app hosts; 0 = removed
-ASIA2_GOMAXPROCS=${ASIA2_GOMAXPROCS:-1}   # asia2 app (JPEG offload / forwarded work) GOMAXPROCS; 1 = leave the 2nd vCPU to PostgreSQL; "" = Go default (2)
+ASIA2_GOMAXPROCS_IN=${ASIA2_GOMAXPROCS-unset}; ASIA2_GOMAXPROCS=${ASIA2_GOMAXPROCS:-1}   # asia2 app (JPEG offload / forwarded work) GOMAXPROCS; 1 = leave the 2nd vCPU to PostgreSQL; "" = Go default (2)
 DROP_DUP_IDX=${DROP_DUP_IDX:-0}   # 1 = drop redundant indexes on asia2 (posting_windows_active = posting_windows_one_active_region; posts_author_id = prefix of posts_author_posted) so the post tx fits 16 fast-path locks
 PGCPU=${PGCPU:-0}   # 1 = install etc/pg/primary-cpu.conf as asia2 conf.d/zz-cpu.conf (max_wal_size 12GB, jit off, ...) + pg_reload_conf; 0 = remove it
 IMG_HOTPART=${IMG_HOTPART:-1}   # 1 = new image IDs get a d0d0d0 tag; tagged IDs are read from the contest partition only (webapp/go/image_hotpart.go); 0 = old all-partition lookup
@@ -79,7 +79,10 @@ NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -
 # OPS_TRACE=1 (default 0): asia1 logs "ops-trace" every 10s (anonymous HMAC correlation IDs; login->past-month Memories p50/p90, actions after posting, per-region slot/persist/replication wait p50; webapp/go/ops_trace.go)
 MEM_FULL=${MEM_FULL:-0}   # 1 (needs MEM=1) = asia2 app becomes a full-history mem peer of asia1 (ISUREAL_MEM_FULL, webapp/go/mem_full.go): cold-forwarded GETs (COLD_ORIGIN) wait for the seq and answer from memory; asia1 pushes to it too
 ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
-[[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1000MiB:50   # MEM_FULL: full-history load measured RSS 1.5GB (GOGC 100) vs peak 1.04GB / steady 0.91GB (900MiB:50) locally
+# MEM_FULL: live heap ~0.9GB. job28421: with 1000MiB:50 and GOMAXPROCS=1 the GC ran next to the limit on one core
+# (cold load 1m43s vs 18s locally, dump read cut at 40s -> never ready). Give it headroom and the 2nd core unless set.
+[[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1400MiB:100
+[[ $MEM_FULL == 1 && $ASIA2_GOMAXPROCS_IN == unset ]] && ASIA2_GOMAXPROCS=2
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 ASIA_READ_SPLIT=${ASIA_READ_SPLIT:-0}   # 1 (asia1 nginx only; ignored with FRONT=1) = GET feeds / post detail / comments / RealMojis are weighted between asia1's app and the asia2 app (asia2 has NO mem model: PG path next to PostgreSQL, RYW via ISUREAL_STORE_AWAIT_PG=1). ASIA_READ_SPLIT_PCT (50) = asia2's share in %; asia2 down -> max_fails 3 / 5s, retried on asia1 (etc/app/isureal.conf app_asia_split)
 # guard: asia2 answers split reads from PG unless MEM_FULL makes it a peer; PG must be current at 2xx

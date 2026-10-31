@@ -29,7 +29,7 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
     scp -q etc/systemd/isureal-go.service.d/10-tune.conf "$h:/tmp/10-tune.conf"
     scp -q etc/systemd/isureal-go.service.d/30-front.conf "$h:/tmp/30-front.conf"
-    r=$(region_of "$h"); f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-192.168.4.10}; [[ $f == 1 ]] || pvt=""
+    r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-192.168.4.10}; [[ $f == 1 ]] || pvt=""
     sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
@@ -48,7 +48,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-192.168.2.10:8080,192.168.3.10:8080}"'; else setenv ISUREAL_IMG_PEERS ""; fi
-      setenv ISUREAL_FRONT '"$FRONT"'
+      setenv ISUREAL_FRONT '"$fr"'
       setenv ISUREAL_FRONT_FWD '"$f"'
       setenv ISUREAL_FRONT_FWD_GET '"$g"'
       setenv ISUREAL_FRONT_FWD_TARGET '"$FWD_TARGET"':8080
@@ -60,7 +60,7 @@ for h in "${HOSTS[@]}"; do
       sudo install -D -m 644 /tmp/30-front.conf /etc/systemd/system/isureal-go.service.d/30-front.conf && sudo systemctl daemon-reload
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
       sudo systemctl restart isureal-go
-      if [ "'"$FRONT"'" = 1 ]; then
+      if [ "'"$fr"'" = 1 ]; then
         # the Go front retries bind(:80) every 200ms, so it takes over as soon as nginx is gone
         sudo systemctl disable -q --now nginx
         for i in $(seq 50); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/); [ "$c" = 200 ] && break; sleep 0.2; done; echo "front :80 -> $c"

@@ -572,7 +572,7 @@ func registerLocalImg(e *echo.Echo, h *HandlerContext) {
 		go func() {
 			for range time.Tick(10 * time.Second) {
 				if n := asiaLocalImgN.Swap(0); n > 0 {
-					slog.Info("asia localimg", "stored", n)
+					slog.Info("asia localimg", "stored", n, "sync_batches", asiaSyncer.batches.Swap(0), "sync_members", asiaSyncer.members.Swap(0), "per_file_sync", asiaLocalImgPerFileSync)
 				}
 			}
 		}()
@@ -648,7 +648,8 @@ func registerLocalImgRoutes(e *echo.Echo) {
 // ---------- asia1 as an origin (ISUREAL_ASIA_LOCALIMG=1, asia1 only) ----------
 //
 // asia1 keeps the bytes of the images it commits itself (posts, RealMoji,
-// profile images): data + meta are fsynced into asiaStore before the commit,
+// profile images): data + meta are made durable in asiaStore before the
+// commit (group commit, localimg_groupsync.go),
 // and image_objects gets no row at all (an empty-data row would be served as
 // a zero-byte image). No flusher: the bytes never reach PostgreSQL, so the
 // bytea no longer crosses asia1 -> asia2. The push to eu/am (replicateImage)
@@ -681,15 +682,29 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 	}
 	asiaStore.mu.RLock() // purge (initialize) takes the write lock
 	defer asiaStore.mu.RUnlock()
-	if err := writeFileSync(asiaStore.p("data", id), data); err != nil {
+	write := writeFileNoSync // group commit: durable after asiaSyncer.wait
+	if asiaLocalImgPerFileSync {
+		write = writeFileSync
+	}
+	dataPath, metaPath := asiaStore.p("data", id), asiaStore.p("meta", id)
+	if err := write(dataPath, data); err != nil {
 		slog.Warn("asia localimg data", "error", err)
 		return false
 	}
 	meta := owner + "\n" + strconv.FormatInt(time.Now().UnixNano(), 10) + "\n"
-	if err := writeFileSync(asiaStore.p("meta", id), []byte(meta)); err != nil {
+	if err := write(metaPath, []byte(meta)); err != nil {
 		slog.Warn("asia localimg meta", "error", err)
-		os.Remove(asiaStore.p("data", id))
+		os.Remove(dataPath)
 		return false
+	}
+	if !asiaLocalImgPerFileSync {
+		// 201 only after the sync that covers both files (and their dir entries)
+		if err := asiaSyncer.wait(dataPath, metaPath); err != nil {
+			slog.Warn("asia localimg sync", "error", err)
+			os.Remove(metaPath)
+			os.Remove(dataPath)
+			return false
+		}
 	}
 	asiaLocalImgN.Add(1)
 	return true

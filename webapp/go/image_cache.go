@@ -234,6 +234,10 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 		s.mem.add(id, obj)
 		return obj, nil
 	}
+	if obj := localImgOwn(id); obj != nil {
+		s.mem.add(id, obj)
+		return obj, nil
+	}
 	// singleflight の待機者がいるので、呼び出し元のキャンセルに巻き込まれないようにする。
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 	defer cancel()
@@ -249,6 +253,11 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 		err = primary.GetContext(ctx, &row, q, id)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
+		// ISUREAL_LOCALIMG: the bytes may still be only at the origin region.
+		if obj := localImgPull(ctx, id); obj != nil {
+			s.put(id, obj)
+			return obj, nil
+		}
 		return nil, nil
 	}
 	if err != nil {

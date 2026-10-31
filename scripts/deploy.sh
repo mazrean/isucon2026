@@ -15,6 +15,7 @@ if [[ ! -s $SECRET_FILE ]]; then mkdir -p "${SECRET_FILE%/*}"; head -c 24 /dev/u
 SECRET=$(cat "$SECRET_FILE")
 FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
 FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
+MEM=${MEM:-0}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
 FWD_GET=${FWD_GET:-1}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
@@ -33,6 +34,8 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-192.168.4.10}"'
       setenv ISUREAL_NODE_NAME '"$h"'
       setenv ISUREAL_PPROF_ADDR 127.0.0.1:6060
+      setenv ISUREAL_MEM '"$MEM"'
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-192.168.2.10:8080,192.168.3.10:8080}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       sudo nginx -t -q
       sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload

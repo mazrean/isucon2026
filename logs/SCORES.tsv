@@ -2,3 +2,5 @@
 10:56	c2f63f5	job=1991 state=4 pass=true スコア=15974 種別エラー数=map[]	A/B: 転送先 asia2
 10:59	bcbd1b1	job=2153 state=4 pass=true スコア=17351 種別エラー数=map[]	pprof 有効 (転送先 asia1)
 11:02	31978e3	job=2320 state=4 pass=true スコア=24549 種別エラー数=map[]	HMAC 4x
+11:04	47f74f2	job=2433 state=4 pass=true スコア=20946 種別エラー数=map[]	統合: exp 量子化 + posting-window O(1) + export + 画像 push 複製
+11:06	47f74f2	job=2593 state=4 pass=true スコア=19645 種別エラー数=map[]	再現 + pprof (統合版)

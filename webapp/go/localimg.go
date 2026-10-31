@@ -705,6 +705,7 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		write = writeFileSync
 	}
 	dataPath, metaPath := asiaStore.p("data", id), asiaStore.p("meta", id)
+	fwdSlotYield(ctx) // 画像の書き込みと sync (どの FSYNC モードでも) は I/O の待ち
 	if err := write(dataPath, data); err != nil {
 		slog.Warn("asia localimg data", "error", err)
 		return false
@@ -717,7 +718,6 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 	}
 	if !asiaLocalImgPerFileSync {
 		// 201 only after the sync that covers both files (and their dir entries)
-		fwdSlotYield(ctx)
 		syncStart := time.Now()
 		err := asiaSyncer.wait(dataPath, metaPath)
 		postTimingAdd("localimg_sync", time.Since(syncStart))

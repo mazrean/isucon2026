@@ -172,3 +172,4 @@ END: 2026-10-31 18:00 JST
 | 6507 | 2b7a1c0 | **73358** | 5642 構成 (heavy は asia2 + backup、push on) + barrier 修正。pass だが「見えるべき投稿がありません」10 件 (dump は logs/faildump/job6507.txt) |
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 | 6869 | - | 69483 | synchronous_commit=off。73k とノイズの範囲。フィードの誤り 0 件 |
+| 7020 | - | 68859 | PREVALIDATE=1: eu/am の 4〜5 日目 74/61〜75/62 (前回 55/40)。GP の asia は 312 (asia2 の Memories タイムアウト)。eu/am が伸びるので既定 on |

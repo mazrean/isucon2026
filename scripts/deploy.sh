@@ -16,7 +16,7 @@ SECRET=$(cat "$SECRET_FILE")
 FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
 FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
-PREVALIDATE=${PREVALIDATE:-0}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
+PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do

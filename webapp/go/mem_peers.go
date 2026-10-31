@@ -33,6 +33,7 @@ const memBufferBatches = 8192
 type memBatch struct {
 	Seq     int64       `json:"q"`
 	Changes []memChange `json:"c"`
+	at      time.Time   // publish 時刻 (pump 内のみ。MEM_PUSH_STATS の queue)
 }
 
 type memPushRequest struct {
@@ -152,6 +153,9 @@ func (ps *memPeers) publishWM(changes []memChange, wm int64) {
 		ps.wm = wm // 新しい ps.seq に対して有効: x より前に応答したコミットはこのバッチ以前に含まれる
 	}
 	b := memBatch{Seq: ps.seq, Changes: changes}
+	if memPushStatsOn {
+		b.at = time.Now()
+	}
 	ps.buf = append(ps.buf, b)
 	if len(ps.buf) > memBufferBatches {
 		ps.buf = append([]memBatch(nil), ps.buf[len(ps.buf)-memBufferBatches/2:]...)
@@ -174,6 +178,9 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 		last = batches[len(batches)-1].Seq
 	}
 	now := time.Now()
+	if memPushStatsOn && len(batches) > 0 && !batches[0].at.IsZero() {
+		memPushStats.recordQueue(now.Sub(batches[0].at))
+	}
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
 	if last == ps.seq {
 		req.WM = ps.wm // ps.wm は ps.seq に対して有効
@@ -776,7 +783,7 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 				continue // ロックを手放している間に、先行の push がこのバッチまで適用した
 			}
 		}
-		if err := r.m.applyBatch(b.Changes); err != nil {
+		if err := r.m.applyBatchChunked(b.Changes, memApplyChunk); err != nil {
 			slog.Error("mem: apply failed", "error", err)
 			r.m.ready.Store(false)
 			go r.invalidate()
@@ -859,7 +866,7 @@ func (r *memReceiver) fillGap(epoch string, to int64) error {
 		if mb.Seq != r.seq+1 {
 			return fmt.Errorf("mem: pulled batch %d does not follow %d", mb.Seq, r.seq)
 		}
-		if err := r.m.applyBatch(mb.Changes); err != nil {
+		if err := r.m.applyBatchChunked(mb.Changes, memApplyChunk); err != nil {
 			return err
 		}
 		r.seq = mb.Seq

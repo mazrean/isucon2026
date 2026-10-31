@@ -85,7 +85,7 @@ func runWMInvariant(t *testing.T, early, xAfterSnap bool) (violations int64) {
 			}
 			dbMu.Unlock()
 			time.Sleep(time.Duration(rand.IntN(300)) * time.Microsecond) // 結果が返るまで
-			if xAfterSnap { // 誤った作り方 (負のテスト用): スナップショットの後に時刻を取る
+			if xAfterSnap {                                              // 誤った作り方 (負のテスト用): スナップショットの後に時刻を取る
 				x = memNow().UnixNano()
 			}
 			req := memPushRequest{Epoch: "e1", Seq: seq, Batches: []memBatch{{Seq: seq}}}

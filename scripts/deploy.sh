@@ -37,6 +37,7 @@ MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers
 MEM_WM=${MEM_WM:-1}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
 MEM_WM_HB=${MEM_WM_HB:-0}   # 1 (needs MEM_WM=1) = shorter wm waits: 10ms poll, 16 in-flight pushes to wm peers, wm rides the data push (webapp/go/mem_watermark.go); MEM_WM_SLACK_MS (default 0) loosens the read target
 MEM_WM_EARLY=${MEM_WM_EARLY:-0}   # 1 (needs MEM_WM=1) = asia1 pushes a poll's batch + wm to eu/am before applying it locally (cuts asia1 apply time from the eu/am wm wait). Separate knobs, empty/0 = built-in default: MEM_WM_TICK_MS (idle poll period, 20; 10 with HB), MEM_PUSH_INFLIGHT (data pushes per wm peer, 4; 16 with HB), MEM_WM_INFLIGHT (wm-only posts per peer, 8; 16 with HB), MEM_IDLE_CONNS (keep-alive conns per peer, 16; 64 with HB: keep >= push + wm + 2)
+MEM_APPLY_CHUNK=${MEM_APPLY_CHUNK:-0}   # N>0 (all hosts, same value) = asia1 tags changes with their xid; eu/am apply a push batch whole-tx-at-a-time, releasing the memory write lock every ~N changes (never inside a tx; wm/seq advance only after the whole batch) (webapp/go/mem_apply_chunk.go)
 ASIA_POST_CAP=${ASIA_POST_CAP:-0}   # N>0 (asia1 only) = during GP at most N asia-local POST /api/posts run at once (forwarded eu/am posts never wait), so the pump's push/poll goroutines are not queued behind them on 2 CPUs (webapp/go/gp_postcap.go). ASIA_POST_CAP_WAIT_MS (3000, then run uncapped), ASIA_POST_CAP_LAG_MS (0 = always in GP; >0 = only while the last push RTT exceeds it)
 # IPBAN_ASYNC=1: ip_bans reload in a 200ms background loop, requests never wait for it (webapp/go/ip_ban.go). MEM_WM_MAXWAIT_MS (default 300): peer GET waits up to this for the wm before falling back to the primary (1 RTT per query from eu/am). DBTRACE=1: every 10s slog the SQL this app sent, per pool + 80-char prefix (webapp/go/dbtrace.go)
 MEM_PUSH_STATS=${MEM_PUSH_STATS:-0}   # 1 = 10s slog "mem: push stats" (pump: bytes/batches/ack; peer: net/lock/apply/pulls) (webapp/go/mem_push_stats.go)
@@ -101,6 +102,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
       setenv ISUREAL_MEM_WM_HB '"$MEM_WM_HB"'
       setenv ISUREAL_MEM_WM_EARLY '"$MEM_WM_EARLY"'
+      setenv ISUREAL_MEM_APPLY_CHUNK '"$MEM_APPLY_CHUNK"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_ASIA_POST_CAP '"$ASIA_POST_CAP"'; else setenv ISUREAL_ASIA_POST_CAP 0; fi
       setenv ISUREAL_ASIA_POST_CAP_WAIT_MS '"${ASIA_POST_CAP_WAIT_MS:-3000}"'
       setenv ISUREAL_ASIA_POST_CAP_LAG_MS '"${ASIA_POST_CAP_LAG_MS:-0}"'

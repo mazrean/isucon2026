@@ -98,6 +98,17 @@ var (
 
 func buildExportSkel(h *HandlerContext, c *echo.Context, userID string) ([]byte, []string, *exportSkel, error) {
 	ctx := c.Request().Context()
+	if sk, ok, _ := h.exportMemSkel(ctx, userID); ok {
+		if err := h.fillExportImages(ctx, sk); err != nil {
+			return nil, nil, nil, err
+		}
+		b, tags, err := assembleExport(sk)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		exportMemServed.Add(1)
+		return b, tags, sk, nil
+	}
 	author, err := getUser(ctx, h.Reader(), userID)
 	if err != nil {
 		return nil, nil, nil, err

@@ -163,3 +163,5 @@ END: 2026-10-31 18:00 JST
 | 5893 | cf55c32 | 0 FAIL | heavy 分担 + JPEG を eu/am のみ + push off。eu/am が 23〜31 人に低下 (JPEG の転送で回線を圧迫)。整合性違反 1 件: america のユーザーの friends フィードに、5.6s 後に削除された asia の投稿 (friends_of_friends) が見えた。原因は調査中 |
 | 6145 | cb15c96 | 0 FAIL | JPEG 配分を戻した。asia 5 日目 557。friends フィードで見えてはいけない投稿が 7 件 (読み手は america、削除されていない friends 投稿)。再発 → 潜在の競合を調査中 |
 | 6305 | 55b8f09 | 68929 | 切り分け: heavy を asia1 ローカル + push on + barrier 修正 → pass。ただし「見えるべき投稿がありません」3 件。致命的な「見えてはいけない」は push off + heavy 分担の 2 回 (5893, 6145) だけ → 既定を 5642 の構成 (heavy は asia2 + backup、push on) に戻す |
+| 6507 | 2b7a1c0 | **73358** | 5642 構成 (heavy は asia2 + backup、push on) + barrier 修正。pass だが「見えるべき投稿がありません」10 件 (dump は logs/faildump/job6507.txt) |
+- 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

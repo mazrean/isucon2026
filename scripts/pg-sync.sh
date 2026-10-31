@@ -9,7 +9,7 @@ case "${1:-status}" in
     $SSH "echo $1 | sudo tee /etc/postgresql/16/main/pg-sync.mode >/dev/null" </dev/null
     if [ "$1" = off ]; then
       # watchdog が止まっていても確実に外す (即時)
-      $SSH "sudo systemctl is-active -q pg-sync-watchdog || { printf \"synchronous_standby_names = ''\nsynchronous_commit = on\n\" | sudo tee /etc/postgresql/16/main/conf.d/zz-sync.conf >/dev/null; sudo -u postgres psql -Atc 'select pg_reload_conf()'; }" </dev/null
+      $SSH "sudo systemctl is-active -q pg-sync-watchdog || { printf \"synchronous_standby_names = ''\nsynchronous_commit = off\n\" | sudo tee /etc/postgresql/16/main/conf.d/zz-sync.conf >/dev/null; sudo -u postgres psql -Atc 'select pg_reload_conf()'; }" </dev/null
     fi
     sleep 4 ;;
   status) ;;

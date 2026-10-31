@@ -5,7 +5,7 @@
 # initialize wipes them.
 set -uo pipefail
 log=$1 out=$2
-pairs=$(grep -oE '[A-Za-z0-9_.-]+ に見えてはいけない投稿 [0-9a-f-]{36}' "$log" | sort -u | awk '{print $1" "$3}')
+pairs=$(grep -oE '[A-Za-z0-9_.-]+ (に見えてはいけない投稿|に見えるべき投稿) [0-9a-f-]{36}' "$log" | sort -u | awk '{print $1" "$NF}')
 [ -n "$pairs" ] || exit 0
 {
   while read -r reader post; do

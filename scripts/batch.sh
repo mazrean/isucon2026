@@ -14,7 +14,7 @@ out=$(scripts/portal-bench.sh run 2>&1)
 line=$(grep 'job=' <<<"$out" | tail -1)
 echo "$out" | grep -E '整合性|失敗|"messages"' -A3 | head -8
 echo "$line"
-if grep -q 'pass=false' <<<"$line"; then
+if grep -q 'pass=false' <<<"$line" || grep -q '見え' "$(ls -t logs/bench/*.log | head -1)"; then
   mkdir -p logs/faildump
   scripts/fail-dump.sh "$(ls -t logs/bench/*.log | head -1)" "logs/faildump/$(date +%H%M).txt"
 fi

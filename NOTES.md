@@ -235,6 +235,7 @@ END: 2026-10-31 18:00 JST
 | 25603 | - | 148725 | 新既定 + ASIA_LOCALIMG_FSYNC=1 (+POST_TIMING)。asia 999 / eu 253 / am **119**、GP 682/240/118。localimg_sync の GP p90 は 3.0s → 0.24s、asia の GP は過去最多。ただ am の d5 が 119 に崩れた (原因を調査中) |
 | 25833 | - | **FAIL** | NGX_REQBUF_OFF=1。post-validation で画像 403 + POST の通信失敗 (use of closed connection)。不採用 |
 | 26073 | - | **FAIL** | STORE_WAL。初期データの検証で GET /api/memories が 401 invalid_session: asia1 の Memories の miss を asia2 (MEMORIES_CACHE_ORIGIN) が PG で計算し、まだ PG に無いセッションを無効と判定。STORE_WAL のときは MEMORIES_CACHE_ORIGIN を空にするガードを足した |
+| 26281 | - | 184132 | 新既定 + ASIA_LOCALIMG_FSYNC=gp。GP 642/284/275 (計 1201、STORE 系で最多)、am の崩れなし。gp を既定にした |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

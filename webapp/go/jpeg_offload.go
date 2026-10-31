@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -60,6 +61,34 @@ func parseJPEGRemotes(s string) []*jpegRemote {
 	return out
 }
 
+// ISUREAL_JPEG_LOCAL_SOCK points at webapp/rust/jpegcheckd (HTTP/1.1 on a
+// unix socket, same protocol as POST /internal/jpegcheck). When set, the local
+// check goes there; any error (daemon down, 5xx) falls back to in-process.
+var (
+	jpegLocalSock   = os.Getenv("ISUREAL_JPEG_LOCAL_SOCK")
+	jpegLocalClient = &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				var d net.Dialer
+				return d.DialContext(ctx, "unix", jpegLocalSock)
+			},
+			MaxIdleConnsPerHost: 64,
+			IdleConnTimeout:     300 * time.Second,
+		},
+	}
+)
+
+func checkJPEGLocal(ctx context.Context, data []byte) (w, h int, ok bool) {
+	if jpegLocalSock != "" {
+		w, h, ok, err := postJPEGCheck(ctx, jpegLocalClient, "http://jpegcheckd/internal/jpegcheck", "local", data, 2*time.Second)
+		if err == nil {
+			return w, h, ok
+		}
+	}
+	w, h, err := jpegcheck.Check(bytes.NewReader(data))
+	return w, h, err == nil
+}
+
 func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
 	for _, r := range jpegRemotes {
 		if r.inflight.Add(1) > r.cap {
@@ -73,19 +102,22 @@ func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
 		}
 		break
 	}
-	w, h, err := jpegcheck.Check(bytes.NewReader(data))
-	return w, h, err == nil
+	return checkJPEGLocal(ctx, data)
 }
 
 func (r *jpegRemote) check(ctx context.Context, data []byte) (w, h int, ok bool, err error) {
-	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	return postJPEGCheck(ctx, jpegRemoteClient, "http://"+r.addr+"/internal/jpegcheck", r.addr, data, r.timeout)
+}
+
+func postJPEGCheck(ctx context.Context, client *http.Client, url, name string, data []byte, timeout time.Duration) (w, h int, ok bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://"+r.addr+"/internal/jpegcheck", bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
 	if err != nil {
 		return 0, 0, false, err
 	}
 	req.Header.Set(forwardedSecretHeader, forwardSecret)
-	res, err := jpegRemoteClient.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		return 0, 0, false, err
 	}
@@ -95,7 +127,7 @@ func (r *jpegRemote) check(ctx context.Context, data []byte) (w, h int, ok bool,
 		return 0, 0, false, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return 0, 0, false, fmt.Errorf("jpegcheck remote %s: %d", r.addr, res.StatusCode)
+		return 0, 0, false, fmt.Errorf("jpegcheck remote %s: %d", name, res.StatusCode)
 	}
 	var okInt int
 	if _, err := fmt.Sscanf(string(body), "%d %d %d", &okInt, &w, &h); err != nil {
@@ -113,8 +145,8 @@ func registerJPEGCheckRoutes(e *echo.Echo) {
 		if err != nil {
 			return c.NoContent(http.StatusBadRequest)
 		}
-		w, h, err := jpegcheck.Check(bytes.NewReader(data))
-		if err != nil {
+		w, h, ok := checkJPEGLocal(c.Request().Context(), data)
+		if !ok {
 			return c.String(http.StatusOK, "0 0 0")
 		}
 		return c.String(http.StatusOK, fmt.Sprintf("1 %d %d", w, h))

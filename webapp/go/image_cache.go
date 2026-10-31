@@ -6,10 +6,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"hash/maphash"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -201,8 +204,30 @@ func (s *imageStore) diskWriter() {
 		}
 		if err := os.Rename(f.Name(), p); err != nil {
 			os.Remove(f.Name())
+			continue
+		}
+		// the disk cache only grows (new image IDs every run): once it passes the
+		// budget, drop it wholesale. A miss just reloads from memory/DB.
+		if imageDiskWritten.Add(int64(len(buf))) > imageDiskBudget {
+			imageDiskWritten.Store(0)
+			s.dropDisk()
 		}
 	}
+}
+
+var (
+	imageDiskBudget  = int64(envIntOrDefault("ISUREAL_IMAGE_DISK_MAX_MB", 6144)) << 20
+	imageDiskWritten atomic.Int64
+)
+
+// dropDisk empties the disk cache (rename + background delete) without touching the memory LRU.
+func (s *imageStore) dropDisk() {
+	trash := fmt.Sprintf("%s.trash-%d", s.dir, time.Now().UnixNano())
+	if err := os.Rename(s.dir, trash); err == nil {
+		go os.RemoveAll(trash)
+	}
+	os.MkdirAll(s.dir, 0o755)
+	slog.Warn("imgcache: disk budget reached, dropped disk cache", "budget_mb", imageDiskBudget>>20)
 }
 
 // get は、画像 ID の中身を返す。存在しなければ (nil, nil)。

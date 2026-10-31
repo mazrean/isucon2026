@@ -71,6 +71,9 @@ func getMemoriesByDateHandler(h *HandlerContext) echo.HandlerFunc {
 }
 
 func listMemories(ctx context.Context, db sqlx.QueryerContext, userID string, start, end time.Time, beforeAt *time.Time, beforeID string) (getMemoriesResponse, error) {
+	if pdb, ok := db.(*sqlx.DB); ok && memoriesParallel {
+		return listMemoriesParallel(ctx, pdb, userID, start, end, beforeAt, beforeID)
+	}
 	var response getMemoriesResponse
 	if (beforeAt == nil) != (beforeID == "") {
 		return response, NewAPIError(http.StatusBadRequest, "invalid_pagination")

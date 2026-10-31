@@ -20,9 +20,6 @@ var signHasAVX512 bool
 var signSIMDMin = 3
 
 func init() {
-	if os.Getenv("ISUREAL_SIGN_SIMD") == "0" {
-		signHasAVX512 = false
-	}
 	if v, err := strconv.Atoi(os.Getenv("ISUREAL_SIGN_SIMD_MIN")); err == nil && v > 0 {
 		signSIMDMin = v
 	}

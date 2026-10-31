@@ -1,5 +1,7 @@
 package isureal
 
+import "os"
+
 //go:generate sh -c "go run ./internal/signgen > sign_avx512_amd64.s"
 
 // chainState is the lane-transposed input of chainAVX512: word j of lane l is
@@ -15,4 +17,4 @@ func chainAVX512(st *chainState, n int)
 
 func cpuHasAVX512() bool
 
-func init() { signHasAVX512 = cpuHasAVX512() }
+func init() { signHasAVX512 = cpuHasAVX512() && os.Getenv("ISUREAL_SIGN_SIMD") != "0" }

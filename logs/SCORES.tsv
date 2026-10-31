@@ -58,3 +58,4 @@
 14:08	ab21c76	job=15806 state=4 pass=true スコア=123052 種別エラー数=map[]	STORE=1 (適用役 1 本のパイプライン a449f26) on 新既定 (JC=1、JPEG 枠 2、HEAVY asia1、MEMORIES_CACHE)
 14:11	3c47bcb	job=15950 state=4 pass=true スコア=154644 種別エラー数=map[]	新既定 + MEMORIES_CACHE_ORIGIN=192.168.4.10:8080 (キャッシュの外れは asia2 で計算、asia1 の CPU を書き込みに)
 14:13	2a541a5	job=16157 state=4 pass=true スコア=152807 種別エラー数=map[]	新既定 + ASIA_LOCALIMG=1 (グループコミット) + asia1 の画像ディスクキャッシュ off (syncfs が imgcache の汚れページまで書き戻すのを防ぐ。PG から画像の bytea と WAL を外す)
+14:16	3893dfa	job=16350 state=4 pass=true スコア=163659 種別エラー数=map[]	新既定 (CACHE_ORIGIN) + IMGV_PEER_INDEX=1 + IMG_SENDFILE=1 (eu/am の画像の有効性をローカルで、sendfile)

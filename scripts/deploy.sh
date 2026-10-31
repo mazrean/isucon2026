@@ -105,8 +105,8 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_POST_SLOT_EXEMPT '"${POST_SLOT_EXEMPT:-0}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_CACHE_DIR '"${ASIA1_IMG_DISK:--}"'; else setenv ISUREAL_IMAGE_CACHE_DIR /home/isucon/imgcache; fi
       setenv ISUREAL_ASIA_LOCALIMG_SYNC '"${ASIA_LOCALIMG_SYNC:-}"'
-      setenv ISUREAL_IMGV_PEER_INDEX '"${IMGV_PEER_INDEX:-0}"'
-      setenv ISUREAL_IMG_SENDFILE '"${IMG_SENDFILE:-0}"'
+      setenv ISUREAL_IMGV_PEER_INDEX '"${IMGV_PEER_INDEX:-1}"'
+      setenv ISUREAL_IMG_SENDFILE '"${IMG_SENDFILE:-1}"'
       setenv ISUREAL_PREVALIDATE '"$pv"'
       setenv ISUREAL_PREVALIDATE_TARGET '"$pvt"'
       setenv ISUREAL_LOCALIMG '"$LOCALIMG"'

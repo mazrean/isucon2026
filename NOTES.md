@@ -204,6 +204,7 @@ END: 2026-10-31 18:00 JST
 | 15806 | - | 123052 | STORE=1 (適用役パイプライン a449f26) on 新既定。エラー 0。asia 18/50/144/349/584、GP asia 546 (93%、過去最高) だが eu 136 / am 169、GP 134/167 に崩壊 → eu/am 側の原因を直せば大きい |
 | 15950 | - | **154644** | 新既定 + MEMORIES_CACHE_ORIGIN=192.168.4.10:8080 (キャッシュの外れは asia2 で計算)。asia 18/54/159/386/386 (d4→d5 1.0 倍で停止)、eu 338 (過去最高) / am 301、GP 239/328/293。投稿タイムアウト → 再送で 409 が 1 件 → MEMORIES_CACHE_ORIGIN を既定に |
 | 16157 | - | 152807 | 新既定 + ASIA_LOCALIMG=1 (グループコミット) + asia1 の画像ディスクキャッシュ off。asia 18/52/150/423/847 (d4→d5 2.00、復活)、eu 314 / am 247、GP 509/289/244。投稿の EOF 1 件、503 → asia の伸びが戻ったので ASIA_LOCALIMG=1 + ASIA1_IMG_DISK=- を既定に |
+| 16350 | 2a541a5 | **163659** | CACHE_ORIGIN + IMGV_PEER_INDEX=1 + IMG_SENDFILE=1 (ASIA_LOCALIMG=0 の版)。asia 18/52/153/430/567、eu 341 / am 286、GP 403/320/280 → IMGV_PEER_INDEX・SENDFILE を既定に |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

@@ -164,6 +164,12 @@ func setupStore(h *HandlerContext) {
 	h.Store = e
 	h.memPump.preReload = e.syncPG
 	storeCurrent = e
+	if e.wal != nil {
+		// store_pgbarrier.go の PG 読みの待ちに繋ぐ
+		storePGBarrierFn = storePGBarrier
+		storeCurrentSeqFn = storeCurrentSeq
+		storePGAppliedFn = storePGApplied.Load
+	}
 	slog.Info("store: enabled", "await_pg", storeAwaitPG, "image_lanes", storeImageLanes, "table_lanes", storeTableLanes, "wal", storeWALDir)
 }
 

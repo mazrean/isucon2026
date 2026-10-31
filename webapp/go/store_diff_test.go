@@ -17,3 +17,18 @@ func TestStoreDiff(t *testing.T) {
 	}
 	t.Logf("store handled/fallback: %s", storeCurrent.statsString())
 }
+
+// TestStoreDiffWAL: ISUREAL_STORE_WAL 有効 + AWAIT_PG=0 (PG は純粋な write-behind)。DB 経路の読みは PG バリア (store_pgbarrier.go) が待つ。
+func TestStoreDiffWAL(t *testing.T) {
+	oldDir, oldAwait, oldOn := storeWALDir, storeAwaitPG, storeWALOn
+	storeWALDir, storeAwaitPG, storeWALOn = t.TempDir(), false, true
+	defer func() {
+		storeWALDir, storeAwaitPG, storeWALOn = oldDir, oldAwait, oldOn
+		storePGBarrierFn, storeCurrentSeqFn, storePGAppliedFn = nil, nil, nil
+	}()
+	TestStoreDiff(t)
+	if storeCurrent == nil || storeCurrent.wal == nil {
+		t.Fatal("store WAL was not enabled")
+	}
+	t.Logf("pg applied=%d current=%d", storePGApplied.Load(), storeCurrentSeq())
+}

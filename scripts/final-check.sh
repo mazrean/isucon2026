@@ -14,7 +14,7 @@ OUT=$(mktemp -d); trap 'rm -rf "$OUT"' EXIT
 
 # Runs on each host as isucon: $1 = host alias, $2 = DF_NG. Prints "NG ..." / "WARN ..." for the summary.
 REMOTE=$(cat <<'EOF'
-h=$1; dfng=$2
+h=$1; dfng=$2; walok=${3:-0}
 ng() { echo "NG $h: $*"; }; warn() { echo "WARN $h: $*"; }
 echo "-- boot_id $(cat /proc/sys/kernel/random/boot_id)  up since $(uptime -s)"
 echo "-- df"
@@ -47,6 +47,19 @@ dup=$(grep -oE '^[A-Z0-9_]+=' /home/isucon/env.sh | sort | uniq -d | tr -d '=' |
 js=$(systemctl is-active isureal-jpegcheckd 2>/dev/null)
 echo "  isureal-jpegcheckd: $js $(systemctl is-enabled isureal-jpegcheckd 2>/dev/null)"
 [ -n "$(envget ISUREAL_JPEG_LOCAL_SOCK)" ] && [ "$js" != active ] && warn "ISUREAL_JPEG_LOCAL_SOCK set but isureal-jpegcheckd $js (falls back to in-process)"
+echo "-- store WAL"
+sw=$(envget ISUREAL_STORE_WAL); sa=$(envget ISUREAL_STORE_AWAIT_PG)
+echo "  ISUREAL_STORE=$(envget ISUREAL_STORE) ISUREAL_STORE_WAL=${sw:-<unset>} ISUREAL_STORE_AWAIT_PG=${sa:-<unset>}"
+if [ -n "$sw" ] || [ "$sa" = 0 ]; then
+  [ "$walok" = 1 ] || ng "store WAL / AWAIT_PG=0 on but not adopted (rerun with STORE_WAL_OK=1 if adopted)"
+  if [ -n "$sw" ]; then
+    if [ -d "$sw" ]; then echo "  wal dir: $(ls -la "$sw" | tail -n +2 | tr '\n' ' ')"; else ng "ISUREAL_STORE_WAL dir $sw missing"; fi
+    rec=$(sudo -n journalctl -u isureal-go -b --no-pager -o cat 2>/dev/null | grep -E 'store wal: (recovered|open failed|truncate failed|create table failed)' | tail -3)
+    echo "$rec" | sed 's/^/  log: /'
+    echo "$rec" | grep -q 'store wal: recovered' || ng "no 'store wal: recovered' log since boot"
+    echo "$rec" | grep -qE 'open failed|truncate failed' && ng "store wal error in log"
+  fi
+fi
 echo "-- leftovers"
 dev=$(ip route show default | awk '{for(i=1;i<NF;i++) if($i=="dev"){print $(i+1); exit}}')
 root=$(tc qdisc show dev "$dev" root 2>/dev/null | head -1)
@@ -91,7 +104,7 @@ EOF
 )
 
 for h in "${HOSTS[@]}"; do
-  "${SSH[@]}" "$h" bash -s -- "$h" "$DF_NG" <<<"$REMOTE" >"$OUT/$h" 2>&1 || echo "NG $h: ssh failed (rc=$?)" >>"$OUT/$h" &
+  "${SSH[@]}" "$h" bash -s -- "$h" "$DF_NG" "${STORE_WAL_OK:-0}" <<<"$REMOTE" >"$OUT/$h" 2>&1 || echo "NG $h: ssh failed (rc=$?)" >>"$OUT/$h" &
 done
 wait
 

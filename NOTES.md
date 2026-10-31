@@ -31,6 +31,7 @@ END: 2026-10-31 18:00 JST
 | 10:50 | 6f6685e | 0 | **false** | nginx 調整。デプロイ直後の asia1 再起動 (停止 10s) 中に initialize → 502。deploy で起動待ち + TimeoutStopSec=3 に修正 |
 | 10:52 | 6032c39 | 16175 | true | レプリカ再生停止で回復 |
 | 10:58 | 7b0c307 | 0 | **false** | GET 転送 + PG 1GB。driver の zsh で lock 取得失敗 → E2E の投稿がベンチ中に混入し「存在しない投稿」で整合性違反。アプリ起因ではない |
+| 11:03 | 8c9e0e0 | 17423 | true | GET も asia1 へ転送 + PG shared_buffers 1GB。eu/am 人数増、asia 18 で停滞 |
 
 ## バックログ (優先順)
 1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)

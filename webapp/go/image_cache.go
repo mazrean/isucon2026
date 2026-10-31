@@ -33,7 +33,7 @@ func (o *imageObject) size() int64 {
 }
 
 const (
-	imageMemCacheBudget = 300 << 20
+	imageMemCacheBudgetDefMB = 300
 	imageMemCacheShards = 32
 )
 
@@ -122,7 +122,7 @@ var images = newImageStore(envOrDefault("ISUREAL_IMAGE_CACHE_DIR", "/home/isucon
 
 func newImageStore(dir string) *imageStore {
 	s := &imageStore{
-		mem:    newImageLRU(imageMemCacheBudget),
+		mem:    newImageLRU(int64(envIntOrDefault("ISUREAL_IMAGE_MEM_MB", imageMemCacheBudgetDefMB)) << 20),
 		flight: make(map[string]*imageCall),
 		recv:   make(map[string]chan struct{}),
 	}

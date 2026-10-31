@@ -33,6 +33,13 @@ import (
 
 var imgvMemOn = os.Getenv("ISUREAL_IMGV_MEM") != "0"
 
+// ISUREAL_IMGV_PEER_INDEX=1: peers (europe1/america1) build imgPostIndex too.
+// Without it every old-post image (the validator's past images) asks the DB
+// for validity, which on a peer is cross-region (ISUREAL_DB_READ_HOST = asia2).
+// The argument above holds unchanged on a peer: d0 is the peer's live model,
+// fed in place by the pump's pushes (applyBatch); a resync swaps the pointer.
+var imgvPeerIndex = os.Getenv("ISUREAL_IMGV_PEER_INDEX") == "1"
+
 type imgPostRef struct {
 	postID   string
 	authorID string
@@ -82,7 +89,7 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 		stale := imgPostIndex.d != d
 		imgPostIndex.mu.RUnlock()
 		// pump (asia1) only: peers re-sync often and are cross-region from the DB.
-		if stale && h.memPump != nil && !imgPostIndex.loading.Load() {
+		if stale && (h.memPump != nil || imgvPeerIndex) && h.BG != nil && !imgPostIndex.loading.Load() {
 			go rebuildImgPostIndex(h)
 		}
 		if hit && ref.authorID == owner {

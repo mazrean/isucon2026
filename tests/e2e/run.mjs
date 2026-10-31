@@ -1,6 +1,7 @@
 // ISUReal browser E2E structural check.
 //   node run.mjs record [BASE_URL]   -> writes baseline/ (summary.json, raw/, screens/)
 //   node run.mjs check  [BASE_URL]   -> runs the same flow, diffs against baseline/, exit 0 if no FAIL
+//   node run.mjs diff   SUMMARY.json -> re-diff a saved run (out/<ts>/summary.json) without a browser
 // Structure only: DOM tag/class path sets, API key sets + value formats + status codes,
 // image load success, console errors, final URL patterns. Data values (counts, times, text) are ignored.
 import { chromium } from 'playwright';
@@ -10,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MODE = process.argv[2] || 'check';
-const BASE = (process.argv[3] || process.env.E2E_BASE_URL || 'https://57.183.58.128').replace(/\/$/, '');
+const BASE = ((process.argv[2] !== 'diff' && process.argv[3]) || process.env.E2E_BASE_URL || 'https://57.183.58.128').replace(/\/$/, '');
 const STRICT = process.env.E2E_STRICT === '1';
 const PAUSE = Number(process.env.E2E_PAUSE_MS || 250);
 const YUMA = { username: 'yuma_kobayashi_186', secretKey: '0f6-BAnyBELD2MA-t-fekeDtQN4ynqD0mfgOF8JWwWs' };
@@ -230,7 +231,7 @@ async function uiRegister(page, tr, prefix, username, region) {
 // Each block runs with fresh users. If a session gets invalidated mid-block (401: someone ran
 // /api/initialize, e.g. a benchmark), the block's steps are discarded and the block is retried.
 const openTrackers = [];
-const browser = await chromium.launch();
+const browser = MODE === 'diff' ? null : await chromium.launch();
 const run = Date.now().toString(36);
 let inconclusive = [];
 async function block(name, fn) {
@@ -238,7 +239,10 @@ async function block(name, fn) {
     const mark = steps.length;
     openTrackers.length = 0;
     try { await fn(attempt); } catch (e) { console.log(`[block-error] ${name}: ${e.message.split('\n')[0]}`); steps.push({ name: name + '-block', error: e.message.split('\n')[0] }); }
-    if (!openTrackers.some((t) => t.saw401)) return;
+    const invalidated = openTrackers.some((t) => t.saw401);
+    const errored = steps.slice(mark).some((s) => s.error);
+    if (!invalidated && (!errored || attempt === 2)) return;
+    if (!invalidated) { console.log(`[retry] ${name}: step error, retrying block once with fresh users`); steps.length = mark; continue; }
     console.log(`[retry] ${name}: session invalidated (401; concurrent /api/initialize?) attempt ${attempt}`);
     steps.length = mark;
     if (attempt < 2) await new Promise((r) => setTimeout(r, 3000));
@@ -246,7 +250,8 @@ async function block(name, fn) {
   inconclusive.push(name);
   steps.push({ name: name + '-block', error: 'session invalidated twice (benchmark running?) -> INCONCLUSIVE' });
 }
-try {
+if (MODE === 'diff') steps.push(...JSON.parse(fs.readFileSync(process.argv[3], 'utf8')).steps);
+else try {
   // A: throwaway asia user -> post creation
   await block('poster', async (attempt) => {
     const { ctx, page, tr } = await newPage(browser, 'poster');
@@ -367,7 +372,7 @@ try {
   // E / U: europe / america users via X-Country-Code
   for (const [region, cc] of [['europe', 'DE'], ['america', 'US']]) await block(region, async (attempt) => {
     const { ctx, page, tr } = await newPage(browser, region, cc);
-    const uname = `e2e_${run}${attempt}_${region[0]}`;
+    const uname = `e2e_${run}${attempt}_${region}`;
     let key = null;
     await step(region + '-register', async () => { key = await uiRegister(page, tr, region + '-', uname, region); });
     await step(region + '-login', async () => {
@@ -404,6 +409,8 @@ if (MODE === 'record') {
 }
 
 // ---------- diff ----------
+// omitempty fields in the initial Go implementation (present only for some data): never a structural diff
+const OPTIONAL_KEY = /\.(score|location\.(latitude|longitude|locality))$/;
 const base = JSON.parse(fs.readFileSync(path.join(HERE, 'baseline', 'summary.json'), 'utf8')).steps;
 const fails = [], warns = [];
 const F = (s, m) => fails.push(`FAIL [${s}] ${m}`);
@@ -440,12 +447,12 @@ for (const b of base) {
     const bs = b.api[k], cs = c.api[k];
     const emptyIn = (s, p) => Object.entries(s).some(([q, t]) => q.endsWith('[]') && p.startsWith(q) && p !== q && t.length === 1 && t[0] === 'EMPTY');
     for (const p of Object.keys(bs)) {
-      if (!cs[p]) { if (!emptyIn(cs, p)) F(b.name, `API ${k} key missing: ${p}`); continue; }
+      if (!cs[p]) { if (!emptyIn(cs, p) && !OPTIONAL_KEY.test(p)) F(b.name, `API ${k} key missing: ${p}`); continue; }
       const bt = bs[p].filter((t) => t !== 'null' && t !== 'EMPTY'), ctt = cs[p].filter((t) => t !== 'null' && t !== 'EMPTY');
       if (bt.length && ctt.length && !ctt.every((t) => bt.includes(t))) F(b.name, `API ${k} type ${p}: ${bt} -> ${ctt}`);
       else if (bt.length && ctt.length === 0 && cs[p].includes('null') && !bs[p].includes('null')) W(b.name, `API ${k} ${p} is null now (was ${bt})`);
     }
-    for (const p of Object.keys(cs)) if (!bs[p]) (emptyIn(bs, p) ? W : F)(b.name, `API ${k} extra key: ${p}`);
+    for (const p of Object.keys(cs)) if (!bs[p] && !OPTIONAL_KEY.test(p)) (emptyIn(bs, p) ? W : F)(b.name, `API ${k} extra key: ${p}`);
   }
   for (const k of cKeys) if (!b.api[k] && !bKeys.some((x) => stripStatus(x) === stripStatus(k))) W(b.name, `API extra call: ${k}`);
   // images

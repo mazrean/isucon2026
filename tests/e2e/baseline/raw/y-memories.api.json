@@ -1,0 +1,157 @@
+[
+ {
+  "key": "GET /api/memories?month=",
+  "status": 200,
+  "url": "/api/memories?month=2026-10",
+  "json": {
+   "items": [
+    {
+     "id": "63a20c76-aebc-4a3c-b5d0-48730e2596a4",
+     "author": {
+      "id": "81d06ead-77f3-4bfc-a4fe-1af4fe58a67a",
+      "username": "yuma_kobayashi_186",
+      "displayName": "小林 悠真 186",
+      "profileImageUrl": null,
+      "bio": "散歩で見つけた景色を記録中",
+      "accountType": "regular"
+     },
+     "postingWindowId": "8559248b-c2b9-466e-952d-f0c8efbbfae8",
+     "imageUrl": "/api/images/ec293a23-5c67-4151-8574-f3de6769afaa?exp=1793498033&sig=WHRQeJgVBHjIy3B9Vl3oLYhTtsVjy9KBTc2HhecO770",
+     "caption": "赤い子ども用プラ椅子",
+     "visibility": "friends_of_friends",
+     "location": {
+      "kind": "approximate",
+      "locality": "浅草"
+     },
+     "postedAt": "2026-10-17T01:54:16.535815Z",
+     "onTime": false,
+     "lateSeconds": 74543,
+     "realmojis": [
+      {
+       "id": "2c39ece7-4f9a-4508-918c-5ee719453f9a",
+       "reactor": {
+        "id": "8d663fe0-41ae-44d0-8428-7ea9c56b32d0",
+        "username": "sutbul_mini_chilmyeonjo_904",
+        "displayName": "숯불 미니 칠면조 904",
+        "profileImageUrl": null,
+        "bio": "커피와 카메라와 고양이를 좋아해요",
+        "accountType": "regular"
+       },
+       "reactionType": "laugh",
+       "imageUrl": "/api/images/62e4a02e-be48-4ec0-93b2-96569a3820db?exp=1793498033&sig=OZ6v82YeXvrhfysd4WlG7sXSras_F0J4LZVCEpxNX-I",
+       "createdAt": "2026-10-17T03:29:37.05071Z"
+      },
+      {
+       "id": "7e5a0959-a9d8-4db0-a05e-0d58f0d2c159",
+       "reactor": {
+        "id": "e2ac5582-137b-4de7-8631-c3548058849a",
+        "username": "keuroket_seongjang_1291",
+        "displayName": "크로켓 먹고 자람 1291",
+        "profileImageUrl": null,
+        "bio": "매일 하늘을 찍어요",
+        "accountType": "regular"
+       },
+       "reactionType": "instant",
+       "imageUrl": "/api/images/d8da7533-20b7-4578-81ed-1974cce7d88a?exp=1793498033&sig=xW83SS6506gAD7y8GicnUPPUxiEmn14O2uhV_gNnWzU",
+       "createdAt": "2026-10-17T03:24:42.288247Z"
+      }
+     ],
+     "comments": []
+    },
+    {
+     "id": "dbdc895b-2ef9-4513-a6e1-84be81a6324b",
+     "author": {
+      "id": "81d06ead-77f3-4bfc-a4fe-1af4fe58a67a",
+      "username": "yuma_kobayashi_186",
+      "displayName": "小林 悠真 186",
+      "profileImageUrl": null,
+      "bio": "散歩で見つけた景色を記録中",
+      "accountType": "regular"
+     },
+     "postingWindowId": "0d5d430a-895f-4a0a-adbd-cf3bc3903f51",
+     "imageUrl": "/api/images/8713ba1c-69e1-4749-b8cd-6ce3a074d06a?exp=1793498033&sig=KR_5hpDIxzOE3IlyvBpM3-bUDBX1NJbYznTMdnNNxKA",
+     "caption": "ミニバンの三列目シート",
+     "visibility": "friends",
+     "location": {
+      "kind": "approximate",
+      "locality": "天王寺"
+     },
+     "postedAt": "2026-10-14T05:38:24Z",
+     "onTime": true,
+     "lateSeconds": 0,
+     "realmojis": [
+      {
+       "id": "1f5d4b47-bda8-4f84-b95e-824480147964",
+       "reactor": {
+        "id": "8d663fe0-41ae-44d0-8428-7ea9c56b32d0",
+        "username": "sutbul_mini_chilmyeonjo_904",
+        "displayName": "숯불 미니 칠면조 904",
+        "profileImageUrl": null,
+        "bio": "커피와 카메라와 고양이를 좋아해요",
+        "accountType": "regular"
+       },
+       "reactionType": "heart",
+       "imageUrl": "/api/images/0ab0cbb1-c65a-49e0-aa3b-f2376b74fb66?exp=1793498033&sig=0hx0a9yqXm--K6VUJNz9vSV608KCk1krEWLvwaMtvjs",
+       "createdAt": "2026-10-14T21:06:29.232795Z"
+      }
+     ],
+     "comments": []
+    },
+    {
+     "id": "aaea7c31-46a5-44fa-ba4b-775f116197ef",
+     "author": {
+      "id": "81d06ead-77f3-4bfc-a4fe-1af4fe58a67a",
+      "username": "yuma_kobayashi_186",
+      "displayName": "小林 悠真 186",
+      "profileImageUrl": null,
+      "bio": "散歩で見つけた景色を記録中",
+      "accountType": "regular"
+     },
+     "postingWindowId": "30535867-23c4-4e58-a4ed-f0319a472b53",
+     "imageUrl": "/api/images/f927adb3-a3b7-483c-9c75-341ee1937225?exp=1793498033&sig=c2Hkn8EnWh3VDZix_oUsah5Ogqw6C1kVtdxHk4LnQo0",
+     "caption": "陶器のガーデンスツール",
+     "visibility": "friends",
+     "location": {
+      "kind": "approximate",
+      "locality": "梅田"
+     },
+     "postedAt": "2026-10-13T06:43:42Z",
+     "onTime": true,
+     "lateSeconds": 0,
+     "realmojis": [
+      {
+       "id": "8ecb97c1-93e2-4c91-a422-3f26a8cc5b26",
+       "reactor": {
+        "id": "8d663fe0-41ae-44d0-8428-7ea9c56b32d0",
+        "username": "sutbul_mini_chilmyeonjo_904",
+        "displayName": "숯불 미니 칠면조 904",
+        "profileImageUrl": null,
+        "bio": "커피와 카메라와 고양이를 좋아해요",
+        "accountType": "regular"
+       },
+       "reactionType": "instant",
+       "imageUrl": "/api/images/871e0e0b-734f-4913-a2f3-f0fb18090133?exp=1793498033&sig=sIOwV8PPdMAlJdNPuqYMhe9p1cna-vU2G35iWD99HTo",
+       "createdAt": "2026-10-14T03:00:31.335461Z"
+      }
+     ],
+     "comments": [
+      {
+       "id": "ee09e205-69cd-42c4-9474-77b96c29cf99",
+       "author": {
+        "id": "8d663fe0-41ae-44d0-8428-7ea9c56b32d0",
+        "username": "sutbul_mini_chilmyeonjo_904",
+        "displayName": "숯불 미니 칠면조 904",
+        "profileImageUrl": null,
+        "bio": "커피와 카메라와 고양이를 좋아해요",
+        "accountType": "regular"
+       },
+       "body": "좋은 의자!",
+       "createdAt": "2026-10-13T12:14:06.817821Z"
+      }
+     ]
+    }
+   ],
+   "hasMore": false
+  }
+ }
+]

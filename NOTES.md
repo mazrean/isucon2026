@@ -34,6 +34,8 @@ END: 2026-10-31 18:00 JST
 | 11:03 | 8c9e0e0 | 17423 | true | GET も asia1 へ転送 + PG shared_buffers 1GB。eu/am 人数増、asia 18 で停滞 |
 | 11:10 | 2f19b70 | 17351 | true | pprof 有効 (再現確認)。CPU の 6 割が画像署名 HMAC |
 | 11:16 | 2f19b70 | 24549 | true | HMAC Reset 使い回し 4x。eu 43 人 / asia 32 人まで伸びる |
+| 11:25 | 8d41ed4 | 20946/19645 | true | 統合版。人数 2.6 倍/日 だが asia 127 で横ばい |
+| 11:58 | a41e963 | **39703** | true | 分散インメモリ MEM=1 + GET ローカル + jpegcheck。asia 317 人。グランプリ全滅 (2/1/0 人) |
 
 ## バックログ (優先順)
 1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)

@@ -3,6 +3,7 @@ package isureal
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 	"strconv"
 	"sync"
@@ -25,7 +26,8 @@ import (
 //       space=pump : 適用済みの pump の batch seq (memReceiver.seq) と比べる。
 //       space=store: push の SS (asia1 が ps.mu の下で読んだ storeCurrentSeq。Seq までのバッチを適用した時点で有効)
 //                    の適用済みの最大値と比べる。
-//     届いたらメモリで答える。上限を超えた / メモリが使えないときは自分の PG で答える (memForceDBKey)。
+//     届いたらメモリで答える。上限を超えた / lease 切れのときは自分の PG で答える (memForceDBKey)。
+//     作り直し中 (not-ready) は待たずに 503 (送り手が自分の PG で答える)。
 //   - キャッシュ origin の要求 (X-Isureal-Cache-Origin) は待ちの目印を持たないので、従来どおり PG で答える。
 
 var memFull = os.Getenv("ISUREAL_MEM_FULL") == "1"
@@ -124,6 +126,12 @@ func memColdWaitMiddleware(r *memReceiver) echo.MiddlewareFunc {
 				target = 0
 			}
 			space := req.Header.Get(coldSpaceHeader)
+			if !r.m.ready.Load() {
+				// 作り直し中 (initialize の後のダンプ + ホット外のロード、18〜21 秒): 即座に断る。
+				// 送り手 (cold_origin.go の coldForward) は 5xx で自分の PG の経路に落ちる。読みを待たせない。
+				memColdStats.notOn.Add(1)
+				return c.NoContent(http.StatusServiceUnavailable)
+			}
 			if r.coldWait(req.Context(), space, target) {
 				memColdStats.served.Add(1)
 				return next(c)
@@ -143,7 +151,7 @@ func memColdStatsLoop() {
 	for range time.Tick(10 * time.Second) {
 		s, t, n, f := memColdStats.served.Swap(0), memColdStats.timeout.Swap(0), memColdStats.notOn.Swap(0), memColdStats.forceDB.Swap(0)
 		if s+t+n+f > 0 {
-			slog.Info("mem-full: cold reads", "mem", s, "timeout_pg", t, "not_ready_pg", n, "origin_pg", f)
+			slog.Info("mem-full: cold reads", "mem", s, "timeout_pg", t, "not_ready_503", n, "origin_pg", f)
 		}
 	}
 }

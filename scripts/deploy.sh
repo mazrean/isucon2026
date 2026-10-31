@@ -84,6 +84,19 @@ if [ "$ASIA_READ_SPLIT" = 1 ] && [ -n "$STORE_WAL" ] && [ "${MEM_FULL:-0}" != 1 
 ASIA_READ_SPLIT_PCT=${ASIA_READ_SPLIT_PCT:-50}
 ars_w2=$ASIA_READ_SPLIT_PCT; (( ars_w2 >= 1 && ars_w2 <= 99 )) || { echo "ASIA_READ_SPLIT_PCT must be 1..99" >&2; exit 2; }; ars_w1=$((100 - ars_w2))
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
+# PG_SB_MB (default empty = file absent = shared_buffers from isucon-tuning.conf, 1GB): e.g. 512 = asia2 conf.d/zz-sb.conf
+# "shared_buffers = 512MB" (frees RAM for MEM_FULL). Runs before any app restart; PostgreSQL is restarted only when
+# pg_settings reports pending_restart, then we wait until it accepts connections (apps restart afterwards below).
+PG_SB_MB=${PG_SB_MB-}
+"${SSH[@]}" asia2 'set -e
+  f=/etc/postgresql/16/main/conf.d/zz-sb.conf
+  if [ -n "'"$PG_SB_MB"'" ]; then echo "shared_buffers = '"$PG_SB_MB"'MB" | sudo tee $f.new >/dev/null && sudo chown postgres:postgres $f.new && sudo mv $f.new $f; elif [ -e $f ]; then sudo rm -f $f; else exit 0; fi
+  sudo -u postgres psql -XAtqc "select pg_reload_conf()" >/dev/null; sleep 0.5
+  if [ "$(sudo -u postgres psql -XAtc "select count(*) from pg_settings where pending_restart")" != 0 ]; then
+    echo "asia2: pg restart (pending_restart)"; sudo systemctl restart postgresql@16-main
+    for i in $(seq 150); do sudo -u postgres psql -XAtqc "select 1" >/dev/null 2>&1 && break; sleep 0.2; done
+  fi
+  echo "asia2: shared_buffers=$(sudo -u postgres psql -XAtc "show shared_buffers")"' </dev/null
 for h in "${HOSTS[@]}"; do
   (
     scp -q "$OUT/isureal" "$h:/tmp/isureal.new"

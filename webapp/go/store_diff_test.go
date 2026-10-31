@@ -6,7 +6,10 @@ package isureal
 // asia1 メモリ (sb) / peer (sc) の GET 応答を比較する。
 //   ISUREAL_DB_HOST=127.0.0.1 ISUREAL_DB_PORT=15433 ISUREAL_LOG_LEVEL=error go test -tags memdiff -run TestStoreDiff -v .
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestStoreDiff(t *testing.T) {
 	storeEnabled = true
@@ -25,6 +28,20 @@ func TestStoreDiffWAL(t *testing.T) {
 	defer func() {
 		storeWALDir, storeAwaitPG, storeWALOn = oldDir, oldAwait, oldOn
 		storePGBarrierFn, storeCurrentSeqFn, storePGAppliedFn = nil, nil, nil
+	}()
+	// 1 process に pump と peer が同居するので、storePGRolePeer (process 全体で 1 つ) が peer に倒れると
+	// 全要求が peer の標本待ち (上限まで) になる。ここでは store が 1 つなので asia1 の seq 待ちに揃える。
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			case <-time.After(time.Millisecond):
+				storePGRolePeer.Store(false)
+			}
+		}
 	}()
 	TestStoreDiff(t)
 	if storeCurrent == nil || storeCurrent.wal == nil {

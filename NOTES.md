@@ -203,3 +203,4 @@ END: 2026-10-31 18:00 JST
 | 9384 | - | 113234 | IMGV_MEM (画像の有効性をメモリで)。asia5 881 / eu 141 / am 100。GP asia 200 (窓の遅れ、修正前) / eu 130 / am 94。register timeout 1 |
 | 10125 | - | 113557 | 窓の修正 + JPEG 委譲 asia2 のみ + JC=1。asia4 408→5 日目 685 (伸び鈍化) / eu 189 / am 88。GP asia 450 (66%、修正の効果) / eu 176 / am 84 |
 | 10322 | - | 104859 | STORE=1 + 窓の修正 + JPEG asia2 のみ + JC=1。asia4 436→5 日目 525 (1.2 倍に鈍化) / eu 144 / am 112。GP 464/135/97。write-behind の取りこぼし 0。不採用 |
+| 10890 | - | **FAIL 0** | LOGREPL=1 (公式)。「再ログイン前のセッションが無効になっていません」。原因: logrepl のバリアが login を除外していた (login は古いセッションを無効化する)。修正済み。revert 確認済み (スロット 0、sync names 空、watchdog 両方 disabled) |

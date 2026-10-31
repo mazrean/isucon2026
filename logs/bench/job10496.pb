@@ -1,0 +1,43 @@
+
+��R��� *�Ε�����2�ϕ���P:�Ε���دB�ϕ����OH���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T03:58:28.312Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:58:31.529Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:58:34.325Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:58:37.392Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T03:58:40.541Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T03:58:43.329Z level=INFO msg="america 2 日目: 16 人"
+time=2026-10-31T03:58:46.524Z level=INFO msg="asia 3 日目: 153 人"
+time=2026-10-31T03:58:48.609Z level=INFO msg="user moved" user=kuliaso-5466 from=europe to=america
+time=2026-10-31T03:58:49.441Z level=INFO msg="europe 3 日目: 50 人"
+time=2026-10-31T03:58:50.474Z level=INFO msg="user moved" user=hilialeo_5970 from=asia to=america
+time=2026-10-31T03:58:52.361Z level=INFO msg="america 3 日目: 48 人"
+time=2026-10-31T03:58:55.335Z level=INFO msg="asia 4 日目: 421 人"
+time=2026-10-31T03:58:55.994Z level=INFO msg="user moved" user=kuliaso-5466 from=america to=europe
+time=2026-10-31T03:58:58.890Z level=INFO msg="user moved" user=ivymator_6782 from=asia to=europe
+time=2026-10-31T03:58:59.371Z level=INFO msg="europe 4 日目: 138 人"
+time=2026-10-31T03:59:00.341Z level=INFO msg="user moved" user=zoeel.6817 from=asia to=america
+time=2026-10-31T03:59:01.769Z level=INFO msg="america 4 日目: 121 人"
+time=2026-10-31T03:59:03.990Z level=INFO msg="user moved" user=zoeel.6817 from=america to=europe
+time=2026-10-31T03:59:04.581Z level=INFO msg="user moved" user=kimaxeva_7476 from=asia to=america
+time=2026-10-31T03:59:04.607Z level=INFO msg="user moved" user=shimiael_6966 from=asia to=europe
+time=2026-10-31T03:59:05.705Z level=INFO msg="user moved" user=nato8094 from=asia to=europe
+time=2026-10-31T03:59:06.039Z level=INFO msg="asia 5 日目: 828 人"
+time=2026-10-31T03:59:08.142Z level=INFO msg="europe 5 日目: 159 人"
+time=2026-10-31T03:59:08.881Z level=INFO msg="user moved" user=kiulfu-8724 from=europe to=asia
+time=2026-10-31T03:59:10.312Z level=INFO msg="user moved" user=noivy_9327 from=america to=europe
+time=2026-10-31T03:59:10.933Z level=INFO msg="user moved" user=kuliaso-5466 from=europe to=america
+time=2026-10-31T03:59:13.516Z level=INFO msg="america 5 日目: 133 人"
+time=2026-10-31T03:59:21.157Z level=INFO msg="america 最終日（グランプリ）: 132 人"
+time=2026-10-31T03:59:24.322Z level=INFO msg="europe 最終日（グランプリ）: 158 人"
+time=2026-10-31T03:59:25.329Z level=INFO msg="asia 最終日（グランプリ）: 829 人"
+time=2026-10-31T03:59:28.333Z level=INFO msg="グランプリ: アジア 122 人, ヨーロッパ 102 人, アメリカ 122 人"
+{
+  "pass": true,
+  "score": 111122,
+  "messages": [
+    "hanako_sato_3441: 履歴を読めません: GET /api/images/096c3388-260c-4f14-aaac-024d0d24430b?exp=1793505000\u0026sig=3FVABXIuxZR7hko3qo0yOPQ-TGjCXaJwvTa09dow044: ステータスコード 500 が返りました（期待値 200、context deadline exceeded）"
+  ]
+}
+ ���������(���������2�ϕ����O��
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

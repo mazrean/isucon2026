@@ -192,8 +192,8 @@ func memLogReplBarrier(db *sqlx.DB) echo.MiddlewareFunc {
 			var apiErr *APIError
 			clientErr := (bw.code >= 400 && bw.code < 500) ||
 				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
-			// login は新しいセッションを作るだけで、メモリに無いトークンは DB で確認される (安全側) ので待たない。
-			if !clientErr && req.URL.Path != "/api/auth/login" && req.URL.Path != "/api/admin/auth/login" {
+			// login も待つ: 再ログインは古いセッションを無効化する (権限を減らす書き込み)。job10890 はこれで FAIL。
+			if !clientErr {
 				if werr := lrWaitApplied(req.Context(), db); werr != nil {
 					slog.Warn("mem-logrepl: barrier failed", "error", werr)
 				}

@@ -118,4 +118,12 @@ func TestGPWindowDeadline(t *testing.T) {
 	if _, ok := m.gpWindowDeadline("america", now); ok {
 		t.Fatal("no window")
 	}
+	if gpMem.Load() == nil && gpLocalActive("europe") {
+		t.Fatal("nil mem must not be GP")
+	}
+	gpMem.Store(m)
+	defer gpMem.Store(nil)
+	if !gpLocalActive("europe") || gpLocalActive("asia") {
+		t.Fatal("gpLocalActive mismatch")
+	}
 }

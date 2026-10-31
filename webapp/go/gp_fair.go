@@ -30,7 +30,18 @@ var (
 	gpFairAfter      = time.Duration(envIntOrDefault("ISUREAL_GP_FAIR_AFTER_MS", 5000)) * time.Millisecond
 	gpFairPostExempt = os.Getenv("ISUREAL_GP_FAIR_POST_EXEMPT") == "1"
 	gpFairGateG      = newPrioGate(gpFairSlots)
+	// ISUREAL_GP_JPEG_REMOTES_MAX=N (既定 0 = 制限なし、GP_FAIR とは独立): 自地域が GP の間、JPEG 検査の委譲先を
+	// ISUREAL_JPEG_REMOTES の先頭 N 個 (asia2) に限る。eu/am への委譲は 360KB を asia1 から地域外へ送り
+	// (18156 の GP で約 530 件/10s ≈ 150Mbps)、asia1 の送信帯域 (bw_out_allowance_exceeded) を mem の push と取り合う。
+	gpJPEGRemotesMax = envIntOrDefault("ISUREAL_GP_JPEG_REMOTES_MAX", 0)
+	gpMem            atomic.Pointer[memStore] // pump (asia1) のメモリ。setupMem が入れる
 )
+
+// gpLocalActive: 自地域 (pump の地域) が GP 中か。
+func gpLocalActive(region string) bool {
+	_, ok := gpMem.Load().gpWindowDeadline(region, time.Now())
+	return ok
+}
 
 // gpWindowDeadline: region の開いている窓が GP (on-time が gpFairMaxWindow 以下) で、
 // 締め切り + gpFairAfter までなら、その締め切りを返す。

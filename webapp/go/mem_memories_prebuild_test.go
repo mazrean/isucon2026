@@ -42,8 +42,10 @@ func TestMemPrebuildMatchesDB(t *testing.T) {
 	if dsn == "" {
 		t.Skip("ISUREAL_TEST_PG_DSN not set")
 	}
-	defer func(a, b bool, n int) { memRespCacheOn, memPrebuildOn, memPrebuildInitUsers = a, b, n }(memRespCacheOn, memPrebuildOn, memPrebuildInitUsers)
-	memRespCacheOn, memPrebuildOn, memPrebuildInitUsers = true, true, 100
+	defer func(a, b, c bool, n int) {
+		memRespCacheOn, memPrebuildOn, memPrebuildTouchOn, memPrebuildInitUsers = a, b, c, n
+	}(memRespCacheOn, memPrebuildOn, memPrebuildTouchOn, memPrebuildInitUsers)
+	memRespCacheOn, memPrebuildOn, memPrebuildTouchOn, memPrebuildInitUsers = true, true, true, 100
 	db := sqlx.MustOpen("pgx", dsn)
 	defer db.Close()
 	ctx := context.Background()
@@ -53,6 +55,9 @@ func TestMemPrebuildMatchesDB(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("load %v, hotFrom %v, months %d", time.Since(start), d.hotFrom, len(d.memPrebuildMonths()))
+	// workers pause while a window is open: the test DB keeps the last run's open windows
+	openW := d.open
+	d.open = map[string]*memWindow{}
 	m := &memStore{d: d}
 	m.ready.Store(true)
 	h := &HandlerContext{DB: db, reads: &readRouter{primary: db}, Config: &Config{Region: "europe"}, Mem: m}
@@ -159,6 +164,22 @@ func TestMemPrebuildMatchesDB(t *testing.T) {
 	// users not present at load are not queued
 	if d.memPrebuildUser("not-initial"); len(memPrebuildCh) != 0 {
 		t.Fatal("queued a non-initial user")
+	}
+
+	// an open window pauses the workers; past the time bound the job is dropped
+	if len(openW) > 0 {
+		m.mu.Lock()
+		d.open = openW
+		m.mu.Unlock()
+		d.pb.until = time.Now().Add(500 * time.Millisecond)
+		d.rc.clearAll()
+		skip, puts := memPrebuildSkip.Load(), memPrebuildPuts.Load()
+		memPrebuildCh <- memPrebuildJob{d: d, user: eu[0], start: months[0], end: months[0].AddDate(0, 1, 0)}
+		memPrebuildJobs.Add(1)
+		time.Sleep(1200 * time.Millisecond)
+		if memPrebuildPuts.Load() != puts || memPrebuildSkip.Load() != skip+1 {
+			t.Fatalf("open window: puts %d skip %d", memPrebuildPuts.Load()-puts, memPrebuildSkip.Load()-skip)
+		}
 	}
 
 	// ISUREAL_MEMORIES_ORIGIN_DEADLINE_MS: a slow origin is abandoned and the miss computed locally

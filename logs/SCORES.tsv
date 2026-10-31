@@ -94,3 +94,4 @@
 16:14	7b08446	job=26843 state=4 pass=true スコア=121444 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL (再挑戦: MEMORIES_CACHE_ORIGIN 空、peer にも WAL の barrier)
 16:17	63dd555	job=27110 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + NOTE=1
 16:20	179a4bb	job=27389 state=4 pass=true スコア=173589 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + MEM_SYNC_VISIBLE=1
+16:24	020d5a3	job=27636 state=4 pass=true スコア=184824 種別エラー数=map[]	26530 構成 + MEM_HOT_EXTRA_DAYS=30

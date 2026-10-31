@@ -194,6 +194,7 @@ END: 2026-10-31 18:00 JST
 | 13083 | - | 133128 | STORE=1 (レーン + fsync 修正) on 既定。asia5 785 / GP asia 437 → 既定 (STORE=0) の 146736 より低い。STORE は不採用 |
 | 13426 | - | **147756** | MEMORIES_CACHE=1 + HEAVY_TARGET=127.0.0.1 + SSE 修正。asia 18/47/131/348/781 (d4→d5 2.24 倍、12846 の 2.41 より悪い = asia1 に重い読みを寄せた分)、eu 297 / am 249、GP 565/277/244 (eu GP +64)。503 は 0 件 |
 | 13667 | - | 139684 | 既定 + 画像 INSERT 専用プール + login 7→4 + 友達申請 9→5 + ASIA_LOCALIMG=1。asia 18/51/149/419/946 (2.83/2.92/2.81/2.26、d5 過去最高)、eu 269 / am 250。GP asia 291 (31%) に崩壊 → ASIA_LOCALIMG が第一容疑。503 20 件 |
+| 13916 | - | 67391 | LOGREPL=1 (eb992f8 修正版、公式) on 既定 (往復削減 3 つ、ASIA_LOCALIMG=0)。asia 18/45/123/322/322、eu 121 / am 89、GP 273/120/84。remote_apply で全体が遅くなり半減 → LOGREPL は不採用で確定。invalid_session 401 が 3 件。後始末は確認済み (slot 0、synchronous_standby_names 空、watchdog 2 つとも inactive) |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

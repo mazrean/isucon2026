@@ -1,0 +1,36 @@
+
+��l��� *�������2������*:�������B�����)H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T04:43:30.612Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T04:43:33.614Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T04:43:36.546Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T04:43:39.666Z level=INFO msg="asia 2 日目: 45 人"
+time=2026-10-31T04:43:42.579Z level=INFO msg="europe 2 日目: 16 人"
+time=2026-10-31T04:43:45.668Z level=INFO msg="america 2 日目: 13 人"
+time=2026-10-31T04:43:48.615Z level=INFO msg="asia 3 日目: 123 人"
+time=2026-10-31T04:43:51.898Z level=INFO msg="europe 3 日目: 41 人"
+time=2026-10-31T04:43:54.874Z level=INFO msg="america 3 日目: 33 人"
+time=2026-10-31T04:43:57.008Z level=INFO msg="user moved" user=mefu.5989 from=europe to=america
+time=2026-10-31T04:43:57.633Z level=INFO msg="asia 4 日目: 322 人"
+time=2026-10-31T04:44:00.777Z level=INFO msg="europe 4 日目: 82 人"
+time=2026-10-31T04:44:03.933Z level=INFO msg="america 4 日目: 60 人"
+time=2026-10-31T04:44:06.560Z level=INFO msg="user moved" user=mefu.5989 from=america to=europe
+time=2026-10-31T04:44:06.848Z level=INFO msg="asia 5 日目: 322 人"
+time=2026-10-31T04:44:09.925Z level=INFO msg="europe 5 日目: 121 人"
+time=2026-10-31T04:44:13.230Z level=INFO msg="america 5 日目: 89 人"
+time=2026-10-31T04:44:13.489Z level=INFO msg="user moved" user=yoeva-8100 from=america to=europe
+time=2026-10-31T04:44:21.924Z level=INFO msg="europe 最終日（グランプリ）: 121 人"
+time=2026-10-31T04:44:22.121Z level=INFO msg="asia 最終日（グランプリ）: 321 人"
+time=2026-10-31T04:44:22.322Z level=INFO msg="america 最終日（グランプリ）: 87 人"
+time=2026-10-31T04:44:30.418Z level=INFO msg="グランプリ: アジア 273 人, ヨーロッパ 120 人, アメリカ 84 人"
+{
+  "pass": true,
+  "score": 67391,
+  "messages": [
+    "vindanru5085: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）",
+    "minore_5020: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）",
+    "roro-5138: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）"
+  ]
+}
+ ���������(���������2�����)��
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

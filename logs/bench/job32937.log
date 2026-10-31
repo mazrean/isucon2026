@@ -1,0 +1,194 @@
+time=2026-10-31T08:13:47.338Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T08:13:50.341Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T08:13:53.338Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T08:13:56.336Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T08:13:59.346Z level=INFO msg="europe 2 日目: 19 人"
+time=2026-10-31T08:14:02.334Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T08:14:03.761Z level=INFO msg="user moved" user=ivykene-5453 from=america to=europe
+time=2026-10-31T08:14:04.829Z level=INFO msg="user moved" user=rishiri_5431 from=europe to=america
+time=2026-10-31T08:14:05.433Z level=INFO msg="asia 3 日目: 146 人"
+time=2026-10-31T08:14:06.752Z level=INFO msg="user moved" user=yuko5662 from=asia to=america
+time=2026-10-31T08:14:07.811Z level=INFO msg="user moved" user=yuko5662 from=america to=europe
+time=2026-10-31T08:14:07.958Z level=INFO msg="user moved" user=chimu_5733 from=asia to=america
+time=2026-10-31T08:14:08.338Z level=INFO msg="europe 3 日目: 56 人"
+time=2026-10-31T08:14:09.163Z level=INFO msg="user moved" user=liashite6221 from=asia to=america
+time=2026-10-31T08:14:09.976Z level=INFO msg="user moved" user=ivykene-5453 from=europe to=america
+time=2026-10-31T08:14:10.030Z level=INFO msg="user moved" user=liashite6221 from=america to=asia
+time=2026-10-31T08:14:11.339Z level=INFO msg="america 3 日目: 49 人"
+time=2026-10-31T08:14:13.541Z level=INFO msg="user moved" user=orkeso-6252 from=europe to=asia
+time=2026-10-31T08:14:14.367Z level=INFO msg="asia 4 日目: 417 人"
+time=2026-10-31T08:14:15.005Z level=INFO msg="user moved" user=liashite6221 from=asia to=america
+time=2026-10-31T08:14:17.526Z level=INFO msg="europe 4 日目: 154 人"
+time=2026-10-31T08:14:18.683Z level=INFO msg="user moved" user=liaku_7692 from=asia to=america
+time=2026-10-31T08:14:19.046Z level=INFO msg="user moved" user=orkeso-6252 from=asia to=america
+time=2026-10-31T08:14:19.468Z level=INFO msg="user moved" user=romaka-7302 from=asia to=america
+time=2026-10-31T08:14:20.077Z level=INFO msg="user moved" user=yuko5662 from=europe to=america
+time=2026-10-31T08:14:20.211Z level=INFO msg="user moved" user=washiyu-8567 from=asia to=america
+time=2026-10-31T08:14:20.281Z level=INFO msg="user moved" user=liaku_7692 from=america to=asia
+time=2026-10-31T08:14:20.359Z level=INFO msg="america 4 日目: 133 人"
+time=2026-10-31T08:14:20.429Z level=INFO msg="user moved" user=leosu8288 from=asia to=europe
+time=2026-10-31T08:14:20.644Z level=INFO msg="user moved" user=mohe.8151 from=asia to=europe
+time=2026-10-31T08:14:21.179Z level=INFO msg="user moved" user=leoseho-7904 from=asia to=america
+time=2026-10-31T08:14:22.347Z level=INFO msg="user moved" user=ivykene-5453 from=america to=europe
+time=2026-10-31T08:14:23.345Z level=INFO msg="asia 5 日目: 1149 人"
+time=2026-10-31T08:14:26.661Z level=INFO msg="europe 5 日目: 413 人"
+time=2026-10-31T08:14:27.062Z level=INFO msg="user moved" user=soka.9527 from=america to=europe
+time=2026-10-31T08:14:28.059Z level=INFO msg="user moved" user=yuisivy6913 from=america to=asia
+time=2026-10-31T08:14:29.485Z level=INFO msg="america 5 日目: 327 人"
+time=2026-10-31T08:14:38.540Z level=INFO msg="europe 最終日（グランプリ）: 413 人"
+time=2026-10-31T08:14:38.585Z level=INFO msg="asia 最終日（グランプリ）: 1149 人"
+time=2026-10-31T08:14:38.585Z level=INFO msg="america 最終日（グランプリ）: 326 人"
+time=2026-10-31T08:14:47.542Z level=INFO msg="グランプリ: アジア 482 人, ヨーロッパ 271 人, アメリカ 210 人"
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "走行後の整合性チェックに失敗しました: chihiku_15169: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "metoleo.17726: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "nuroke.17052: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "romia_16597: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "hihonoa.17938: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "fuso-16382: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "leofuya8800: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "fumeel.9717: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kimar_17112: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "evakeri_14683: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "vinis-17059: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "torru.6100: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kenomar6572: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "dandanko8855: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sabendan-6581: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "leovinra-15583: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "serochi.5107: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "rine9649: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "nise.18089: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "raki-16368: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "noaro_16848: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kooror17540: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kutsu_16702: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "menelia-8557: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "numaxsol17417: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "watsu-18158: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "evara-15160: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "shishilia.8862: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "elmosol-16774: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "leosu8288: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "himeka_15997: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "vinshiyu-9469: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "hoso-6333: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "rirewa.17210: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "mireso.17741: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "futohe_16296: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "tahi16489: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "hane_16397: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "zoeridan-9068: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "niyo.16169: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "marmax-17874: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "futorivy.16618: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "isivyyo15656: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "funaso-8937: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "isulwa15508: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kewaya18010: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "torsol15267: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kume_5143: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "niormu.10140: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "fuchi-17465: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "danyuma_12630: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "marruki16818: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "yaka.16680: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sodanso-7573: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "benme_15730: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "nidan_13632: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kidanha.6831: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "nuulfu.5490: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "rohano_6460: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "mesol.17812: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "torchi_8292: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "koko14234: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "fuel-7392: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sufu11992: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "miamu-6234: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "anben12604: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "liachitor-13201: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "tatsu.11245: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "ivywa.9644: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "hehanu15633: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kaben.6182: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kiivychi9246: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "vinha16527: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "niivytor.15883: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "heleo8749: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sero-15233: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "manamar_15282: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "karowa-17343: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "liafu-17836: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "tois-6416: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "issu_16684: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "keta.8352: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "mevin_12129: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "homayu-12235: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "chireno16500: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "soltsuke.9960: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "chimu_5733: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "benma.9138: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sunoa-11601: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "taha_7080: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "rumia-13975: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "leoanme_15979: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "elmelia.9518: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "hito-11328: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "danbenshi.12105: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kivin12421: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "leoorha14680: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "makise12339: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "marruivy.6724: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "benra_15181: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "shileoshi_17944: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sophie_evans_4030: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "yadanlia15428: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "rune.16239: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "shiyaan-15253: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "leoshi_7979: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "anhe-10189: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "danan_16925: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "bensu15350: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "haanlia-12140: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "niro-11063: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "liaelhe.12031: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "towa_11252: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "nera13347: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "lianehi13209: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "yumiis.7628: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "evamar14734: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "waan10735: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "sukomi-14535: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "riel-9618: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "hasenoa_9593: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "kuel_13752: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "torvin_13737: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "koul_17197: Memories を取得できません: GET /api/memories?month=2026-10: 応答がタイムアウトしました",
+    "nera13347: 投稿できません: POST /api/posts: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/posts\": readfrom tcp 10.27.39.14:37228-\u003e57.183.58.128:8080: write tcp 10.27.39.14:37228-\u003e57.183.58.128:8080: use of closed network connection",
+    "miko-13103: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "tsuelsa.13474: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "yuro14987: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "nenu.15098: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "temaxleo_12891: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "rafu-13579: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "hitor.13376: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "soseel_13336: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "tenona14859: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "monoa8064: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "tare_10871: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "noahois_12498: ログインし直せません: POST /api/auth/login: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/auth/login\": EOF",
+    "riel15114: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "miyo_14021: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "yeoneo_byeongjorim_2882: ログアウトできません: POST /api/auth/logout: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/auth/logout\": EOF",
+    "anyata12978: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "teormar10245: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "ansuya-7545: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "yamoni_8258: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+
+reason= 走行後の整合性チェックに失敗しました
+job=32937 state=4 pass=false スコア=0 種別エラー数=map[]

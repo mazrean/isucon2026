@@ -14,3 +14,4 @@
 11:43	f55196e	job=4952 state=4 pass=true スコア=70862 種別エラー数=map[]	4xx はバリアを飛ばす
 11:47	6cb20bc	job=5168 state=4 pass=true スコア=69730 種別エラー数=map[]	A/B: 画像 push 停止
 11:49	38d8b4e	job=5400 state=4 pass=false スコア=0 種別エラー数=map[]	PGO + v3 + Memories/export を asia2 へ
+11:53	e2a74ab	job=5642 state=4 pass=true スコア=69709 種別エラー数=map[]	プール是正 + login バリア自ホストのみ + PG 400

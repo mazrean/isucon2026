@@ -158,3 +158,5 @@ END: 2026-10-31 18:00 JST
 | 4692 | 2b1c03c | **68277** | JPEG オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200。GP 322/54/44。asia1 CPU: HMAC 35% / Memories 19% / export 15% / JPEG 14% |
 | 4952 | f55196e | **70862** | 4xx はバリアを飛ばす。GP 376/55/33 |
 | 5168 | 6cb20bc | 69730 | A/B: 画像 push 停止 → 差なし (eu/am 減, asia 増)。push は維持 |
+| 5400 | 1f0a1d1 | 0 FAIL | PGO + v3 + Memories/export を asia2 へ。asia 5 日目 676 人 / GP 441。走行後の整合性で too many clients (asia2 プール既定 80 + 画像判定 40×4) |
+| 5642 | e2a74ab | 69709 | プール是正 + login バリア自ホスト + PG 400。asia2 が CPU 100% で Memories 平均 3.3s (タイムアウト多数) |

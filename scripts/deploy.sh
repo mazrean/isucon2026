@@ -155,6 +155,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PUSH_FILTER '"$IMG_PUSH_FILTER"'; else setenv ISUREAL_IMG_PUSH_FILTER 0; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY_LOCAL_SLOTS '"${FWD_LOCAL_SLOTS:-128}"'; fi
+      setenv ISUREAL_FWD_PRIORITY_POST_SLOTS '"${FWD_POST_SLOTS:-0}"'   # N>0: asia-local POST /api/posts use their own N slots, so login/friend-requests do not wait behind slow posts (priority.go)
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY '"$FWD_PRIORITY"'; else setenv ISUREAL_FWD_PRIORITY 0; fi
       setenv ISUREAL_FRONT '"$fr"'
       setenv ISUREAL_FRONT_FWD '"$f"'

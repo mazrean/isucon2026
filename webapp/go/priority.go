@@ -22,15 +22,21 @@ var (
 	fwdPriorityLocalSlots = envIntOrDefault("ISUREAL_FWD_PRIORITY_LOCAL_SLOTS", 32)
 	fwdPriorityMaxWait    = time.Duration(envIntOrDefault("ISUREAL_FWD_PRIORITY_MAX_WAIT_MS", 2000)) * time.Millisecond
 	fwdPriorityIdle       = time.Duration(envIntOrDefault("ISUREAL_FWD_PRIORITY_IDLE_MS", 2000)) * time.Millisecond
+	// ISUREAL_FWD_PRIORITY_POST_SLOTS=N (既定 0 = 共有): ローカルの POST /api/posts を、他のローカル書き込みとは別の N 枠に通す。
+	// job23341 (STORE=1): d5/GP で投稿 1 本が 4〜10 秒かかり、共有の 128 枠を投稿が埋めた。login / friend-requests / accept は
+	// 処理が 0.1〜0.5 秒なのに、全部が枠待ちの上限 (2 秒) で 2.0〜2.2 秒になった (nginx の request_time)。
+	// 投稿どうしの待ちと上限は今までどおり。変わるのは「投稿の列の後ろに他の書き込みが並ばない」ことだけ。
+	fwdPriorityPostSlots = envIntOrDefault("ISUREAL_FWD_PRIORITY_POST_SLOTS", 0)
 )
 
 type fwdPriority struct {
-	region   string
-	slots    chan struct{}
-	maxWait  time.Duration
-	idle     time.Duration
-	lastFwd  atomic.Int64 // 最後に転送書き込みを受けた時刻 (UnixNano)
-	inflight atomic.Int64 // 処理中の転送書き込み
+	region    string
+	slots     chan struct{}
+	postSlots chan struct{} // ISUREAL_FWD_PRIORITY_POST_SLOTS (nil = slots を共有)
+	maxWait   time.Duration
+	idle      time.Duration
+	lastFwd   atomic.Int64 // 最後に転送書き込みを受けた時刻 (UnixNano)
+	inflight  atomic.Int64 // 処理中の転送書き込み
 
 	mu       sync.Mutex
 	fwdDur   []time.Duration // 転送書き込みの処理時間
@@ -41,7 +47,19 @@ type fwdPriority struct {
 }
 
 func newFwdPriority(region string, slots int, maxWait, idle time.Duration) *fwdPriority {
-	return &fwdPriority{region: region, slots: make(chan struct{}, slots), maxWait: maxWait, idle: idle}
+	p := &fwdPriority{region: region, slots: make(chan struct{}, slots), maxWait: maxWait, idle: idle}
+	if fwdPriorityPostSlots > 0 {
+		p.postSlots = make(chan struct{}, fwdPriorityPostSlots)
+	}
+	return p
+}
+
+// slotsFor: この要求が取る枠。
+func (p *fwdPriority) slotsFor(req *http.Request) chan struct{} {
+	if p.postSlots != nil && req.Method == http.MethodPost && req.URL.Path == "/api/posts" {
+		return p.postSlots
+	}
+	return p.slots
 }
 
 // FwdPriorityMiddleware は ISUREAL_FWD_PRIORITY が off なら何もしない。
@@ -97,13 +115,14 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 				return err
 			}
 			acquired := false
+			slots := p.slotsFor(c.Request())
 			select {
-			case p.slots <- struct{}{}:
+			case slots <- struct{}{}:
 				acquired = true
 			default:
 				t := time.NewTimer(p.maxWait)
 				select {
-				case p.slots <- struct{}{}:
+				case slots <- struct{}{}:
 					acquired = true
 				case <-t.C:
 				case <-c.Request().Context().Done():
@@ -119,7 +138,7 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 			p.record(&p.localWt, wait)
 			err := next(c)
 			if acquired {
-				<-p.slots
+				<-slots
 			}
 			p.record(&p.localDur, time.Since(start))
 			return err

@@ -608,6 +608,9 @@ func lrRemoveFrom(list []*memPost, p *memPost) []*memPost {
 }
 
 func (d *memData) lrRemovePost(id string) {
+	if memRespCacheOn {
+		d.rc.clearAll()
+	}
 	p := d.posts[id]
 	if p == nil {
 		return

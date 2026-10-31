@@ -107,6 +107,8 @@ type memData struct {
 	// (hotKnown false = unknown; readers fall back to the DB).
 	hotFrom  time.Time
 	hotKnown bool
+	// rc: Memories / export response cache (mem_respcache.go), dropped with this memData
+	rc memRespCache
 }
 
 type memSearchEnt struct{ off, ulen, dlen uint32 }
@@ -503,6 +505,7 @@ func (d *memData) applyChange(ch memChange) error {
 	case "users":
 		var r memUserRow
 		if err = json.Unmarshal(ch.Row, &r); err == nil {
+			d.respInvalidateUser(r.ID, r.Status)
 			d.applyUser(r)
 		}
 	case "login_sessions":
@@ -533,6 +536,9 @@ func (d *memData) applyChange(ch memChange) error {
 	case "posting_windows":
 		var r memWindowRow
 		if err = json.Unmarshal(ch.Row, &r); err == nil {
+			if memRespCacheOn {
+				d.rc.invalidate("w" + r.ID)
+			}
 			err = d.applyWindow(r)
 		}
 	case "posts":
@@ -541,6 +547,13 @@ func (d *memData) applyChange(ch memChange) error {
 			if del {
 				now := time.Now()
 				r.DeletedAt = &now
+			}
+			if memRespCacheOn {
+				if r.AuthorID == "" {
+					d.rc.clearAll()
+				} else {
+					d.rc.invalidate("o"+r.AuthorID, "p"+r.ID)
+				}
 			}
 			d.applyPost(r)
 		}
@@ -551,6 +564,7 @@ func (d *memData) applyChange(ch memChange) error {
 				now := time.Now()
 				r.DeletedAt = &now
 			}
+			d.respInvalidatePost(r.PostID)
 			d.applyComment(r)
 		}
 	case "realmojis":
@@ -560,6 +574,7 @@ func (d *memData) applyChange(ch memChange) error {
 				now := time.Now()
 				r.DeletedAt = &now
 			}
+			d.respInvalidatePost(r.PostID)
 			d.applyRealMoji(r)
 		}
 	}

@@ -53,12 +53,7 @@ func getMemoriesHandler(h *HandlerContext) echo.HandlerFunc {
 				return c.JSON(http.StatusOK, response)
 			}
 		}
-		defer heavyAcquire(c.Request().Context())()
-		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, response)
+		return serveMemories(h, c, GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID, func(r getMemoriesResponse) any { return r })
 	}
 }
 
@@ -81,12 +76,7 @@ func getMemoriesByDateHandler(h *HandlerContext) echo.HandlerFunc {
 				return c.JSON(http.StatusOK, getMemoriesByDateResponse(response))
 			}
 		}
-		defer heavyAcquire(c.Request().Context())()
-		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, getMemoriesByDateResponse(response))
+		return serveMemories(h, c, GetSession(c).UserID, start, end, input.BeforePostedAt, input.BeforeID, func(r getMemoriesResponse) any { return getMemoriesByDateResponse(r) })
 	}
 }
 

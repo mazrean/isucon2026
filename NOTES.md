@@ -154,3 +154,5 @@ END: 2026-10-31 18:00 JST
 | 3724 | 6973095 | 38515 | JPEG を asia2 へ (cap2)。GP 全滅: mem poll がプール枯渇でタイムアウト → 全リロード 4.5s |
 | 3997 | 6a62af1 | 41584 | bg プール + poll 再試行。too many clients 発生 (全ホスト 80) |
 | 4395 | 11cfa30 | **48422** | JPEG オフロード 3 台 + 画素バッファ無し + ホスト別プール。5 日目 362/62/41、GP 8/4/0 |
+| 4513 | 1cd1f59 | 49892 | GOMEMLIMIT 2600 / GOGC 400。GP asia 51 |
+| 4692 | 2b1c03c | **68277** | JPEG オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200。GP 322/54/44。asia1 CPU: HMAC 35% / Memories 19% / export 15% / JPEG 14% |

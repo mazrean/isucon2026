@@ -10,3 +10,4 @@
 11:29	67093d9	job=3997 state=4 pass=true スコア=41584 種別エラー数=map[]	bg プール + poll 再試行 + RYW 修正
 11:35	cefef63	job=4395 state=4 pass=true スコア=48422 種別エラー数=map[]	JPEG オフロード 3 台 + 画素バッファ無し + ホスト別プール
 11:37	5d49fa0	job=4513 state=4 pass=true スコア=49892 種別エラー数=map[]	GOMEMLIMIT 2600 / GOGC 400
+11:39	2b1c03c	job=4692 state=4 pass=true スコア=68277 種別エラー数=map[]	オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200

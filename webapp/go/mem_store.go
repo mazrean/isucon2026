@@ -114,11 +114,21 @@ type memStore struct {
 	mu    sync.RWMutex
 	d     *memData
 	ready atomic.Bool
+
+	useLease   bool         // peer のみ
+	leaseUntil atomic.Int64 // unix nano
 }
 
-// on は、このリクエストをメモリから返してよいか (フラグ ON かつロード完了)。
+// on は、このリクエストをメモリから返してよいか (フラグ ON かつロード完了、peer は lease 内)。
 func (m *memStore) on() bool {
-	return m != nil && m.ready.Load()
+	if m == nil || !m.ready.Load() {
+		return false
+	}
+	return !m.useLease || time.Now().UnixNano() < m.leaseUntil.Load()
+}
+
+func (m *memStore) extendLease() {
+	m.leaseUntil.Store(time.Now().Add(memLease).UnixNano())
 }
 
 // ---- row types (shared by primary load, changelog jsonb and peer dump) ----

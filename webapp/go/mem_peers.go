@@ -35,8 +35,18 @@ type memBatch struct {
 
 type memPushRequest struct {
 	Epoch   string     `json:"e"`
+	Seq     int64      `json:"q"` // pump の最新連番 (heartbeat でも送る。peer はこれで欠番を検知)
 	Batches []memBatch `json:"b"`
 }
+
+// peer は最後に push/heartbeat を受け取ってから memLease を過ぎたら自発的にメモリ読みをやめる (DB 経路)。
+// pump の push タイムアウト (memPushTimeout) > memLease なので、pump が ack 無しで先に進む時点で
+// その peer は必ず not-ready になっている。
+const (
+	memLease          = 1 * time.Second
+	memPushTimeout    = 3 * time.Second
+	memHeartbeatEvery = 250 * time.Millisecond
+)
 
 type memPushResponse struct {
 	OK bool `json:"ok"`
@@ -77,6 +87,7 @@ type memPeer struct {
 	sending bool
 	acked   int64
 	down    bool
+	beat    bool
 }
 
 type memPeers struct {
@@ -129,17 +140,24 @@ func (ps *memPeers) publish(changes []memChange) {
 func (ps *memPeers) sender(peer *memPeer, epoch string) {
 	for {
 		ps.mu.Lock()
-		if len(peer.pending) == 0 || ps.epoch != epoch {
+		if ps.epoch != epoch && len(peer.pending) > 0 {
+			epoch = ps.epoch // 新しい epoch の送信を引き継ぐ
+		}
+		if (len(peer.pending) == 0 && !peer.beat) || ps.epoch != epoch {
 			peer.sending = false
 			ps.mu.Unlock()
 			return
 		}
+		peer.beat = false
 		batches := peer.pending
 		peer.pending = nil
+		last := ps.seq
+		if len(batches) > 0 {
+			last = batches[len(batches)-1].Seq
+		}
 		ps.mu.Unlock()
 
-		last := batches[len(batches)-1].Seq
-		_, err := memHTTPPost(peer.addr, "/internal/mem/push", memPushRequest{Epoch: epoch, Batches: batches}, 3*time.Second)
+		_, err := memHTTPPost(peer.addr, "/internal/mem/push", memPushRequest{Epoch: epoch, Seq: last, Batches: batches}, memPushTimeout)
 
 		ps.mu.Lock()
 		if ps.epoch == epoch {
@@ -156,6 +174,26 @@ func (ps *memPeers) sender(peer *memPeer, epoch string) {
 			}
 		}
 		ps.cond.Broadcast()
+		ps.mu.Unlock()
+	}
+}
+
+// heartbeat: 送信中でない peer に空 push を送る (lease 延長 + 欠番検知)。
+func (ps *memPeers) heartbeatLoop() {
+	t := time.NewTicker(memHeartbeatEvery)
+	defer t.Stop()
+	for range t.C {
+		if !ps.p.m.ready.Load() {
+			continue
+		}
+		ps.mu.Lock()
+		for _, peer := range ps.peers {
+			if !peer.sending {
+				peer.beat = true
+				peer.sending = true
+				go ps.sender(peer, ps.epoch)
+			}
+		}
 		ps.mu.Unlock()
 	}
 }
@@ -514,6 +552,7 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.d = d
 	r.m.mu.Unlock()
 	r.epoch, r.seq = dump.Epoch, dump.Seq
+	r.m.extendLease()
 	r.m.ready.Store(true)
 	slog.Info("mem: synced from pump", "seq", dump.Seq, "users", len(d.users), "posts", len(d.posts), "elapsed", time.Since(start))
 	return nil
@@ -573,6 +612,24 @@ func (r *memReceiver) push(req memPushRequest) bool {
 		}
 		r.seq = b.Seq
 	}
+	if req.Seq > r.seq {
+		missing, err := r.pull(req.Epoch, r.seq+1, req.Seq)
+		if err == nil {
+			for _, mb := range missing {
+				if err = r.m.applyBatch(mb.Changes); err != nil {
+					break
+				}
+				r.seq = mb.Seq
+			}
+		}
+		if err != nil || r.seq != req.Seq {
+			slog.Warn("mem: gap recovery failed", "error", err)
+			r.m.ready.Store(false)
+			go r.invalidate()
+			return false
+		}
+	}
+	r.m.extendLease()
 	return true
 }
 

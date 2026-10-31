@@ -43,7 +43,10 @@ type memPump struct {
 	peers *memPeers // 分散モード (nil なら集中モード)
 }
 
-var memCurrentPump *memPump // テスト用
+var (
+	memCurrentPump      *memPump  // テスト用
+	memCurrentPeerStore *memStore // テスト用
+)
 
 func memRole(config *Config) string {
 	if !memEnabled {
@@ -80,10 +83,14 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		e.Use(memWriteBarrier(p))
 		registerMemPumpRoutes(e, p)
 		go p.ticker()
+		if p.peers != nil {
+			go p.peers.heartbeatLoop()
+		}
 		go p.barrier()
 	case "peer":
-		m := &memStore{d: newMemData()}
+		m := &memStore{d: newMemData(), useLease: true}
 		h.Mem = m
+		memCurrentPeerStore = m
 		registerMemPeerRoutes(e, newMemReceiver(m))
 	}
 }

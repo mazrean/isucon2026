@@ -31,7 +31,7 @@ func (m *memStore) sessionFromHeader(c *echo.Context) (*Session, bool) {
 	tokenHash := hex.EncodeToString(sum[:])
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	if !m.ready.Load() {
+	if !m.on() {
 		return nil, false
 	}
 	s, ok := m.d.sessions[tokenHash]
@@ -129,7 +129,7 @@ func (m *memStore) feed(c *echo.Context, input getFeedRequest) (bool, error) {
 func (m *memStore) buildFeed(viewerID string, input getFeedRequest) (getFeedResponse, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	if !m.ready.Load() {
+	if !m.on() {
 		return getFeedResponse{}, false
 	}
 	d := m.d
@@ -272,7 +272,7 @@ func (m *memStore) buildFeed(viewerID string, input getFeedRequest) (getFeedResp
 
 func (m *memStore) getPost(c *echo.Context, postID string) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -298,7 +298,7 @@ func (m *memStore) getPost(c *echo.Context, postID string) (bool, error) {
 
 func (m *memStore) myCurrentPost(c *echo.Context) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -330,7 +330,7 @@ func (m *memStore) myCurrentPost(c *echo.Context) (bool, error) {
 
 func (m *memStore) currentPostingWindow(c *echo.Context) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -392,7 +392,7 @@ func (d *memData) canComment(viewerID string, p *memPost) bool {
 
 func (m *memStore) comments(c *echo.Context, input getCommentsRequest) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -433,7 +433,7 @@ func (m *memStore) comments(c *echo.Context, input getCommentsRequest) (bool, er
 
 func (m *memStore) realmojis(c *echo.Context, input getRealMojisRequest) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -486,7 +486,7 @@ func (m *memStore) realmojis(c *echo.Context, input getRealMojisRequest) (bool, 
 
 func (m *memStore) getMe(c *echo.Context) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -502,7 +502,7 @@ func (m *memStore) getMe(c *echo.Context) (bool, error) {
 
 func (m *memStore) getUser(c *echo.Context, userID string) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -536,7 +536,7 @@ func (m *memStore) getUser(c *echo.Context, userID string) (bool, error) {
 
 func (m *memStore) searchUsers(c *echo.Context, input searchUsersRequest) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -589,7 +589,7 @@ func (m *memStore) searchUsers(c *echo.Context, input searchUsersRequest) (bool,
 
 func (m *memStore) relationships(c *echo.Context, input getRelationshipsRequest) (bool, error) {
 	m.mu.RLock()
-	if !m.ready.Load() {
+	if !m.on() {
 		m.mu.RUnlock()
 		return false, nil
 	}
@@ -626,7 +626,9 @@ func (m *memStore) relationships(c *echo.Context, input getRelationshipsRequest)
 			recs = append(recs, rec{id: r.ID, updatedAt: r.UpdatedAt, user: d.users[r.RecipientID]})
 		}
 	}
-	sort.Slice(recs, func(i, j int) bool { return memTimeIDLess(recs[j].updatedAt, recs[j].id, recs[i].updatedAt, recs[i].id) })
+	sort.Slice(recs, func(i, j int) bool {
+		return memTimeIDLess(recs[j].updatedAt, recs[j].id, recs[i].updatedAt, recs[i].id)
+	})
 	var beforeAt time.Time
 	if input.BeforeUpdatedAt != nil {
 		beforeAt = memRoundCursor(*input.BeforeUpdatedAt)

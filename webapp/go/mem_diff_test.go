@@ -17,6 +17,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -85,7 +86,7 @@ func mdNorm(b []byte) string { return mdSigRe.ReplaceAllString(string(b), `$1"`)
 
 type mdUser struct {
 	id, name, secret string
-	a, b             *mdClient
+	a, b, c          *mdClient
 }
 
 func TestMemDiff(t *testing.T) {
@@ -94,9 +95,23 @@ func TestMemDiff(t *testing.T) {
 	sa := httptest.NewServer(NewServer(config))
 	defer sa.Close()
 	memEnabled = true
-	srvB := NewServer(config)
-	sb := httptest.NewServer(srvB)
+	forwardSecret = "test-secret"
+	sb := httptest.NewUnstartedServer(nil)
+	sc := httptest.NewUnstartedServer(nil)
+	os.Setenv("ISUREAL_MEM_PEERS", sc.Listener.Addr().String())
+	sb.Config.Handler = NewServer(config)
+	os.Unsetenv("ISUREAL_MEM_PEERS")
+	os.Setenv("ISUREAL_MEM_ROLE", "peer")
+	os.Setenv("ISUREAL_MEM_PUMP", sb.Listener.Addr().String())
+	sc.Config.Handler = NewServer(config)
+	os.Unsetenv("ISUREAL_MEM_ROLE")
+	os.Unsetenv("ISUREAL_MEM_PUMP")
+	sb.Start()
+	sc.Start()
 	defer sb.Close()
+	defer sc.Close()
+	sb.URL = "http://" + sb.Listener.Addr().String()
+	sc.URL = "http://" + sc.Listener.Addr().String()
 
 	pb := &mdClient{t: t, base: sb.URL}
 	if code, body := pb.json("POST", "/api/initialize", map[string]any{}); code != 200 {
@@ -149,6 +164,7 @@ func TestMemDiff(t *testing.T) {
 		u.id = lr.User.ID
 		u.a = &mdClient{t: t, base: sa.URL, token: lr.Token}
 		u.b = &mdClient{t: t, base: sb.URL, token: lr.Token}
+		u.c = &mdClient{t: t, base: sc.URL, token: lr.Token}
 	}
 	users = append(users, &mdUser{name: "yuma_kobayashi_186", secret: "0f6-BAnyBELD2MA-t-fekeDtQN4ynqD0mfgOF8JWwWs"})
 	login(users[0])
@@ -191,10 +207,17 @@ func TestMemDiff(t *testing.T) {
 	vis := []string{"public", "friends", "friends_of_friends"}
 
 	mismatches := 0
+	notOn := 0
 	seen := map[string]int{}
 	compare := func(step int, u *mdUser, path string) {
 		ca, ba := u.a.do("GET", path, nil, "")
 		cb, bb := u.b.do("GET", path, nil, "")
+		if !memCurrentPeerStore.on() || !memCurrentPump.m.on() {
+			notOn++
+		}
+		if step%2 == 1 {
+			cb, bb = u.c.do("GET", path, nil, "") // peer
+		}
 		na, nb := mdNorm(ba), mdNorm(bb)
 		if ca != cb || na != nb {
 			mismatches++
@@ -264,6 +287,12 @@ func TestMemDiff(t *testing.T) {
 		return ""
 	}
 
+	// peer の同期を待つ
+	for i := 0; i < 100; i++ {
+		if code, _ := users[0].c.do("GET", "/internal/mem/none", nil, ""); code != 0 {
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
 	check(0)
 	for step := 1; step <= 1500; step++ {
 		u := pick()
@@ -358,12 +387,12 @@ func TestMemDiff(t *testing.T) {
 			}
 			other.b.json("POST", "/api/friend-requests", map[string]string{"recipientId": u.id})
 		}
-		if step%50 == 0 || step < 20 {
+		if step%49 == 0 || step%50 == 0 || step < 20 {
 			check(step)
 		}
 	}
-	check(401)
-	t.Logf("posts=%d comments=%d realmojis=%d mismatches=%d", len(postIDs), len(commentIDs), len(realmojiIDs), mismatches)
+	check(1501)
+	t.Logf("posts=%d comments=%d realmojis=%d mismatches=%d notOn=%d", len(postIDs), len(commentIDs), len(realmojiIDs), mismatches, notOn)
 }
 
 func trunc(b []byte) string {

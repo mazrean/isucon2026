@@ -166,17 +166,11 @@ END: 2026-10-31 18:00 JST
 | 6145 | cb15c96 | 0 FAIL | JPEG 配分を戻した。asia 5 日目 557。friends フィードで見えてはいけない投稿が 7 件 (読み手は america、削除されていない friends 投稿)。再発 → 潜在の競合を調査中 |
 | 6305 | 55b8f09 | 68929 | 切り分け: heavy を asia1 ローカル + push on + barrier 修正 → pass。ただし「見えるべき投稿がありません」3 件。致命的な「見えてはいけない」は push off + heavy 分担の 2 回 (5893, 6145) だけ → 既定を 5642 の構成 (heavy は asia2 + backup、push on) に戻す |
 | 6507 | 2b7a1c0 | **73358** | 5642 構成 (heavy は asia2 + backup、push on) + barrier 修正。pass だが「見えるべき投稿がありません」10 件 (dump は logs/faildump/job6507.txt) |
-- 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 | 6869 | - | 69483 | synchronous_commit=off。73k とノイズの範囲。フィードの誤り 0 件 |
 | 7020 | - | 68859 | PREVALIDATE=1: eu/am の 4〜5 日目 74/61〜75/62 (前回 55/40)。GP の asia は 312 (asia2 の Memories タイムアウト)。eu/am が伸びるので既定 on |
 | 7184 | 8b2d632 | 0 FAIL | 統合版: initialize 504。起動時ロード 37s + initialize が peer の全量ダンプ (15〜17s × 数回) を待った → 待たないよう修正 |
 | 7382 | 7c40de3 | 9478 | 統合版 (全投稿メモリ化): ベンチ中に 62.5 万件の全量ダンプが 4 回 (15〜33s)、回線と CPU を占有して人数が 1 日目から増えず → 全投稿メモリ化を revert。署名 (AVX-512) だけ残す |
 | 7706 | 6e86484 | **93068** | 全投稿メモリ化を revert + AVX-512 署名 + PREVALIDATE + STORAGE EXTERNAL + sync commit off。asia 5 日目 663、eu 89、am 74、GP 466/67/50。フィードの誤り 0 |
-
-### FRONT (asia1 の nginx 撤去) のロールバック
-- `FRONT=0 scripts/batch.sh ...` か `FRONT=0 scripts/deploy.sh` で再デプロイ → deploy が nginx を enable して start/reload する。
-- 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
-- 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。
 | 7851 | - | **111842** | LOCALIMG=1 (eu/am の画像を自地域に fsync 保存、asia1 はメタデータのみ、PG へ非同期 flush)。asia 742 / eu 175 / am 95、GP 545/161/84。flush_err 0。409 post_slot_unavailable が 1 件 (要観察) |
 | 8010 | - | 84958 | FRONT=1 (asia1 nginx 撤去、LOCALIMG=0)。93068 の構成より低い → 不採用 (既定 FRONT=0)。旧 lease のため「見えるべき」4 件 |
 | 8178 | - | 0 FAIL | 既定 (LOCALIMG=1) の再現: 整合性違反「見えてはいけない投稿」(旧 lease の穴) → lease を送信時刻で上限する修正を投入 |
@@ -184,6 +178,27 @@ END: 2026-10-31 18:00 JST
 | 8506 | - | 110123 | push パイプライン化 (mem-pipeline)。112k とノイズの範囲。エラー無し。バリア p50 220ms / p90 316〜459ms |
 | 8713 | - | **113783** | MEM_WM=1 (watermark)。asia 5 日目 944 / eu 192 / am 111。GP は asia 199 に崩れ (asia1 飽和)、eu 171、am 103。wm 待ち p50 63〜144ms、fallback 少 → 既定 on |
 | 8957 | - | 111710 | JC=1 (Rust JPEG)。asia5 823 / eu 182 / am 118。GP asia 0 人 (崩壊)、eu 174、am 116。jpeg remote_err 33 |
+| 9384 | - | 113234 | IMGV_MEM (画像の有効性をメモリで)。asia5 881 / eu 141 / am 100。GP asia 200 (窓の遅れ、修正前) / eu 130 / am 94。register timeout 1 |
+| 10125 | - | 113557 | 窓の修正 + JPEG 委譲 asia2 のみ + JC=1。asia4 408→5 日目 685 (伸び鈍化) / eu 189 / am 88。GP asia 450 (66%、修正の効果) / eu 176 / am 84 |
+| 10322 | - | 104859 | STORE=1 + 窓の修正 + JPEG asia2 のみ + JC=1。asia4 436→5 日目 525 (1.2 倍に鈍化) / eu 144 / am 112。GP 464/135/97。write-behind の取りこぼし 0。不採用 |
+| 10890 | - | **FAIL 0** | LOGREPL=1 (公式)。「再ログイン前のセッションが無効になっていません」。原因: logrepl のバリアが login を除外していた (login は古いセッションを無効化する)。修正済み。revert 確認済み (スロット 0、sync names 空、watchdog 両方 disabled) |
+| 11091 | - | 104839 | FOR KEY SHARE + asia1 CPU 3 本。asia5 967 (最多) / eu 122 / am 100。GP asia 467 / eu 65 / am 55 (eu/am 崩れ)。通知 503 ×7、client cancel |
+| 11272 | - | 112194 | 画像 push 停止 (IMG_PEERS 空) + KEY SHARE。asia5 953 / eu 185 / am 115。GP asia 551 (58%) / eu 32 / am 62。eu/am の窓 POST 3.2/5.2s が新しい律速。画像 500 (deadline) ×2 |
+| 11493 | - | **129380** | push 停止 + KEY SHARE + FWD_PRIORITY=1。asia5 423 / eu 277 / am 302 (eu/am 激増)。GP asia 178 / eu 261 / am 261。asia ローカルの待ち p50 1.1〜1.9s (枠 32 が狭い) → 既定に FWD_PRIORITY=1・push 停止 |
+| 11716 | - | **139085** | FWD_PRIORITY + ローカル枠 64。asia5 823 / eu 224 / am 331。GP 400 / 220 / 244。ローカル待ち p50 1.3〜2.0s (まだ詰まる) → 既定 64 |
+| 11877 | - | **141122** | ローカル枠 128。asia5 877 / eu 274 / am 261。GP 226 / 238 / 249 → 既定 128 |
+| 12063 | - | **FAIL 0** | PGSSLMODE=allow + MEMORIES_MEM=1。初期検証で PUT /api/me/profile-image が 500 (unexpected EOF、直前に同じ利用者の invalid_image 400)。11877 でも負荷中に同じ 500 が 1 件 → 既存の間欠バグとして調査中 |
+| 12395 | - | **FAIL 0** | 12063 と同じ構成の再走。同じ profile-image 500 で FAIL → 再現。PGSSL=prefer + MEMORIES_MEM=0 で切り分け |
+| 12488 | - | **FAIL 0** | PGSSL=prefer + MEMORIES_MEM=0 でも同じ FAIL → 原因は asia1 のディスク満杯 (imgcache 33G、nginx の body 一時ファイルが書けず 500)。全台の imgcache を消去、ディスク上限 6GB を実装 |
+| 12846 | - | **146736** | ディスク上限 + 既定 + MEMORIES_MEM=1 + admin 専用プール。asia5 915 / eu 269 / am 275。GP 587 / 213 / 232。通知 503 あり → MEMORIES_MEM 既定 on |
+| 13083 | - | 133128 | STORE=1 (レーン + fsync 修正) on 既定。asia5 785 / GP asia 437 → 既定 (STORE=0) の 146736 より低い。STORE は不採用 |
+
+- 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
+
+### FRONT (asia1 の nginx 撤去) のロールバック
+- `FRONT=0 scripts/batch.sh ...` か `FRONT=0 scripts/deploy.sh` で再デプロイ → deploy が nginx を enable して start/reload する。
+- 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
+- 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。
 
 ## asia2 論理レプリカ watchdog (pg-logrepl-watchdog)
 - 対象: ISUREAL_MEM_LOGREPL=1 の各 app の購読 (application_name = スロット名 = ノード名、mem_logrepl.go の lrSlotName)。既定メンバー `asia1 europe1 america1` (unit の LR_MEMBERS)。
@@ -200,19 +215,6 @@ END: 2026-10-31 18:00 JST
   journalctl -u pg-logrepl-watchdog -f
   ```
 - 注意: 物理スタンバイが同名 (asia1 等) の application_name / スロットで残っていると誤判定する (物理スタンバイは撤去済みの前提)。
-| 9384 | - | 113234 | IMGV_MEM (画像の有効性をメモリで)。asia5 881 / eu 141 / am 100。GP asia 200 (窓の遅れ、修正前) / eu 130 / am 94。register timeout 1 |
-| 10125 | - | 113557 | 窓の修正 + JPEG 委譲 asia2 のみ + JC=1。asia4 408→5 日目 685 (伸び鈍化) / eu 189 / am 88。GP asia 450 (66%、修正の効果) / eu 176 / am 84 |
-| 10322 | - | 104859 | STORE=1 + 窓の修正 + JPEG asia2 のみ + JC=1。asia4 436→5 日目 525 (1.2 倍に鈍化) / eu 144 / am 112。GP 464/135/97。write-behind の取りこぼし 0。不採用 |
-| 10890 | - | **FAIL 0** | LOGREPL=1 (公式)。「再ログイン前のセッションが無効になっていません」。原因: logrepl のバリアが login を除外していた (login は古いセッションを無効化する)。修正済み。revert 確認済み (スロット 0、sync names 空、watchdog 両方 disabled) |
-| 11091 | - | 104839 | FOR KEY SHARE + asia1 CPU 3 本。asia5 967 (最多) / eu 122 / am 100。GP asia 467 / eu 65 / am 55 (eu/am 崩れ)。通知 503 ×7、client cancel |
-| 11272 | - | 112194 | 画像 push 停止 (IMG_PEERS 空) + KEY SHARE。asia5 953 / eu 185 / am 115。GP asia 551 (58%) / eu 32 / am 62。eu/am の窓 POST 3.2/5.2s が新しい律速。画像 500 (deadline) ×2 |
-| 11493 | - | **129380** | push 停止 + KEY SHARE + FWD_PRIORITY=1。asia5 423 / eu 277 / am 302 (eu/am 激増)。GP asia 178 / eu 261 / am 261。asia ローカルの待ち p50 1.1〜1.9s (枠 32 が狭い) → 既定に FWD_PRIORITY=1・push 停止 |
-| 11716 | - | **139085** | FWD_PRIORITY + ローカル枠 64。asia5 823 / eu 224 / am 331。GP 400 / 220 / 244。ローカル待ち p50 1.3〜2.0s (まだ詰まる) → 既定 64 |
-| 11877 | - | **141122** | ローカル枠 128。asia5 877 / eu 274 / am 261。GP 226 / 238 / 249 → 既定 128 |
-| 12063 | - | **FAIL 0** | PGSSLMODE=allow + MEMORIES_MEM=1。初期検証で PUT /api/me/profile-image が 500 (unexpected EOF、直前に同じ利用者の invalid_image 400)。11877 でも負荷中に同じ 500 が 1 件 → 既存の間欠バグとして調査中 |
-| 12395 | - | **FAIL 0** | 12063 と同じ構成の再走。同じ profile-image 500 で FAIL → 再現。PGSSL=prefer + MEMORIES_MEM=0 で切り分け |
-| 12488 | - | **FAIL 0** | PGSSL=prefer + MEMORIES_MEM=0 でも同じ FAIL → 原因は asia1 のディスク満杯 (imgcache 33G、nginx の body 一時ファイルが書けず 500)。全台の imgcache を消去、ディスク上限 6GB を実装 |
-| 12846 | - | **146736** | ディスク上限 + 既定 + MEMORIES_MEM=1 + admin 専用プール。asia5 915 / eu 269 / am 275。GP 587 / 213 / 232。通知 503 あり → MEMORIES_MEM 既定 on |
 
 ## 理論限界との差の洗い出し (13:35、job12846 146,736 時点)
 式: 点 ≈ Σ人日 × 1人日の点 + GP + 検証役。上限の目安は人数 2.9 倍/日 (前日 p90 < 0.1s)、1人日 約 60 点、検証役 4〜5 万。
@@ -226,4 +228,3 @@ END: 2026-10-31 18:00 JST
 | 6 | eu/am の login (4 日目に 41% が 1 秒超) | 転送 | 地域内 | LOCAL_SESSION (1fdaef9、未マージ) |
 | 7 | TB との差の説明 | 7〜13 万が不明 | 帳簿で説明 | 帳簿・検証役の天井・未発見の点源 (担当 3 本) |
 | 8 | 最終版の安全 | localOnlyWrite あり | 切替スイッチ | LOCAL_ONLY_WRITE=0 の A/B、ディスク上限、全台 df、再起動試験、2 回 pass |
-| 13083 | - | 133128 | STORE=1 (レーン + fsync 修正) on 既定。asia5 785 / GP asia 437 → 既定 (STORE=0) の 146736 より低い。STORE は不採用 |

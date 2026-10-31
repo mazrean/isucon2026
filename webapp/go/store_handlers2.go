@@ -66,8 +66,11 @@ func (e *storeEngine) putProfileImage(c *echo.Context, userID string, data []byt
 			return nil, errStoreFallback
 		}
 		old := u.ProfileImageID
-		imageID := uuid.NewString()
-		t.exec(`INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES ($1,$2,$3,'image/jpeg',$4)`, imageID, userID, data, t.now)
+		imageID := newImageID(c.Request().Context())
+		external := externalImage(c, userID)
+		if !external {
+			t.exec(`INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES ($1,$2,$3,'image/jpeg',$4)`, imageID, userID, data, t.now)
+		}
 		t.exec(`UPDATE users SET profile_image_id=$2,updated_at=$3 WHERE id=$1`, userID, imageID, t.now)
 		if old != nil {
 			t.exec(`DELETE FROM image_objects WHERE id=$1`, *old)
@@ -75,7 +78,9 @@ func (e *storeEngine) putProfileImage(c *echo.Context, userID string, data []byt
 		next := u.User
 		next.ProfileImageID = strPtr(imageID)
 		t.emit("users", "U", userRow(next))
-		t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", data) })
+		if !external {
+			t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", data) })
+		}
 		return func() error {
 			return c.NoContent(http.StatusNoContent)
 		}, nil

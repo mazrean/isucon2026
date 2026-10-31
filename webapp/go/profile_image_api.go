@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )
 
@@ -47,9 +46,12 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 			return err
 		}
-		imageID := uuid.NewString()
-		if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects(id,owner_user_id,data,media_type) VALUES ($1,$2,$3,'image/jpeg')`, imageID, userID, data); err != nil {
-			return err
+		imageID := newImageID(ctx)
+		external := externalImage(c, userID)
+		if !external {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects(id,owner_user_id,data,media_type) VALUES ($1,$2,$3,'image/jpeg')`, imageID, userID, data); err != nil {
+				return err
+			}
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE users SET profile_image_id=$2,updated_at=clock_timestamp() WHERE id=$1`, userID, imageID); err != nil {
 			return err
@@ -62,7 +64,9 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
-		replicateImage(imageID, userID, "image/jpeg", data)
+		if !external {
+			replicateImage(imageID, userID, "image/jpeg", data)
+		}
 		return c.NoContent(http.StatusNoContent)
 	}
 }

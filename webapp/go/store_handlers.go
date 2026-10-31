@@ -137,9 +137,12 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		if active != 0 || deleted >= 2 || postedAt.Before(w.StartsAt) {
 			return nil, NewAPIError(http.StatusConflict, "post_slot_unavailable")
 		}
-		imageID := uuid.NewString()
+		imageID := newImageID(c.Request().Context())
+		external := externalImage(c, userID)
 		postID := uuid.NewString()
-		t.exec(`INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt)
+		if !external {
+			t.exec(`INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt)
+		}
 		t.exec(`INSERT INTO posts (id, author_id, posting_window_id, image_id, caption, visibility,
                       location_kind, latitude, longitude, locality, posted_at, created_at)
    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, postID, userID, w.ID, imageID, input.Caption, input.Visibility,
@@ -150,7 +153,9 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 			Longitude: location.Longitude, Locality: location.Locality, PostedAt: postedAt,
 		})
 		resp := newPostResponse(d.posts[postID].full(), u.User)
-		t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", imageData) })
+		if !external {
+			t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", imageData) })
+		}
 		return func() error {
 			return c.JSON(http.StatusCreated, resp)
 		}, nil
@@ -246,13 +251,18 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 			t.emit("realmojis", "U", r)
 		}
 		t.exec(`UPDATE realmojis SET replaced_at=$3 WHERE post_id=$1 AND reactor_id=$2 AND replaced_at IS NULL AND deleted_at IS NULL`, p.ID, actor, t.now)
-		imageID := uuid.NewString()
-		t.exec(`INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES($1,$2,$3,'image/jpeg',$4)`, imageID, actor, data, t.now)
+		imageID := newImageID(c.Request().Context())
+		external := externalImage(c, actor)
+		if !external {
+			t.exec(`INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES($1,$2,$3,'image/jpeg',$4)`, imageID, actor, data, t.now)
+		}
 		id := uuid.NewString()
 		t.exec(`INSERT INTO realmojis(id,post_id,reactor_id,image_id,reaction_type,created_at) VALUES($1,$2,$3,$4,$5,$6)`, id, p.ID, actor, imageID, input.ReactionType, t.now)
 		t.emit("realmojis", "I", memRealMojiRow{ID: id, PostID: p.ID, ReactorID: actor, ImageID: imageID, ReactionType: input.ReactionType, CreatedAt: t.now})
 		resp := newRealMojiResponse(RealMoji{ID: id, PostID: p.ID, ReactorID: actor, ImageID: imageID, ReactionType: input.ReactionType, CreatedAt: t.now}, au.User)
-		t.after = append(t.after, func() { replicateImage(imageID, actor, "image/jpeg", data) })
+		if !external {
+			t.after = append(t.after, func() { replicateImage(imageID, actor, "image/jpeg", data) })
+		}
 		return func() error {
 			return c.JSON(http.StatusCreated, resp)
 		}, nil

@@ -16,6 +16,7 @@ func main() {
 	}
 	config := isureal.ConfigFromEnv()
 	server := isureal.NewServer(config)
+	isureal.StartFrontFromEnv(server, config.Region) // ISUREAL_FRONT=1 のときだけ :80 (frontproxy.go)
 	if err := server.Start(":8080"); err != nil {
 		panic("failed to start server: " + err.Error())
 	}

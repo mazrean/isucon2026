@@ -40,6 +40,7 @@ func NewServer(config *Config) *echo.Echo {
 	e.Use(ActionLogMiddleware(config.LogLevel, os.Stdout))
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = APIErrorHandler
+	registerPrevalidate(e, config.Region)
 
 	db, err := sqlx.Open("pgx", config.DatabaseDSN())
 	if err != nil {
@@ -66,6 +67,7 @@ func NewServer(config *Config) *echo.Echo {
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
 	setupMem(handlerContext, e)
+	registerLocalImg(e, handlerContext)
 	setupStore(handlerContext)
 
 	e.POST("/api/initialize", initializeHandler(handlerContext))

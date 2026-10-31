@@ -23,6 +23,7 @@ func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 			defer h.Store.mu.Unlock()
 			h.Store.syncPG()
 		}
+		localImgPurgePeers(c.Request().Context())
 		cmd := exec.Command("../sql/init.sh")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

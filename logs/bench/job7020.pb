@@ -1,0 +1,54 @@
+
+�%�6��� *׸��ػ�P2�����ٙ�:׸�����pB��������H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008���#��"��*�"
+実行終了�"time=2026-10-31T03:11:33.687Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:11:36.749Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:11:39.686Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:11:42.846Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T03:11:45.788Z level=INFO msg="europe 2 日目: 15 人"
+time=2026-10-31T03:11:48.732Z level=INFO msg="america 2 日目: 13 人"
+time=2026-10-31T03:11:51.816Z level=INFO msg="asia 3 日目: 135 人"
+time=2026-10-31T03:11:54.689Z level=INFO msg="europe 3 日目: 36 人"
+time=2026-10-31T03:11:56.449Z level=INFO msg="user moved" user=torhame5696 from=asia to=europe
+time=2026-10-31T03:11:57.817Z level=INFO msg="america 3 日目: 36 人"
+time=2026-10-31T03:12:00.272Z level=INFO msg="user moved" user=hoso5999 from=asia to=europe
+time=2026-10-31T03:12:00.710Z level=INFO msg="asia 4 日目: 346 人"
+time=2026-10-31T03:12:03.959Z level=INFO msg="europe 4 日目: 74 人"
+time=2026-10-31T03:12:07.552Z level=INFO msg="america 4 日目: 61 人"
+time=2026-10-31T03:12:09.540Z level=INFO msg="user moved" user=moke_6401 from=asia to=europe
+time=2026-10-31T03:12:09.542Z level=INFO msg="user moved" user=hinoso-7498 from=asia to=america
+time=2026-10-31T03:12:10.390Z level=INFO msg="asia 5 日目: 581 人"
+time=2026-10-31T03:12:13.975Z level=INFO msg="europe 5 日目: 75 人"
+time=2026-10-31T03:12:16.808Z level=INFO msg="america 5 日目: 62 人"
+time=2026-10-31T03:12:24.875Z level=INFO msg="america 最終日（グランプリ）: 61 人"
+time=2026-10-31T03:12:24.875Z level=INFO msg="asia 最終日（グランプリ）: 581 人"
+time=2026-10-31T03:12:24.875Z level=INFO msg="europe 最終日（グランプリ）: 74 人"
+time=2026-10-31T03:12:33.472Z level=INFO msg="グランプリ: アジア 312 人, ヨーロッパ 64 人, アメリカ 48 人"
+{
+  "pass": true,
+  "score": 68859,
+  "messages": [
+    "ting_huang_776: 履歴を読めません: GET /api/memories?month=2026-04: 応答がタイムアウトしました",
+    "issolul.5708: Memories を取得できません: GET /api/memories?month=2026-11: 応答がタイムアウトしました",
+    "danse.5289: Memories を取得できません: GET /api/memories?month=2026-11: 応答がタイムアウトしました",
+    "benwashi5701: Memories を取得できません: GET /api/memories?month=2026-11: 応答がタイムアウトしました",
+    "seoyeon_lee_911: 履歴を読めません: GET /api/memories?month=2026-03: 応答がタイムアウトしました",
+    "ismu5494: Memories を取得できません: GET /api/memories?month=2026-11: 応答がタイムアウトしました",
+    "ninedan5255: Memories を取得できません: GET /api/memories?month=2026-11: 応答がタイムアウトしました",
+    "jeongeori_pilapeu_3944: 履歴を読めません: GET /api/memories?month=2026-07: 応答がタイムアウトしました",
+    "ren_watanabe_4332: 履歴を読めません: GET /api/memories?month=2025-12: 応答がタイムアウトしました",
+    "aoi_yamamoto_1985: 履歴を読めません: GET /api/memories?month=2026-06: 応答がタイムアウトしました",
+    "subin_yun_4013: 履歴を読めません: GET /api/memories?month=2026-04: 応答がタイムアウトしました",
+    "yui_kato_2462: 履歴を読めません: GET /api/memories?month=2026-06: 応答がタイムアウトしました",
+    "xiejiao_zaotang_3664: 履歴を読めません: GET /api/memories?month=2026-01: 応答がタイムアウトしました",
+    "yui_kato_1422: 履歴を読めません: GET /api/memories?month=2026-08: 応答がタイムアウトしました",
+    "yorimichi_rocket_4311: 履歴を読めません: GET /api/memories?month=2026-09: 応答がタイムアウトしました",
+    "jihun_park_57: Memories を取得できません: GET /api/memories?month=2026-11: 応答がタイムアウトしました",
+    "iwashi_pilaf_stew_3783: 履歴を読めません: GET /api/memories/2026-04-30: 応答がタイムアウトしました",
+    "tsukiyo_uzura_4061: 履歴を読めません: GET /api/memories/2026-03-16: 応答がタイムアウトしました",
+    "xiangrikui_shousi_551: 履歴を読めません: GET /api/memories?month=2025-10: 応答がタイムアウトしました",
+    "jihun_park_2870: 履歴を読めません: GET /api/memories?month=2025-11: 応答がタイムアウトしました"
+  ]
+}
+ ���������(���������2����������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

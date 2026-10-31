@@ -1,0 +1,62 @@
+
+�.�2��� *��������2�������K:�����֘�B�������HH���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008���,��"��*�+
+実行終了�+time=2026-10-31T03:03:59.854Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:04:02.698Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:04:05.847Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:04:08.597Z level=INFO msg="asia 2 日目: 47 人"
+time=2026-10-31T03:04:09.102Z level=INFO msg="user moved" user=torsehi-5120 from=america to=asia
+time=2026-10-31T03:04:11.085Z level=INFO msg="user moved" user=torsehi-5120 from=asia to=europe
+time=2026-10-31T03:04:11.724Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T03:04:14.676Z level=INFO msg="user moved" user=senimo-5215 from=asia to=europe
+time=2026-10-31T03:04:14.676Z level=INFO msg="america 2 日目: 12 人"
+time=2026-10-31T03:04:17.757Z level=INFO msg="asia 3 日目: 125 人"
+time=2026-10-31T03:04:20.607Z level=INFO msg="europe 3 日目: 38 人"
+time=2026-10-31T03:04:24.287Z level=INFO msg="america 3 日目: 25 人"
+time=2026-10-31T03:04:24.679Z level=INFO msg="user moved" user=tahieva_5761 from=asia to=europe
+time=2026-10-31T03:04:25.419Z level=INFO msg="user moved" user=mawa-5709 from=asia to=europe
+time=2026-10-31T03:04:25.914Z level=INFO msg="user moved" user=torsehi-5120 from=europe to=asia
+time=2026-10-31T03:04:26.607Z level=INFO msg="asia 4 日目: 316 人"
+time=2026-10-31T03:04:29.284Z level=INFO msg="user moved" user=senimo-5215 from=europe to=america
+time=2026-10-31T03:04:29.652Z level=INFO msg="europe 4 日目: 69 人"
+time=2026-10-31T03:04:32.650Z level=INFO msg="user moved" user=kesuta6531 from=asia to=europe
+time=2026-10-31T03:04:33.757Z level=INFO msg="america 4 日目: 35 人"
+time=2026-10-31T03:04:35.242Z level=INFO msg="user moved" user=maxmemi7519 from=asia to=europe
+time=2026-10-31T03:04:36.259Z level=INFO msg="user moved" user=vinso.7108 from=asia to=europe
+time=2026-10-31T03:04:36.380Z level=INFO msg="asia 5 日目: 559 人"
+time=2026-10-31T03:04:39.735Z level=INFO msg="user moved" user=tahieva_5761 from=europe to=america
+time=2026-10-31T03:04:41.005Z level=INFO msg="user moved" user=senimo-5215 from=america to=asia
+time=2026-10-31T03:04:41.955Z level=INFO msg="america 5 日目: 35 人"
+time=2026-10-31T03:04:41.958Z level=INFO msg="europe 5 日目: 73 人"
+time=2026-10-31T03:04:50.791Z level=INFO msg="europe 最終日（グランプリ）: 73 人"
+time=2026-10-31T03:04:50.791Z level=INFO msg="asia 最終日（グランプリ）: 559 人"
+time=2026-10-31T03:04:50.792Z level=INFO msg="america 最終日（グランプリ）: 34 人"
+time=2026-10-31T03:04:59.405Z level=INFO msg="グランプリ: アジア 479 人, ヨーロッパ 62 人, アメリカ 26 人"
+{
+  "pass": true,
+  "score": 73358,
+  "messages": [
+    "yuleo_5115: フィード friends: yuleo_5115 に見えるべき投稿 8c849848-7d94-4718-b716-1c578fee4440 がありません",
+    "yuleo_5115: フィード friends: yuleo_5115 に見えるべき投稿 88a9bd7a-108d-4ecd-ac58-a85175dd5ee2 がありません",
+    "yuleo_5115: フィード friends: yuleo_5115 に見えるべき投稿 4828f163-a3cd-4278-b823-ee725497d71f がありません",
+    "yuleo_5115: フィード friends: yuleo_5115 に見えるべき投稿 8ac26314-e80a-432d-ac85-be96901d88a3 がありません",
+    "jeongeori_pilapeu_2611: 履歴を読めません: GET /api/memories?month=2026-05: 応答がタイムアウトしました",
+    "xiejiao_zaotang_1445: 履歴を読めません: GET /api/memories?month=2026-05: 応答がタイムアウトしました",
+    "doraganeun_roket_3515: 履歴を読めません: GET /api/memories?month=2026-02: 応答がタイムアウトしました",
+    "panya_shugyo_1815: 履歴を読めません: GET /api/memories?month=2026-05: 応答がタイムアウトしました",
+    "jihun_park_1912: 履歴を読めません: GET /api/memories?month=2025-11: 応答がタイムアウトしました",
+    "sutbul_mini_chilmyeonjo_4733: 履歴を読めません: GET /api/memories?month=2025-11: 応答がタイムアウトしました",
+    "min_zhang_4242: 履歴を読めません: GET /api/memories?month=2026-01: 応答がタイムアウトしました",
+    "mini_truthahn_vom_holzkohlegrill_4646: フィード friends: mini_truthahn_vom_holzkohlegrill_4646 に見えるべき投稿 357ad35e-0a75-4493-a795-430c716e3eb5 がありません",
+    "mini_truthahn_vom_holzkohlegrill_4646: フィード friends: mini_truthahn_vom_holzkohlegrill_4646 に見えるべき投稿 af585f34-ec2f-44b9-bb83-6fbe865223bb がありません",
+    "mini_truthahn_vom_holzkohlegrill_4646: フィード friends: mini_truthahn_vom_holzkohlegrill_4646 に見えるべき投稿 e656720d-69db-46cb-a347-443fdea06584 がありません",
+    "mini_truthahn_vom_holzkohlegrill_4646: フィード friends: mini_truthahn_vom_holzkohlegrill_4646 に見えるべき投稿 5d33dc4b-3548-4d1a-b17a-5979e07d6321 がありません",
+    "mini_truthahn_vom_holzkohlegrill_4646: フィード friends: mini_truthahn_vom_holzkohlegrill_4646 に見えるべき投稿 e6023438-acce-4926-a076-c710d2467a1e がありません",
+    "mini_truthahn_vom_holzkohlegrill_4646: フィード friends: mini_truthahn_vom_holzkohlegrill_4646 に見えるべき投稿 1aeca326-3fde-4e4c-bf40-e890c367e957 がありません",
+    "dalbam_mechurial_182: 履歴を読めません: GET /api/memories?month=2026-05: 応答がタイムアウトしました",
+    "na_li_611: 履歴を読めません: GET /api/memories?month=2026-05: 応答がタイムアウトしました",
+    "jiwoo_choi_1438: 履歴を読めません: GET /api/memories?month=2025-11: 応答がタイムアウトしました"
+  ]
+}
+ ���������(���������2�������H��
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

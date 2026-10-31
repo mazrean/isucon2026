@@ -3,6 +3,7 @@ package isureal
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"sort"
 	"sync"
@@ -125,6 +126,19 @@ func (m *memStore) on() bool {
 		return false
 	}
 	return !m.useLease || time.Now().UnixNano() < m.leaseUntil.Load()
+}
+
+// extendLeaseUntil は lease を until (pump の送信時刻 + memLease) まで延ばす。今 + memLease を超えず、縮めない。
+func (m *memStore) extendLeaseUntil(until int64) {
+	if until <= 0 {
+		return
+	}
+	if lim := time.Now().Add(memLease).UnixNano(); until > lim {
+		until = lim
+	}
+	if until > m.leaseUntil.Load() {
+		m.leaseUntil.Store(until)
+	}
 }
 
 func (m *memStore) extendLease() {
@@ -398,7 +412,12 @@ func (d *memData) applyPost(r memPostRow) {
 	}
 	w := d.windows[r.PostingWindowID]
 	if w == nil {
-		return
+		// window row not applied yet: keep the post on a placeholder that
+		// applyWindow fills in later, instead of dropping it for good
+		w = &memWindow{}
+		w.ID = r.PostingWindowID
+		d.windows[r.PostingWindowID] = w
+		slog.Warn("mem: post before its window", "post", r.ID, "window", r.PostingWindowID)
 	}
 	author := d.user(r.AuthorID)
 	p := &memPost{Post: post, deleted: r.DeletedAt != nil, author: author, window: w}

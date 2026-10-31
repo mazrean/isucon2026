@@ -11,3 +11,19 @@
 11:35	cefef63	job=4395 state=4 pass=true スコア=48422 種別エラー数=map[]	JPEG オフロード 3 台 + 画素バッファ無し + ホスト別プール
 11:37	5d49fa0	job=4513 state=4 pass=true スコア=49892 種別エラー数=map[]	GOMEMLIMIT 2600 / GOGC 400
 11:39	2b1c03c	job=4692 state=4 pass=true スコア=68277 種別エラー数=map[]	オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200
+11:43	f55196e	job=4952 state=4 pass=true スコア=70862 種別エラー数=map[]	4xx はバリアを飛ばす
+11:47	6cb20bc	job=5168 state=4 pass=true スコア=69730 種別エラー数=map[]	A/B: 画像 push 停止
+11:49	38d8b4e	job=5400 state=4 pass=false スコア=0 種別エラー数=map[]	PGO + v3 + Memories/export を asia2 へ
+11:53	e2a74ab	job=5642 state=4 pass=true スコア=69709 種別エラー数=map[]	プール是正 + login バリア自ホストのみ + PG 400
+11:56	0dbe7eb	job=5893 state=4 pass=false スコア=0 種別エラー数=map[]	heavy を asia1/asia2 で分担 + JPEG は eu/am + push off
+11:59	7f5e427	job=6145 state=4 pass=false スコア=0 種別エラー数=map[]	JPEG 配分を戻す + heavy 分担 + push off + JPEG 統計
+12:02	55b8f09	job=6305 state=4 pass=true スコア=68929 種別エラー数=map[]	切り分け: 5642 相当の構成 (heavy 分担なし, push on) + barrier 修正
+12:05	de64c62	job=6507 state=4 pass=true スコア=73358 種別エラー数=map[]	既定を 5642 構成に戻す + barrier 修正 + JPEG 統計
+12:11	ccfde34	job=6869 state=4 pass=true スコア=69483 種別エラー数=map[]	synchronous_commit=off
+12:13	8b2d632	job=7020 state=4 pass=true スコア=68859 種別エラー数=map[]	eu/am 自地域 JPEG 検証 (PREVALIDATE=1) + sync commit off
+12:14	4ee944b	job=7184 state=4 pass=false スコア=0 種別エラー数=map[]	統合: 全投稿メモリ化 + Memories/export メモリ + push パイプライン + lease 修正 + AVX-512 署名 (heavy は asia1 ローカル)
+12:18	c157c9a	job=7382 state=4 pass=true スコア=9478 種別エラー数=map[]	統合版 再: initialize で peer を待たない + PREVALIDATE + STORAGE EXTERNAL
+12:22	6e86484	job=7706 state=4 pass=true スコア=93068 種別エラー数=map[]	revert 全投稿メモリ化、AVX-512 署名 + PREVALIDATE + STORAGE EXTERNAL + lease/barrier 修正なし(旧 mem)
+12:25	0b781f4	job=7851 state=4 pass=true スコア=111842 種別エラー数=map[]	LOCALIMG=1 (eu/am 画像を自地域保存、asia1 はメタデータのみ)
+12:27	fc4e33c	job=8010 state=4 pass=true スコア=84958 種別エラー数=map[]	FRONT=1 (asia1 の nginx 撤去、Go が :80)
+12:28	f5d3543	job=8178 state=4 pass=false スコア=0 種別エラー数=map[]	既定 (LOCALIMG=1, nginx あり) の再現確認

@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"example.com/isureal-company/isureal/internal/jpegcheck"
@@ -62,7 +64,21 @@ func parseJPEGRemotes(s string) []*jpegRemote {
 	return out
 }
 
+var jpegStats struct{ remoteOK, remoteErr, local atomic.Int64 }
+
+func init() {
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			ok, bad, loc := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0)
+			if ok+bad+loc > 0 {
+				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc)
+			}
+		}
+	}()
+}
+
 func checkJPEGLocal(data []byte) (w, h int, ok bool) {
+	jpegStats.local.Add(1)
 	w, h, err := jpegcheck.Check(bytes.NewReader(data))
 	return w, h, err == nil
 }
@@ -72,6 +88,9 @@ func checkJPEGLocal(data []byte) (w, h int, ok bool) {
 // first. A failed remote call is redone locally, so the result never depends
 // on a remote.
 func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
+	if w, h, ok, hit := prevalidated(ctx, data); hit {
+		return w, h, ok
+	}
 	if len(jpegRemotes) == 0 {
 		return checkJPEGLocal(data)
 	}
@@ -104,8 +123,10 @@ func (r *jpegRemote) run(ctx context.Context, data []byte) (w, h int, ok bool) {
 	w, h, ok, err := r.check(ctx, data)
 	<-r.slots
 	if err != nil {
+		jpegStats.remoteErr.Add(1)
 		return checkJPEGLocal(data)
 	}
+	jpegStats.remoteOK.Add(1)
 	return w, h, ok
 }
 

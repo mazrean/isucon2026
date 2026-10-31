@@ -228,7 +228,7 @@ func (e *storeEngine) commitWait(c *echo.Context, seq uint64) {
 	if storeAwaitPG {
 		e.waitFlushed(seq)
 	}
-	if e.p.peers != nil {
+	if e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		e.p.peers.waitAcked()
 	}
 }

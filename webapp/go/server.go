@@ -19,6 +19,10 @@ type HandlerContext struct {
 	// Admin: 管理者の窓の開閉と管理者セッションの確認だけが使う小さなプール (primary)。
 	// GP の投稿ラッシュで DB (60 本) が埋まると、窓の POST が接続待ちの列に並んで 3〜5 秒遅れていた。
 	Admin *sqlx.DB
+	// Img: image_objects の bytea (361KB) の INSERT / SELECT だけが使うプール (primary)。
+	// 投稿の画像 INSERT は TOAST の relation extension lock 待ちで数十〜数百 ms 接続を握るため、
+	// DB (60 本) から外して、友達申請・login など短い書き込みの接続待ちを無くす。nil なら DB を使う。
+	Img *sqlx.DB
 
 	Notifications *notificationHub
 
@@ -70,6 +74,11 @@ func NewServer(config *Config) *echo.Echo {
 	adminDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
 	configurePool(adminDB, 4)
 	handlerContext.Admin = adminDB
+	if n := envIntOrDefault("ISUREAL_DB_IMG_OPEN", 12); n > 0 {
+		imgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+		configurePool(imgDB, n)
+		handlerContext.Img = imgDB
+	}
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
 	e.Use(FwdPriorityMiddleware(handlerContext))

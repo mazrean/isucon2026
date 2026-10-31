@@ -1,14 +1,17 @@
 package isureal
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 )
 
@@ -91,31 +94,40 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 				return err
 			}
 		}
+		// ISUREAL_PW_FAST (既定 on): 361KB の image_objects INSERT を窓の FOR SHARE より前に出す。
+		// 窓の行ロックを持つ時間が短くなり、admin の open (UPDATE ended_at) が投稿の tx を待つ時間が減る。
+		// h.Img があれば tx の外 (画像専用プールの autocommit) で先に INSERT する: TOAST の extension lock 待ちの間
+		// メインのプールの接続も users の行ロックも握らない。コミットしなかったら後で行を消す (参照の無い画像は
+		// queryImageValidity が見つけないので、消すまでの間も外からは見えない)。
+		imageID := newImageID(ctx)
+		imageInserted := false
+		asiaKept, committed := false, false
+		imgOutside, commitTried := false, false
+		defer func() {
+			if asiaKept && !committed {
+				asiaLocalImgDrop(imageID)
+			}
+			if imgOutside && !commitTried { // Commit がエラーでも確定している可能性があるので消さない
+				go dropOrphanImage(h.Img, imageID)
+			}
+		}()
+		preInsert := postWindowFast && localImgFromCtx(ctx) == nil && !asiaLocalImgOn
+		if preInsert && h.Img != nil {
+			if _, err := h.Img.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, time.Now().UTC()); err != nil {
+				return err
+			}
+			imageInserted, imgOutside = true, true
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err
 		}
 		defer tx.Rollback()
-		var lockedUserID string
-		if err := tx.GetContext(ctx, &lockedUserID, `SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID); err != nil {
-			return err
-		}
-		user, err := getUser(ctx, tx, userID)
+		user, err := getUserForUpdate(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
-		// ISUREAL_PW_FAST (既定 on): 361KB の image_objects INSERT を窓の FOR SHARE より前に出す。
-		// 窓の行ロックを持つ時間が短くなり、admin の open (UPDATE ended_at) が投稿の tx を待つ時間が減る。
-		// 同じ tx の中なので、409 などで rollback すれば画像の行も消える (挙動は従来と同じ)。
-		imageID := newImageID(ctx)
-		imageInserted := false
-		asiaKept, committed := false, false
-		defer func() {
-			if asiaKept && !committed {
-				asiaLocalImgDrop(imageID)
-			}
-		}()
-		if postWindowFast && localImgFromCtx(ctx) == nil && !asiaLocalImgOn {
+		if preInsert && !imageInserted {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, time.Now().UTC()); err != nil {
 				return err
 			}
@@ -179,6 +191,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
+		commitTried = true
 		if err := tx.Commit(); err != nil {
 			return err
 		}
@@ -436,3 +449,12 @@ var windowLockSQL = func() string {
 	}
 	return `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR KEY SHARE`
 }()
+
+// dropOrphanImage は、tx の外で先に入れた画像の行を、投稿がコミットされなかったときに消す。
+func dropOrphanImage(db *sqlx.DB, id string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if _, err := db.ExecContext(ctx, `DELETE FROM image_objects WHERE id = $1`, id); err != nil {
+		slog.Warn("post: drop orphan image failed", "image_id", id, "error", err)
+	}
+}

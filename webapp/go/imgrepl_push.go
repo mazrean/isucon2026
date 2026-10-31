@@ -115,6 +115,7 @@ func replicateImageTo(id, owner, mediaType string, data []byte, regions map[stri
 	obj := &imageObject{Owner: owner, MediaType: mediaType, Data: data}
 	images.put(id, obj)
 	imageReplicator.enqueue(id, obj, regions)
+	friendPusher.enqueue(id, obj) // ISUREAL_IMG_FRIEND_PUSH (asia1 only; nil = off)
 }
 
 func (r *imgReplicator) enqueue(id string, obj *imageObject, regions map[string]bool) {
@@ -256,6 +257,7 @@ func imageReplReceiveHandler(store *imageStore, secret string) echo.HandlerFunc 
 		}
 		store.put(id, &imageObject{Owner: owner, MediaType: mediaType, Data: data})
 		imgStats.recvN.Add(1)
+		imgFriendRecvMark(id)
 		imgStats.recvBytes.Add(int64(len(data)))
 		return c.NoContent(http.StatusNoContent)
 	}

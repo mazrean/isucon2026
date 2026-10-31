@@ -1,0 +1,31 @@
+
+��9��� *�������72����Ȗ��:�������JB�����ح�H�J�<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008����J"�J*�
+実行終了�time=2026-10-31T03:17:39.843Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:17:50.591Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:17:50.591Z level=INFO msg="asia 2 日目: 18 人"
+time=2026-10-31T03:17:52.115Z level=INFO msg="europe 2 日目: 7 人"
+time=2026-10-31T03:17:55.497Z level=INFO msg="america 2 日目: 6 人"
+time=2026-10-31T03:17:59.398Z level=INFO msg="asia 3 日目: 18 人"
+time=2026-10-31T03:18:01.221Z level=INFO msg="europe 3 日目: 7 人"
+time=2026-10-31T03:18:04.541Z level=INFO msg="america 3 日目: 6 人"
+time=2026-10-31T03:18:07.120Z level=INFO msg="asia 4 日目: 18 人"
+time=2026-10-31T03:18:10.684Z level=INFO msg="europe 4 日目: 7 人"
+time=2026-10-31T03:18:13.736Z level=INFO msg="america 4 日目: 6 人"
+time=2026-10-31T03:18:17.361Z level=INFO msg="asia 5 日目: 27 人"
+time=2026-10-31T03:18:20.827Z level=INFO msg="europe 5 日目: 7 人"
+time=2026-10-31T03:18:23.835Z level=INFO msg="america 5 日目: 6 人"
+time=2026-10-31T03:18:30.830Z level=INFO msg="europe 最終日（グランプリ）: 6 人"
+time=2026-10-31T03:18:30.830Z level=INFO msg="asia 最終日（グランプリ）: 26 人"
+time=2026-10-31T03:18:30.830Z level=INFO msg="america 最終日（グランプリ）: 5 人"
+time=2026-10-31T03:18:39.494Z level=INFO msg="グランプリ: アジア 26 人, ヨーロッパ 6 人, アメリカ 5 人"
+{
+  "pass": true,
+  "score": 9478,
+  "messages": [
+    "europe の投稿期間を開けません: POST /api/admin/posting-window: 応答がタイムアウトしました",
+    "savinho_5036: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）"
+  ]
+}
+ ���������(���������2�����ح���
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

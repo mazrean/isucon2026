@@ -167,10 +167,26 @@ func TestMemReadWaitMiddleware(t *testing.T) {
 	if got != nil {
 		t.Fatalf("images must not wait: %v", got)
 	}
+	// pump が wm モードでない: 目標は付くが待たず、ガードは通る。処理中に wm モードの dump へ入れ替わったら読む時点で判定。
 	m.w.pumpWM.Store(false)
-	do("/api/feeds/friends")
-	if got != nil {
-		t.Fatalf("pump not in wm mode: target must not be set: %v", got)
+	m.w.set(0)
+	var ctx context.Context
+	e.GET("/api/me", func(c *echo.Context) error {
+		ctx = c.Request().Context()
+		return c.NoContent(http.StatusOK)
+	})
+	do("/api/me")
+	if ctx.Value(memWMTargetKey{}) != want || !m.onCtx(ctx) {
+		t.Fatal("ack-mode pump: target set and guard passes")
+	}
+	m.w.pumpWM.Store(true)
+	m.w.set(want - 1)
+	if m.onCtx(ctx) {
+		t.Fatal("resynced to wm-mode pump mid-request with wm < target: must use DB")
+	}
+	m.w.advance(want)
+	if !m.onCtx(ctx) {
+		t.Fatal("wm reached target")
 	}
 }
 

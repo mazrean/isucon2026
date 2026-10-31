@@ -105,7 +105,9 @@ func (m *memStore) wmOK(ctx context.Context) bool {
 		return false
 	}
 	t, ok := ctx.Value(memWMTargetKey{}).(int64)
-	return !ok || m.w.wm.Load() >= t
+	// pumpWM が false = 同期元の pump は ack を待っている (従来方式で正しい)。
+	// 判定は読む時点で行う (入口で false でも、処理中に wm モードの dump へ入れ替わりうる)。
+	return !ok || !m.w.pumpWM.Load() || m.w.wm.Load() >= t
 }
 
 func (m *memStore) onCtx(ctx context.Context) bool { return m.on() && m.wmOK(ctx) }
@@ -124,13 +126,16 @@ func memReadWait(m *memStore) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			req := c.Request()
-			if !memWMWaitPath(req) || !m.w.pumpWM.Load() {
+			if !memWMWaitPath(req) {
 				return next(c)
 			}
+			// 目標は常に付ける (ガードが読む時点の pumpWM で判断する)。待つのは pump が wm モードのときだけ。
 			start := memNow()
 			target := start.Add(memWMEps).UnixNano()
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(), memWMTargetKey{}, target)))
-			memWMStats.record(m.waitWM(target, start))
+			if m.w.pumpWM.Load() {
+				memWMStats.record(m.waitWM(target, start))
+			}
 			return next(c)
 		}
 	}
@@ -254,9 +259,12 @@ func (ps *memPeers) markWMMode(remoteAddr string, wm bool) {
 			matched = true
 		}
 	}
-	if !matched && !wm {
-		for _, peer := range ps.peers {
-			peer.wmMode = false
+	if !matched {
+		slog.Warn("mem: dump from unknown peer address", "remote", remoteAddr, "wm", wm)
+		if !wm {
+			for _, peer := range ps.peers {
+				peer.wmMode = false
+			}
 		}
 	}
 }

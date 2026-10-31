@@ -147,6 +147,9 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 				t.Stop()
 			}
 			wait := time.Since(start)
+			if opsTraceOn {
+				opsAdd(c.Request().Context(), opsFwdPrio, wait)
+			}
 			if !acquired {
 				p.mu.Lock()
 				p.timeouts++

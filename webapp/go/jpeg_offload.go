@@ -88,6 +88,9 @@ func checkJPEGLocal(data []byte) (w, h int, ok bool) {
 // first. A failed remote call is redone locally, so the result never depends
 // on a remote.
 func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
+	if w, h, ok, hit := prevalidated(ctx, data); hit {
+		return w, h, ok
+	}
 	if len(jpegRemotes) == 0 {
 		return checkJPEGLocal(data)
 	}

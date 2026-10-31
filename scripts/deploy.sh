@@ -216,7 +216,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_FWD_PRIORITY_POST_SLOTS '"${FWD_POST_SLOTS:-0}"'   # N>0: asia-local POST /api/posts use their own N slots, so login/friend-requests do not wait behind slow posts (priority.go)
       setenv ISUREAL_POST_TIMING '"${POST_TIMING:-0}"'   # 1: 10s slog "post timing" (jpeg / localimg(_sync) / apply / pgflush / ack)
       setenv ISUREAL_ASIA_LOCALIMG_WB '"${ASIA_LOCALIMG_WB:-0}"'   # 1: start writeback at write so the group syncfs is shorter (localimg_groupsync.go)
-      setenv ISUREAL_ASIA_LOCALIMG_FSYNC '"${ASIA_LOCALIMG_FSYNC:-gp}"'   # 1: per-writer parallel fdatasync of data+meta + parent dir fsync instead of the whole-fs syncfs; gp: only while the asia1 window is a GP (gpWindowDeadline), group syncfs otherwise (localimg_fsync.go)
+      setenv ISUREAL_ASIA_LOCALIMG_FSYNC '"${ASIA_LOCALIMG_FSYNC:-0}"'   # 1: per-writer parallel fdatasync of data+meta + parent dir fsync instead of the whole-fs syncfs; gp: only while the asia1 window is a GP (gpWindowDeadline), group syncfs otherwise (localimg_fsync.go)
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY '"$FWD_PRIORITY"'; else setenv ISUREAL_FWD_PRIORITY 0; fi
       setenv ISUREAL_FRONT '"$fr"'
       setenv ISUREAL_FRONT_FWD '"$f"'

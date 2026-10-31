@@ -65,5 +65,5 @@ END: 2026-10-31 18:00 JST
 - 変更禁止: isucon-register.service 関連, isuadmin, envcheck 関連ファイル (/usr/local/bin/envcheck, isucon-contest-envcheck, envcheck*.service, /etc/isucon/envcheck.json, /var/lib/isucon-envcheck/)。
 - クリティカルエラー(即 FAIL): 初期ユーザーログイン 401 / 閲覧権限のない投稿がフィードに出る・取得できる / 権限なし RealMoji・コメント受理 / Memories・エクスポートが期待値不一致 / 削除 5 秒後も画像取得可。
 - 動作確認ユーザー: yuma_kobayashi_186 / SecretKey 0f6-BAnyBELD2MA-t-fekeDtQN4ynqD0mfgOF8JWwWs (asia)。admin / password1234。
-- 質問 #13 (リージョン間委譲の可否) を送信済み (ユーザー未承認で送ってしまった)。回答待ち。転送施策 (バックログ3) は回答が出るまで本番に入れない。
+- 質問 #13 (リージョン間委譲の可否, ユーザー未承認で送信してしまった) → 回答「はい」(個別回答, 10:22)。転送施策 (バックログ3) は許可済み。
 | 10:26 | 8cd4fff | 3407 | true | 画像署名キャッシュ |

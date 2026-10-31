@@ -142,11 +142,25 @@ func openStoreWAL(dir string) (*storeWAL, error) {
 		return nil, err
 	}
 	p := walPath(dir)
+	_, statErr := os.Stat(p)
 	f, err := os.OpenFile(p, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o644)
 	if err != nil {
 		return nil, err
 	}
-	return &storeWAL{f: f, path: p, syncer: &groupSyncer{dir: func() string { return dir }}}, nil
+	if os.IsNotExist(statErr) {
+		// 新しいセグメント: ディレクトリのエントリも永続化する
+		if err := f.Sync(); err == nil {
+			err = fsyncPath(dir)
+		}
+		if err != nil {
+			f.Close()
+			return nil, err
+		}
+	}
+	w := &storeWAL{f: f, path: p}
+	// WAL のファイル専用のグループコミット (syncfs は同じ FS の画像やログの dirty まで巻き込むので使わない)
+	w.syncer = &groupSyncer{dir: func() string { return dir }, syncFn: func() error { return fdatasyncFile(w.f) }}
+	return w, nil
 }
 
 // append は e.mu 保持中 (= 書き込み順) に呼ぶ。fsync はしない (wait で group sync)。

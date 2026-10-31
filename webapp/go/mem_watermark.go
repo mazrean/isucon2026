@@ -295,7 +295,7 @@ func (s *memWMStatsT) loop() {
 		waits, fb, no := s.waits, s.fallback, s.notOn
 		s.waits, s.fallback, s.notOn = nil, 0, 0
 		s.mu.Unlock()
-		if len(waits) == 0 && fb == 0 && no == 0 {
+		if len(waits) == 0 && fb == 0 && no == 0 && memSyncStats.skipped.Load() == 0 {
 			continue
 		}
 		p50, p90, p99 := memPercentiles(waits)

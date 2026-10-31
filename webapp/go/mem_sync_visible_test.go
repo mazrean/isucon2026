@@ -217,7 +217,11 @@ func runSyncInvariant(t *testing.T, mode string, dur time.Duration) (violations,
 			for time.Now().UnixNano() < pausedTil.Load() {
 				time.Sleep(time.Millisecond)
 			}
-			time.Sleep(time.Duration(rand.IntN(400)) * time.Microsecond)
+			select {
+			case <-stop: // 終了後の残りは遅延なしで捨てるように流す
+			default:
+				time.Sleep(time.Duration(rand.IntN(400)) * time.Microsecond)
+			}
 			if b.newTok != "" {
 				m.mu.Lock()
 				delete(m.d.sessions, svHash(b.oldTok))

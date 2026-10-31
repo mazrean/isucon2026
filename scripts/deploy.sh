@@ -48,7 +48,7 @@ MEMORIES_CACHE=${MEMORIES_CACHE:-1}   # 1 (needs MEM=1) = Memories/export DB-pat
 # MEMORIES_TARGET (asia1 only): where nginx sends /api/memories; default = HEAVY_TARGET. 127.0.0.1 = asia1's own app (memory path)
 HEAVY_LIMIT=${HEAVY_LIMIT:-0}   # N>0 = at most N heavy DB reads (export, Memories/search DB path) at once per app (webapp/go/heavy_limit.go)
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
-ASIA_LOCALIMG=${ASIA_LOCALIMG:-0}   # 1 = asia1 keeps the bytes of images it commits (fsync, /home/isucon/asialocalimg); no image_objects row; other hosts pull from asia1 on DB miss (webapp/go/localimg.go). Turning it off again needs /api/initialize (old images are only on asia1)
+ASIA_LOCALIMG=${ASIA_LOCALIMG:-1}   # 1 = asia1 keeps the bytes of images it commits (fsync, /home/isucon/asialocalimg); no image_objects row; other hosts pull from asia1 on DB miss (webapp/go/localimg.go). Turning it off again needs /api/initialize (old images are only on asia1)
 LOCAL_SESSION=${LOCAL_SESSION:-0}   # 1 = europe1/america1 commit login/logout in-region (webapp/go/local_session.go); needs MEM=1 MEM_WM=1 LOGREPL=0 STORE=0
 STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
@@ -98,7 +98,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_DB_IMG_OPEN '"${DB_IMG_OPEN:-12}"'
       setenv ISUREAL_DB_IMG_READ_OPEN '"${DB_IMG_READ_OPEN:-16}"'
       setenv ISUREAL_POST_SLOT_EXEMPT '"${POST_SLOT_EXEMPT:-0}"'
-      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_CACHE_DIR '"${ASIA1_IMG_DISK:-/home/isucon/imgcache}"'; else setenv ISUREAL_IMAGE_CACHE_DIR /home/isucon/imgcache; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_CACHE_DIR '"${ASIA1_IMG_DISK:--}"'; else setenv ISUREAL_IMAGE_CACHE_DIR /home/isucon/imgcache; fi
       setenv ISUREAL_ASIA_LOCALIMG_SYNC '"${ASIA_LOCALIMG_SYNC:-}"'
       setenv ISUREAL_IMGV_PEER_INDEX '"${IMGV_PEER_INDEX:-0}"'
       setenv ISUREAL_IMG_SENDFILE '"${IMG_SENDFILE:-0}"'

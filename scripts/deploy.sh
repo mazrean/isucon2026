@@ -10,18 +10,33 @@ HOSTS=("$@"); [[ ${#HOSTS[@]} -gt 0 ]] || HOSTS=(asia1 europe1 america1)
 OUT=$(mktemp -d)
 ( cd webapp/go && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o "$OUT/isureal" ./cmd/isureal )
 SSH=(ssh -o BatchMode=yes -o ConnectTimeout=10)
+SECRET_FILE=${FWD_SECRET_FILE:-$HOME/.config/isucon2026/fwd_secret}
+if [[ ! -s $SECRET_FILE ]]; then mkdir -p "${SECRET_FILE%/*}"; head -c 24 /dev/urandom | base64 | tr -d '/+=' >| "$SECRET_FILE"; chmod 600 "$SECRET_FILE"; fi
+SECRET=$(cat "$SECRET_FILE")
+FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
+FWD_GET=${FWD_GET:-1}   # 1 = also forward GET /api/ (except images, notifications) to asia1
+region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
   (
     scp -q "$OUT/isureal" "$h:/tmp/isureal.new"
     scp -q etc/app/nginx.conf "$h:/tmp/nginx.conf"
-    scp -q etc/app/isureal.conf "$h:/tmp/isureal.conf"
+    scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
+    r=$(region_of "$h"); f=$FWD; g=$FWD_GET; [[ $h == asia1 ]] && f=0 && g=0
+    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
+    scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf
       sudo install -m 644 /tmp/isureal.conf /etc/nginx/sites-available/isureal.conf
+      grep -q "^ISUREAL_FWD_SECRET=" /home/isucon/env.sh && sed -i "s|^ISUREAL_FWD_SECRET=.*|ISUREAL_FWD_SECRET='"$SECRET"'|" /home/isucon/env.sh || echo "ISUREAL_FWD_SECRET='"$SECRET"'" >> /home/isucon/env.sh
+      setenv() { grep -q "^$1=" /home/isucon/env.sh && sed -i "s|^$1=.*|$1=$2|" /home/isucon/env.sh || echo "$1=$2" >> /home/isucon/env.sh; }
+      setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-192.168.4.10}"'
+      setenv ISUREAL_NODE_NAME '"$h"'
       sudo nginx -t -q
+      sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
       sudo systemctl restart isureal-go
       sudo systemctl reload nginx
+      for i in $(seq 100); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/posting-window/current); [ "$c" != 000 ] && break; sleep 0.2; done
       sha1sum /home/isucon/webapp/go/isureal | cut -c1-12' </dev/null | sed "s/^/$h: /"
   ) &
 done

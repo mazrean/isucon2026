@@ -1,0 +1,12 @@
+[Unit]
+Description=ISUCON inter-host route tuning (initcwnd/initrwnd)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/isucon-route-tune.sh
+
+[Install]
+WantedBy=multi-user.target

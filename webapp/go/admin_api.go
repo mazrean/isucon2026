@@ -33,7 +33,7 @@ func adminLoginHandler(h *HandlerContext) echo.HandlerFunc {
 			ID           string `db:"id"`
 			PasswordHash string `db:"password_hash"`
 		}
-		err := h.DB.GetContext(c.Request().Context(), &administrator,
+		err := h.Reader().GetContext(c.Request().Context(), &administrator,
 			`SELECT id, password_hash FROM administrators WHERE username = $1`, input.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusUnauthorized, "invalid_credentials")

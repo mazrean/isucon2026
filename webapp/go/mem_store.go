@@ -510,7 +510,7 @@ func (d *memData) applyChange(ch memChange) error {
 	case "users":
 		var r memUserRow
 		if err = json.Unmarshal(ch.Row, &r); err == nil {
-			d.respInvalidateUser(r.ID, r.Status)
+			d.respInvalidateUser(r)
 			d.applyUser(r)
 		}
 	case "login_sessions":
@@ -542,7 +542,7 @@ func (d *memData) applyChange(ch memChange) error {
 		var r memWindowRow
 		if err = json.Unmarshal(ch.Row, &r); err == nil {
 			if memRespCacheOn {
-				d.rc.invalidate("w" + r.ID)
+				d.rc.invalidateWhy(map[bool]int{true: rcWhyWindow, false: -1}[memCacheFine], "w"+r.ID)
 			}
 			err = d.applyWindow(r)
 		}
@@ -556,6 +556,8 @@ func (d *memData) applyChange(ch memChange) error {
 			if memRespCacheOn {
 				if r.AuthorID == "" {
 					d.rc.clearAll()
+				} else if memCacheFine {
+					d.respInvalidatePostFine(r)
 				} else {
 					d.rc.invalidate("o"+r.AuthorID, "p"+r.ID)
 				}
@@ -569,7 +571,7 @@ func (d *memData) applyChange(ch memChange) error {
 				now := time.Now()
 				r.DeletedAt = &now
 			}
-			d.respInvalidatePost(r.PostID)
+			d.respInvalidatePostWhy(map[bool]int{true: rcWhyComment, false: -1}[memCacheFine], r.PostID)
 			d.applyComment(r)
 		}
 	case "realmojis":
@@ -579,7 +581,7 @@ func (d *memData) applyChange(ch memChange) error {
 				now := time.Now()
 				r.DeletedAt = &now
 			}
-			d.respInvalidatePost(r.PostID)
+			d.respInvalidatePostWhy(map[bool]int{true: rcWhyRealMoji, false: -1}[memCacheFine], r.PostID)
 			d.applyRealMoji(r)
 		}
 	}

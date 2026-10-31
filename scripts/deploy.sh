@@ -70,16 +70,20 @@ IMG_DEDUP=${IMG_DEDUP:-0}   # 1 = image bytes cross asia->eu/am once: push asks 
 FRONT=${FRONT:-0}   # 1 = Go listens on :80 itself (webapp/go/frontproxy.go) and nginx is stopped+disabled
 PACE=${PACE:-0}   # 1 = asia1 shapes egress to europe/america /24s at PACE_RATE (130mbit) with small-packet priority (scripts/pace.sh); 0 = qdisc removed
 CWND=${CWND:-0}   # 1 = per-region /24 routes with initcwnd 64 initrwnd 64 + tcp_slow_start_after_idle=0 on all app hosts; 0 = removed
-ASIA2_GOMAXPROCS=${ASIA2_GOMAXPROCS:-1}   # asia2 app (JPEG offload / forwarded work) GOMAXPROCS; 1 = leave the 2nd vCPU to PostgreSQL; "" = Go default (2)
+ASIA2_GOMAXPROCS_IN=${ASIA2_GOMAXPROCS-unset}; ASIA2_GOMAXPROCS=${ASIA2_GOMAXPROCS:-1}   # asia2 app (JPEG offload / forwarded work) GOMAXPROCS; 1 = leave the 2nd vCPU to PostgreSQL; "" = Go default (2)
 DROP_DUP_IDX=${DROP_DUP_IDX:-0}   # 1 = drop redundant indexes on asia2 (posting_windows_active = posting_windows_one_active_region; posts_author_id = prefix of posts_author_posted) so the post tx fits 16 fast-path locks
 PGCPU=${PGCPU:-0}   # 1 = install etc/pg/primary-cpu.conf as asia2 conf.d/zz-cpu.conf (max_wal_size 12GB, jit off, ...) + pg_reload_conf; 0 = remove it
 IMG_HOTPART=${IMG_HOTPART:-1}   # 1 = new image IDs get a d0d0d0 tag; tagged IDs are read from the contest partition only (webapp/go/image_hotpart.go); 0 = old all-partition lookup
 PGFPW=${PGFPW:-0}   # 1 = install etc/pg/primary-fpw-off.conf (full_page_writes=off; torn-page corruption risk on a crash) ; 0 = remove it
 VM=${VM:-0}   # 1 = asia1+asia2 get /etc/sysctl.d/98-isucon-vm.conf (watermark_boost 0, min_free 128MB, scale 125, compaction_proactiveness 0, dirty_bg 64MB/dirty 512MB) (scripts/os-knobs.sh); 0 = file removed + kernel defaults back
 NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -> tx-N (isucon-netq.service, scripts/os-knobs.sh); 0 = unit removed, xps 0, irqbalance on
+# OPS_TRACE=1 (default 0): every host logs "ops-trace" (same anonymous IDs on all hosts, key derived from the fwd secret; login start+response; waits per stage slot/fwdprio/imgsync/apply/pg/ack; past month = before the app latest posting-window month) every 10s (anonymous HMAC correlation IDs; login->past-month Memories p50/p90, actions after posting, per-region slot/persist/replication wait p50; webapp/go/ops_trace.go)
 MEM_FULL=${MEM_FULL:-0}   # 1 (needs MEM=1) = asia2 app becomes a full-history mem peer of asia1 (ISUREAL_MEM_FULL, webapp/go/mem_full.go): cold-forwarded GETs (COLD_ORIGIN) wait for the seq and answer from memory; asia1 pushes to it too
 ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
-[[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1000MiB:50   # MEM_FULL: full-history load measured RSS 1.5GB (GOGC 100) vs peak 1.04GB / steady 0.91GB (900MiB:50) locally
+# MEM_FULL: live heap ~0.9GB. job28421: with 1000MiB:50 and GOMAXPROCS=1 the GC ran next to the limit on one core
+# (cold load 1m43s vs 18s locally, dump read cut at 40s -> never ready). Give it headroom and the 2nd core unless set.
+[[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1400MiB:100
+[[ $MEM_FULL == 1 && $ASIA2_GOMAXPROCS_IN == unset ]] && ASIA2_GOMAXPROCS=2
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 ASIA_READ_SPLIT=${ASIA_READ_SPLIT:-0}   # 1 (asia1 nginx only; ignored with FRONT=1) = GET feeds / post detail / comments / RealMojis are weighted between asia1's app and the asia2 app (asia2 has NO mem model: PG path next to PostgreSQL, RYW via ISUREAL_STORE_AWAIT_PG=1). ASIA_READ_SPLIT_PCT (50) = asia2's share in %; asia2 down -> max_fails 3 / 5s, retried on asia1 (etc/app/isureal.conf app_asia_split)
 # guard: asia2 answers split reads from PG unless MEM_FULL makes it a peer; PG must be current at 2xx
@@ -92,7 +96,7 @@ region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) ech
 # PG_SB_MB (default empty = file absent = shared_buffers from isucon-tuning.conf, 1GB): e.g. 512 = asia2 conf.d/zz-sb.conf
 # "shared_buffers = 512MB" (frees RAM for MEM_FULL). Runs before any app restart; PostgreSQL is restarted only when
 # pg_settings reports pending_restart, then we wait until it accepts connections (apps restart afterwards below).
-PG_SB_MB=${PG_SB_MB-}
+PG_SB_MB=${PG_SB_MB-512}
 "${SSH[@]}" asia2 'set -e
   f=/etc/postgresql/16/main/conf.d/zz-sb.conf
   if [ -n "'"$PG_SB_MB"'" ]; then echo "shared_buffers = '"$PG_SB_MB"'MB" | sudo tee $f.new >/dev/null && sudo chown postgres:postgres $f.new && sudo mv $f.new $f; elif [ -e $f ]; then sudo rm -f $f; else exit 0; fi
@@ -116,7 +120,7 @@ for h in "${HOSTS[@]}"; do
     sed -e "s/__MEMORIES_TARGET__/$mt/" -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" -e "s/__ASIA_READ_SPLIT__/$rs/" -e "s/__ASIA_SPLIT_W1__/$ars_w1/" -e "s/__ASIA_SPLIT_W2__/$ars_w2/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     # NGX_REQBUF_OFF=1: stream request bodies to the app (no /var/lib/nginx/body temp file per image upload)
     # NGX_BODYBUF=512k: keep image request bodies in nginx memory instead of a /var/lib/nginx/body temp file
-    if [ -n "${NGX_BODYBUF:-}" ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  client_body_buffer_size $NGX_BODYBUF;|" "$OUT/isureal.$h.conf"; fi
+    NGX_BODYBUF=${NGX_BODYBUF-512k}; if [ -n "$NGX_BODYBUF" ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  client_body_buffer_size $NGX_BODYBUF;|" "$OUT/isureal.$h.conf"; fi
     if [ "${NGX_REQBUF_OFF:-0}" = 1 ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  proxy_request_buffering off;|" "$OUT/isureal.$h.conf"; fi
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
@@ -169,6 +173,8 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_IMG_PREEXTEND_MB '"${IMG_PREEXTEND_MB:-0}"'
       setenv ISUREAL_EXPORT_REBUILD '"${EXPORT_REBUILD:-0}"'
       setenv ISUREAL_EXPORT_CACHE_MB '"${EXPORT_CACHE_MB:-0}"'
+      setenv ISUREAL_MEMCACHE_FINE '"${MEMCACHE_FINE:-0}"'   # MEMCACHE_FINE=1: Memories cache entries dropped per month / post / changed user row instead of every viewer post, plus a 10s respcache cause log, see webapp/go/mem_respcache_fine.go
+      setenv ISUREAL_MEM_HOT_EXTRA_DAYS '"${MEM_HOT_EXTRA_DAYS:-0}"'; setenv ISUREAL_MEM_HOT_EXTRA_MAX_POSTS '"${MEM_HOT_EXTRA_MAX_POSTS:-80000}"'   # MEM_HOT_EXTRA_DAYS=N: N more days of posts in mem, past-month Memories from memory, over MAX_POSTS = off, see webapp/go/mem_hot_extend.go
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_MEM_MB 300; else setenv ISUREAL_IMAGE_MEM_MB '"${PEER_IMAGE_MEM_MB:-300}"'; fi
       setenv ISUREAL_DB_IMG_READ_OPEN '"${DB_IMG_READ_OPEN:-16}"'
       setenv ISUREAL_POST_SLOT_EXEMPT '"${POST_SLOT_EXEMPT:-0}"'
@@ -209,15 +215,20 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_GP_ASIA '"${JPEG_GP_ASIA-}"'; else setenv ISUREAL_JPEG_GP_ASIA ""; fi   # "L/R" (e.g. 6/6): during the asia GP, JPEG checks stay in asia: asia1 local L slots (tried first) + asia2 R slots, no eu/am; "" = off
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080'"$([[ $MEM_FULL == 1 ]] && echo ,192.168.4.10:8080)"'; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
+      setenv ISUREAL_OPS_TRACE '"${OPS_TRACE:-0}"'
       if [ "'"$h"'" = asia1 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then sudo install -d -o isucon -g isucon '"$STORE_WAL"'; setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 0; elif [ "'"$h"'" != asia2 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 1; else setenv ISUREAL_STORE_WAL ""; setenv ISUREAL_STORE_AWAIT_PG 1; fi
       # ^ europe1/america1: ISUREAL_STORE_WAL is only the read-barrier flag there (ISUREAL_STORE=0: no WAL file, no replay); without it their PG reads (DB fallbacks, session checks) do not wait for the asia1 write-behind
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PUSH_FILTER '"$IMG_PUSH_FILTER"'; else setenv ISUREAL_IMG_PUSH_FILTER 0; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY_LOCAL_SLOTS '"${FWD_LOCAL_SLOTS:-128}"'; fi
       setenv ISUREAL_FWD_PRIORITY_POST_SLOTS '"${FWD_POST_SLOTS:-0}"'   # N>0: asia-local POST /api/posts use their own N slots, so login/friend-requests do not wait behind slow posts (priority.go)
+      setenv ISUREAL_FWD_PRIORITY_YIELD '"${FWD_YIELD:-0}"'; setenv ISUREAL_STORE_PRIO '"${STORE_PRIO:-0}"'   # FWD_YIELD=N: give the slot back while waiting on fsync/PG/ack, at most N parked; STORE_PRIO=1: store applier takes non-post writes first (prio_yield.go)
+      setenv ISUREAL_ADMIT_MAX_REQ '"${ADMIT_MAX_REQ:-0}"'; setenv ISUREAL_ADMIT_MAX_IMG_MB '"${ADMIT_MAX_IMG_MB:-0}"'; setenv ISUREAL_ADMIT_POST_MIN '"${ADMIT_POST_MIN:-0}"'; setenv ISUREAL_ADMIT_MAX_WAIT_MS '"${ADMIT_MAX_WAIT_MS:-3000}"'   # total admission cap incl. 2s-timeout passes and FWD_YIELD parked; POST_MIN reserves K of it for posts (admit_gate.go)
       setenv ISUREAL_POST_TIMING '"${POST_TIMING:-0}"'   # 1: 10s slog "post timing" (jpeg / localimg(_sync) / apply / pgflush / ack)
       setenv ISUREAL_ASIA_LOCALIMG_WB '"${ASIA_LOCALIMG_WB:-0}"'   # 1: start writeback at write so the group syncfs is shorter (localimg_groupsync.go)
       setenv ISUREAL_ASIA_LOCALIMG_FSYNC '"${ASIA_LOCALIMG_FSYNC:-0}"'   # 1: per-writer parallel fdatasync of data+meta + parent dir fsync instead of the whole-fs syncfs; gp: only while the asia1 window is a GP (gpWindowDeadline), group syncfs otherwise (localimg_fsync.go)
+      setenv ISUREAL_ASIA_LOCALIMG_SEG '"${ASIA_LOCALIMG_SEG:-0}"'   # 1: asia1 image originals go to append-only segments (data+meta in one record, crc, group fdatasync) instead of per-image files (localimg_seg.go)
+      setenv ISUREAL_ASIA_LOCALIMG_ASYNC '"${ASIA_LOCALIMG_ASYNC:-0}"'   # 1 (needs user approval): asia1 image writes return after the page cache write, sync runs in the background (weaker durability: an OS crash can lose committed images) (localimg_async.go)
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY '"$FWD_PRIORITY"'; else setenv ISUREAL_FWD_PRIORITY 0; fi
       setenv ISUREAL_FRONT '"$fr"'
       setenv ISUREAL_FRONT_FWD '"$f"'

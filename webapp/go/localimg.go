@@ -453,7 +453,7 @@ func externalImage(c *echo.Context, owner string) bool {
 // DB), then — after a DB miss — the origin.
 func localImgOwn(id string) *imageObject {
 	if asiaLocalImgOn && isAsiaLocalID(id) {
-		obj, _ := asiaStore.read(id)
+		obj, _ := asiaRead(id)
 		return obj
 	}
 	if !localImgOn || localImgRegion == "" || localImgOriginOf(id) != localImgRegion {
@@ -572,6 +572,12 @@ func registerLocalImg(e *echo.Echo, h *HandlerContext) {
 	}
 	if asiaLocalImgOn {
 		os.MkdirAll(asiaStore.dir, 0o755)
+		if asiaLocalImgSeg {
+			if err := asiaSeg.open(asiaStore.dir); err != nil {
+				slog.Error("asia localimg seg: open failed; using per-file store", "error", err)
+				asiaLocalImgSeg = false
+			}
+		}
 		go func() {
 			for range time.Tick(10 * time.Second) {
 				if n := asiaLocalImgN.Swap(0); n > 0 {
@@ -633,11 +639,11 @@ func registerLocalImgRoutes(e *echo.Echo) {
 				// memory LRU (replicateImage); disk only after eviction.
 				if o, ok := images.mem.get(id); ok && o.Owner != "" {
 					obj = o
-				} else if obj, _ = asiaStore.read(id); obj != nil {
+				} else if obj, _ = asiaRead(id); obj != nil {
 					images.mem.add(id, obj)
 				}
 			} else {
-				obj, _ = asiaStore.read(id)
+				obj, _ = asiaRead(id)
 			}
 		} else {
 			obj, _ = localStore.read(id)
@@ -700,8 +706,17 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 	}
 	asiaStore.mu.RLock() // purge (initialize) takes the write lock
 	defer asiaStore.mu.RUnlock()
+	fwdSlotYield(ctx)    // 画像の書き込みと sync (SEG・ファイル・どの FSYNC モードでも) は I/O の待ち。分岐より前で枠を返す
+	if asiaLocalImgSeg { // ISUREAL_ASIA_LOCALIMG_SEG: 追記セグメント (localimg_seg.go)
+		if err := asiaSeg.put(id, owner, time.Now().UnixNano(), data); err != nil {
+			slog.Warn("asia localimg seg", "error", err)
+			return false
+		}
+		asiaLocalImgN.Add(1)
+		return true
+	}
 	write := writeFileNoSync // group commit: durable after asiaSyncer.wait
-	if asiaLocalImgPerFileSync {
+	if asiaLocalImgPerFileSync && !asiaLocalImgAsync {
 		write = writeFileSync
 	}
 	dataPath, metaPath := asiaStore.p("data", id), asiaStore.p("meta", id)
@@ -715,11 +730,20 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		os.Remove(dataPath)
 		return false
 	}
+	if asiaLocalImgAsync {
+		// ISUREAL_ASIA_LOCALIMG_ASYNC: ページキャッシュに書いた時点で返る。sync は裏で (localimg_async.go)
+		asiaLocalImgN.Add(1)
+		asiaLocalImgSyncBehind(dataPath, metaPath)
+		return true
+	}
 	if !asiaLocalImgPerFileSync {
 		// 201 only after the sync that covers both files (and their dir entries)
 		syncStart := time.Now()
 		err := asiaSyncer.wait(dataPath, metaPath)
 		postTimingAdd("localimg_sync", time.Since(syncStart))
+		if opsTraceOn {
+			opsAdd(ctx, opsImgSync, time.Since(syncStart))
+		}
 		if err != nil {
 			slog.Warn("asia localimg sync", "error", err)
 			os.Remove(metaPath)
@@ -733,6 +757,9 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 
 // asiaLocalImgDrop removes a kept image whose transaction did not commit.
 func asiaLocalImgDrop(id string) {
+	if asiaLocalImgSeg {
+		asiaSeg.del(id)
+	}
 	os.Remove(asiaStore.p("meta", id))
 	os.Remove(asiaStore.p("data", id))
 }
@@ -741,5 +768,18 @@ func asiaLocalImgDrop(id string) {
 func asiaLocalImgPurge() {
 	if asiaLocalImgOn {
 		asiaStore.purge()
+		if asiaLocalImgSeg {
+			asiaSeg.reset(asiaStore.dir)
+		}
 	}
+}
+
+// asiaRead: ISUREAL_ASIA_LOCALIMG_SEG ならセグメントを先に、無ければ従来のファイル (切り替え前の画像)。
+func asiaRead(id string) (*imageObject, time.Time) {
+	if asiaLocalImgSeg {
+		if obj, at := asiaSeg.get(id); obj != nil {
+			return obj, at
+		}
+	}
+	return asiaStore.read(id)
 }

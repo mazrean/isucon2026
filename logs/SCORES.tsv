@@ -89,3 +89,15 @@
 16:01	b4be5de	job=25603 state=4 pass=true スコア=148725 種別エラー数=map[]	新既定 (STORE+SPLIT) + ASIA_LOCALIMG_FSYNC=1 (+POST_TIMING 計測)
 16:04	c311ac3	job=25833 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT) + NGX_REQBUF_OFF=1
 16:04	c311ac3	job=26073 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL=/home/isucon/storewal
+16:08	fa8a55f	job=26281 state=4 pass=true スコア=184132 種別エラー数=map[]	新既定 (STORE+SPLIT) + ASIA_LOCALIMG_FSYNC=gp
+16:12	15651ce	job=26530 state=4 pass=true スコア=199880 種別エラー数=map[]	新既定 (STORE+SPLIT) + NGX_BODYBUF=512k
+16:14	7b08446	job=26843 state=4 pass=true スコア=121444 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL (再挑戦: MEMORIES_CACHE_ORIGIN 空、peer にも WAL の barrier)
+16:17	63dd555	job=27110 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + NOTE=1
+16:20	179a4bb	job=27389 state=4 pass=true スコア=173589 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + MEM_SYNC_VISIBLE=1
+16:24	020d5a3	job=27636 state=4 pass=true スコア=184824 種別エラー数=map[]	26530 構成 + MEM_HOT_EXTRA_DAYS=30
+16:28	07aac13	job=28200 state=4 pass=true スコア=192638 種別エラー数=map[]	既定 (画像 403 修正込み) + MEM_SYNC_VISIBLE=1 MEM_ACK_OWN=1
+16:30	0e244ec	job=28421 state=4 pass=false スコア=0 種別エラー数=map[]	既定 + MEM_FULL=1 COLD_ORIGIN=asia2 MEMORIES_CACHE_ORIGIN 空 PG_SB_MB=256 (見張り付き)
+16:32	231a4a4	job=28603 state=4 pass=true スコア=166020 種別エラー数=map[]	既定 + FWD_YIELD=16 STORE_PRIO=1 ASIA_LOCALIMG_FSYNC=1 (枠と列の分離 + 常時 fdatasync)
+16:35	d0fdcf2	job=28890 state=4 pass=true スコア=178813 種別エラー数=map[]	既定 + MEMCACHE_FINE=1
+16:38	9395256	job=29164 state=4 pass=true スコア=179410 種別エラー数=map[]	今の既定そのまま (STORE+SPLIT+SYNC_VISIBLE+ACK_OWN+BODYBUF+PG_SB 512+403 修正)
+16:41	ef78aa4	job=29455 state=4 pass=true スコア=191380 種別エラー数=map[]	A: 26530 構成 + PG_SB 512 + 403 修正 (SYNC_VISIBLE/ACK_OWN off)

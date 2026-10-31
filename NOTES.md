@@ -235,6 +235,18 @@ END: 2026-10-31 18:00 JST
 | 25603 | - | 148725 | 新既定 + ASIA_LOCALIMG_FSYNC=1 (+POST_TIMING)。asia 999 / eu 253 / am **119**、GP 682/240/118。localimg_sync の GP p90 は 3.0s → 0.24s、asia の GP は過去最多。ただ am の d5 が 119 に崩れた (原因を調査中) |
 | 25833 | - | **FAIL** | NGX_REQBUF_OFF=1。post-validation で画像 403 + POST の通信失敗 (use of closed connection)。不採用 |
 | 26073 | - | **FAIL** | STORE_WAL。初期データの検証で GET /api/memories が 401 invalid_session: asia1 の Memories の miss を asia2 (MEMORIES_CACHE_ORIGIN) が PG で計算し、まだ PG に無いセッションを無効と判定。STORE_WAL のときは MEMORIES_CACHE_ORIGIN を空にするガードを足した |
+| 26281 | - | 184132 | 新既定 + ASIA_LOCALIMG_FSYNC=gp。GP 642/284/275 (計 1201、STORE 系で最多)、am の崩れなし。gp を既定にした |
+| 26530 | - | **199880** | 新既定 (FSYNC はまだ旧既定の syncfs) + NGX_BODYBUF=512k。d5 1177/390/362、GP 723/192/196。**新最高**。BODYBUF を既定に |
+| 26843 | - | 121444 | STORE_WAL 再挑戦 (ORIGIN 空、peer barrier)。pass だが d5 749/208/187、GP 328/177/170 と大きく下がる。重い読みが asia1 に戻った損と barrier の待ちが WAL の利得を上回る。不採用 |
+| 27110 | - | **FAIL** | 既定 (FSYNC=gp + BODYBUF=512k)。post-validation で asia の画像 (…a0a0a0) が 403。25833 と同じ型。BODYBUF 単独 (26530) と gp 単独 (26281) は pass。既定の FSYNC を 0 に戻した (= 26530 の構成) |
+| 27389 | - | 173589 | 既定 (FSYNC=gp+BODYBUF) + MEM_SYNC_VISIBLE=1。pass。d5 954/410/305、GP 516/344/154。eu の d5 と GP は最多、asia は下がる (ack 待ち +1 RTT)。総合は 26530 を下回るので不採用 |
+| 27636 | - | 184824 | 26530 構成 + MEM_HOT_EXTRA_DAYS=30。pass。26530 (199,880) を下回る。asia2 の available は 287MB まで低下。30 日では月初を含まず、過去月の大半を覆わない (Codex の集計)。不採用 |
+| 28200 | - | 192638 | 既定 (403 修正込み) + MEM_SYNC_VISIBLE=1 MEM_ACK_OWN=1。pass、投稿の失敗 0。GP 628/375/321 (計 1324、過去最多)、eu/am の d5 411/368 (最多)、WM 待ち p50 1ms。asia d4 が 344 と序盤で揺れた。既定に採用 |
+| 28421 | - | **FAIL** | 既定 + MEM_FULL=1 COLD_ORIGIN=asia2 MEMORIES_CACHE_ORIGIN 空 PG_SB_MB=256。走行後の整合性チェックで GET /api/memories?month=2026-10 がタイムアウト。asia の GP は 794 (最多) だが eu 63 / am 127 に崩れる。asia2 の available は最低 1009MB で OOM ではない。不採用 |
+| 28603 | - | 166020 | 既定 + FWD_YIELD=16 STORE_PRIO=1 ASIA_LOCALIMG_FSYNC=1。pass。d5 1018/403/301 なのに asia の GP が 273 (27%) に崩れる (締め切り前の 499 が 82)。不採用 |
+| 28890 | - | 178813 | 既定 (SYNC_VISIBLE+ACK_OWN+PG_SB 512) + MEMCACHE_FINE=1。pass。グランプリ: アジア 556 人, ヨーロッパ 278 人, アメリカ 279 人 |
+| 29164 | - | 179410 | 今の既定そのまま (SYNC_VISIBLE+ACK_OWN+BODYBUF+PG_SB 512+403 修正)。pass。d5 1072/419/328、GP 475/247/255 |
+| 29455 | - | 191380 | A: 26530 構成 + PG_SB 512 + 403 修正 (SYNC_VISIBLE/ACK_OWN off)。pass、エラー 0。GP 746/155/199、総要求 109.6k |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -362,3 +374,11 @@ END: 2026-10-31 18:00 JST
 
 ### ユーザー指示 (15:59)
 「安定性を気にしていられる点数ではないので、スコア上昇の導入・検証を最優先で回して」。ベンチは点を上げる変更の検証を最優先に回す。上がったノブは、すぐに deploy.sh の既定へ足していく (積み上げ式)。
+
+## 段取りの更新 (16:36、ユーザーの直接の指示)
+- 凍結は **17:30**。実験の回を積むのは 17:25 まで。17:25 に、再現した最高の版を最終に決める。
+- 17:30〜17:38 に再起動試験 (reboot-test.sh)。確認には shared_buffers が 512MB で上がることも入れる。そのあと SKIP_DEPLOY で最終の 1 本。
+- 1 本目が pass で 180k 以上なら止める。180k 未満か FAIL で 17:45 より前なら、もう 1 本。17:45 より後は、新しいベンチを積まない。18:00 に終了。
+- 画像の fsync を後回しにする手 (201 を永続化の前に返す) は、ユーザーの承認が無いので入れない。
+- (16:38 改) 再起動試験の後のデプロイなしの 1 本を、最終の 1 本目とする。pass で 180k 以上なら、それを最後の走行として止める。FAIL か 180k 未満なら、17:50 までに 2 本目を積んでよい (17:55 には終わる)。
+- (16:39、ユーザーの直接の指示) ASIA_LOCALIMG_ASYNC=1 (画像を fsync 前に 201) を試してよい。synchronous_commit=off と同じ種類の判断。採るなら 17:30 の再起動試験で画像の照合を必ず通し、欠けたら即 0 に戻す。

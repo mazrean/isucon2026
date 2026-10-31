@@ -220,6 +220,13 @@ func newPrevalidateProxy(target, region string) *httputil.ReverseProxy {
 			pr.Out.Header.Del(prevalidateHeader)
 			pr.Out.Header.Set(forwardedRegionHeader, region)
 			pr.Out.Header.Set(forwardedSecretHeader, forwardSecret)
+			// a LOCALIMG post: asia1 may commit it even if the client drops at the
+			// GP deadline, so finish the forward (and write the meta) regardless.
+			if pend, _ := pr.Out.Context().Value(localImgPendingKey{}).(*localImgPending); pend != nil {
+				ctx, cancel := context.WithTimeout(context.WithoutCancel(pr.Out.Context()), 30*time.Second)
+				time.AfterFunc(30*time.Second, cancel)
+				pr.Out = pr.Out.WithContext(ctx)
+			}
 		},
 		Transport: &http.Transport{
 			Proxy:               nil,
@@ -233,7 +240,8 @@ func newPrevalidateProxy(target, region string) *httputil.ReverseProxy {
 		BufferPool:     proxyBufPool{},
 		ModifyResponse: localImgModifyResponse,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			localImgAbort(r)
+			// a transport error (cancel, timeout, EOF, reset) leaves the outcome at
+			// asia1 unknown: keep the bytes (an orphan without meta is never served)
 			slog.Warn("prevalidate proxy", "error", err)
 			w.WriteHeader(http.StatusBadGateway)
 		},

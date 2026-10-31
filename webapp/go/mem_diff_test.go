@@ -96,11 +96,24 @@ func TestMemDiff(t *testing.T) {
 	memoriesMem = true
 	// MD_RESP_CACHE=1: Memories/export go through mem_respcache.go instead of the mem path
 	respCache := os.Getenv("MD_RESP_CACHE") == "1"
+	// MD_HOT_EXTRA_DAYS=N: ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go); past months inside the extended range come from memory
+	if v, err := strconv.Atoi(os.Getenv("MD_HOT_EXTRA_DAYS")); err == nil && v > 0 {
+		defer func(o int) { memHotExtraDays = o }(memHotExtraDays)
+		memHotExtraDays = v
+	}
 	if respCache {
 		memoriesMem, memRespCacheOn = false, true
+		// MD_CACHE_FINE=1: ISUREAL_MEMCACHE_FINE (mem_respcache_fine.go)
+		if os.Getenv("MD_CACHE_FINE") == "1" {
+			defer func(o bool) { memCacheFine = o }(memCacheFine)
+			memCacheFine = true
+		}
 		defer func() {
 			memRespCacheOn = false
 			t.Logf("resp cache: hits %d miss %d puts %d veto %d", memRespHits.Load(), memRespMiss.Load(), memRespPuts.Load(), memRespVeto.Load())
+			for i := range rcWhyN {
+				t.Logf("  invalidate %s: %d calls, %d removed", rcWhyName[i], memRespInvN[i].Load(), memRespInvRemoved[i].Load())
+			}
 		}()
 	}
 	defer func() {

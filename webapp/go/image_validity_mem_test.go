@@ -90,3 +90,59 @@ func TestMemImageValidMemOnlyInactiveOwner(t *testing.T) {
 		t.Fatal("knob off: deleted owner must ask the DB")
 	}
 }
+
+// ISUREAL_IMG_MEM_ONLY: the realmoji branch of imageValidityQuery, answered
+// from the hot post in memory (replacement / deletion / post deletion /
+// author withdrawal turn it back to "ask the DB").
+func TestMemImageValidMemOnlyRealMoji(t *testing.T) {
+	old := imgMemOnly
+	imgMemOnly = true
+	defer func() { imgMemOnly = old }()
+	imgRealMojiHint.mu.Lock()
+	imgRealMojiHint.m = map[string]string{"img-rm": "p1", "img-rm2": "p1", "img-cold": "p-cold"}
+	imgRealMojiHint.mu.Unlock()
+	defer func() {
+		imgRealMojiHint.mu.Lock()
+		imgRealMojiHint.m = nil
+		imgRealMojiHint.mu.Unlock()
+	}()
+	m := &memStore{d: newMemData()}
+	m.ready.Store(true)
+	h := &HandlerContext{Mem: m}
+	d := m.d
+	d.applyUser(memUserRow{ID: "author", Username: "author", SecretKeyHash: "ka", Status: "active"})
+	d.applyUser(memUserRow{ID: "r", Username: "r", SecretKeyHash: "kr", Status: "active"})
+	d.applyUser(memUserRow{ID: "x", Username: "x", SecretKeyHash: "kx", Status: "active"})
+	now := time.Now()
+	d.applyPost(memPostRow{ID: "p1", AuthorID: "author", PostingWindowID: "w", ImageID: "img-p1", PostedAt: now})
+	check := func(img, owner string, want bool) {
+		t.Helper()
+		v, ok := memImageValid(h, img, owner)
+		if ok != want || (ok && (!v.found || !v.valid || v.secretKeyHash == "")) {
+			t.Fatalf("%s/%s: ok=%v v=%+v want %v", img, owner, ok, v, want)
+		}
+	}
+	check("img-rm", "r", false) // not yet applied
+	d.applyRealMoji(memRealMojiRow{ID: "rm1", PostID: "p1", ReactorID: "r", ImageID: "img-rm", ReactionType: "smile", CreatedAt: now})
+	check("img-rm", "r", true)
+	check("img-rm", "x", false)   // not the reactor
+	check("img-cold", "r", false) // post not in memory
+	// replacement: the old one gets replaced_at, the new one is active
+	d.applyRealMoji(memRealMojiRow{ID: "rm1", PostID: "p1", ReactorID: "r", ImageID: "img-rm", ReactionType: "smile", CreatedAt: now, ReplacedAt: &now})
+	d.applyRealMoji(memRealMojiRow{ID: "rm2", PostID: "p1", ReactorID: "r", ImageID: "img-rm2", ReactionType: "smile", CreatedAt: now})
+	check("img-rm", "r", false)
+	check("img-rm2", "r", true)
+	// post author withdrawn
+	d.applyUser(memUserRow{ID: "author", Username: "author", SecretKeyHash: "ka", Status: "deleted"})
+	check("img-rm2", "r", false)
+	d.applyUser(memUserRow{ID: "author", Username: "author", SecretKeyHash: "ka", Status: "active"})
+	check("img-rm2", "r", true)
+	// realmoji deleted
+	d.applyRealMoji(memRealMojiRow{ID: "rm2", PostID: "p1", ReactorID: "r", ImageID: "img-rm2", ReactionType: "smile", CreatedAt: now, DeletedAt: &now})
+	check("img-rm2", "r", false)
+	d.applyRealMoji(memRealMojiRow{ID: "rm2", PostID: "p1", ReactorID: "r", ImageID: "img-rm2", ReactionType: "smile", CreatedAt: now})
+	check("img-rm2", "r", true)
+	// post deleted
+	d.applyPost(memPostRow{ID: "p1", AuthorID: "author", PostingWindowID: "w", ImageID: "img-p1", PostedAt: now, DeletedAt: &now})
+	check("img-rm2", "r", false)
+}

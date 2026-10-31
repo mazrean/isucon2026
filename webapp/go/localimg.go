@@ -741,6 +741,9 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		syncStart := time.Now()
 		err := asiaSyncer.wait(dataPath, metaPath)
 		postTimingAdd("localimg_sync", time.Since(syncStart))
+		if opsTraceOn {
+			opsAdd(ctx, opsImgSync, time.Since(syncStart))
+		}
 		if err != nil {
 			slog.Warn("asia localimg sync", "error", err)
 			os.Remove(metaPath)

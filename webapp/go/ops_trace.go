@@ -13,12 +13,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/labstack/echo/v5"
 )
 
-// ISUREAL_OPS_TRACE=1 (既定 0、deploy の OPS_TRACE で asia1 だけ): 一連の操作を匿名の相関 ID で追う性能の観測。
+// ISUREAL_OPS_TRACE=1 (既定 0、deploy の OPS_TRACE で全ホスト): 一連の操作を匿名の相関 ID で追う性能の観測。
+// Pre に登録 (prevalidate より前) するので Pre で転送される要求も見る。相関 ID の鍵は forwardSecret から HMAC で導き、全ホストで同じ。
+// 過去月 = 要求の month / date がアプリの投稿期間の最新の月 (DB の max(local_date)) より前。待ちは段ごと (slot / fwdprio / imgsync / apply / pg / ack)。
 // 応答は変えない (読むだけ)。認証情報・生のトークンは保存しない: 相関 ID = HMAC-SHA256(起動ごとの乱数鍵, token) の
 // hex 先頭 8 文字。login のトークンは応答本文から HMAC にしてすぐ捨てる。10 秒ごとに slog "ops-trace" で:
 //   - login → 過去月の Memories (month / date が今月より前) の 2xx までの時間 p50 / p90
@@ -28,11 +31,20 @@ import (
 
 var opsTraceOn = os.Getenv("ISUREAL_OPS_TRACE") == "1"
 
+// opsKey: 全ホストで同じ匿名 ID になるよう forwardSecret から導く (無ければ起動ごとの乱数)。
 var opsKey = func() []byte {
+	if forwardSecret != "" {
+		m := hmac.New(sha256.New, []byte(forwardSecret))
+		m.Write([]byte("isureal-ops-trace-cid"))
+		return m.Sum(nil)
+	}
 	b := make([]byte, 32)
 	_, _ = rand.Read(b)
 	return b
 }()
+
+// opsCur: アプリの投稿期間の最新の月 (YYYY-MM)。opsLoop が DB から更新する。空 = 不明 (過去月に数えない)
+var opsCur atomic.Value
 
 func opsCID(token string) string {
 	m := hmac.New(sha256.New, opsKey)
@@ -44,15 +56,21 @@ type opsSpanKey struct{}
 
 // opsSpan: 1 要求の待ちの内訳 (ns)。
 type opsSpan struct {
-	mu                  sync.Mutex
-	slot, persist, repl time.Duration
+	mu sync.Mutex
+	d  [opsN]time.Duration
 }
 
 const (
-	opsSlot = iota
-	opsPersist
-	opsRepl
+	opsSlot    = iota // GP fair / post cap の枠待ち
+	opsPersist        // store の PG 待ち
+	opsRepl           // store の peer ACK 待ち
+	opsFwdPrio        // FwdPriority の枠待ち
+	opsImgSync        // 画像の sync 待ち (asia localimg)
+	opsApply          // store の apply (writePrio の往復)
+	opsN
 )
+
+var opsKindName = [opsN]string{"slot", "pg", "ack", "fwdprio", "imgsync", "apply"}
 
 // opsAdd: ctx に span があれば待ち時間を足す (OPS_TRACE off なら span は無い)。
 func opsAdd(ctx context.Context, kind int, d time.Duration) {
@@ -60,33 +78,32 @@ func opsAdd(ctx context.Context, kind int, d time.Duration) {
 	if !ok {
 		return
 	}
-	sp.mu.Lock()
-	switch kind {
-	case opsSlot:
-		sp.slot += d
-	case opsPersist:
-		sp.persist += d
-	case opsRepl:
-		sp.repl += d
+	if kind < 0 || kind >= opsN {
+		return
 	}
+	sp.mu.Lock()
+	sp.d[kind] += d
 	sp.mu.Unlock()
 }
 
 type opsUser struct {
-	loginAt time.Time
-	posted  bool
-	seen    time.Time
+	loginAt      time.Time // login の応答
+	loginStartAt time.Time // login の要求の開始
+	posted       bool
+	seen         time.Time
 }
 
 var ops struct {
 	mu        sync.Mutex
 	users     map[string]*opsUser
-	loginMem  []time.Duration
+	loginMem  []time.Duration // login の応答 → 過去月 Memories
+	loginMemS []time.Duration // login の開始 → 過去月 Memories
+	loginDur  []time.Duration // login の開始 → 応答
 	views     int
 	feeds     int
 	realmojis int
 	comments  int
-	waits     map[string]*[3][]time.Duration // region -> slot/persist/repl
+	waits     map[string]*[opsN][]time.Duration // region -> 段ごと
 	started   bool
 }
 
@@ -116,8 +133,11 @@ func (t *opsTee) Write(b []byte) (int, error) {
 
 func (t *opsTee) Unwrap() http.ResponseWriter { return t.ResponseWriter }
 
-func opsPastMonth(req *http.Request, now time.Time) bool {
-	cur := now.UTC().Format("2006-01")
+// opsPastMonth: 要求のパラメータ (month / date) がアプリの投稿期間の最新の月 (cur) より前か。
+func opsPastMonth(req *http.Request, cur string) bool {
+	if len(cur) != 7 {
+		return false
+	}
 	p := req.URL.Path
 	if p == "/api/memories" {
 		m := req.URL.Query().Get("month")
@@ -130,16 +150,26 @@ func opsPastMonth(req *http.Request, now time.Time) bool {
 }
 
 func opsTraceMiddleware(h *HandlerContext) echo.MiddlewareFunc {
+	return opsTraceMiddlewareFn(func() *HandlerContext { return h })
+}
+
+// opsTraceMiddlewareFn: h は要求の時点で引く (Pre に先に登録するため)。nil の間は何もしない。
+func opsTraceMiddlewareFn(getH func() *HandlerContext) echo.MiddlewareFunc {
 	ops.mu.Lock()
 	if !ops.started {
 		ops.started = true
 		ops.users = map[string]*opsUser{}
-		ops.waits = map[string]*[3][]time.Duration{}
-		go opsLoop()
+		ops.waits = map[string]*[opsN][]time.Duration{}
+		go opsLoop(getH)
 	}
 	ops.mu.Unlock()
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
+			h := getH()
+			if h == nil {
+				return next(c)
+			}
+			start := time.Now()
 			req := c.Request()
 			p := req.URL.Path
 			if !strings.HasPrefix(p, "/api/") || strings.HasPrefix(p, "/api/images/") || p == "/api/notifications" || strings.HasPrefix(p, "/api/admin/") {
@@ -174,12 +204,12 @@ func opsTraceMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 			if sp != nil {
 				region := requestRegion(h, c)
 				sp.mu.Lock()
-				w := [3]time.Duration{sp.slot, sp.persist, sp.repl}
+				w := sp.d
 				sp.mu.Unlock()
 				ops.mu.Lock()
 				ws := ops.waits[region]
 				if ws == nil {
-					ws = &[3][]time.Duration{}
+					ws = &[opsN][]time.Duration{}
 					ops.waits[region] = ws
 				}
 				for i := range w {
@@ -206,6 +236,7 @@ func opsTraceMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 			if cid == "" {
 				return err
 			}
+			cur, _ := opsCur.Load().(string)
 			ops.mu.Lock()
 			defer ops.mu.Unlock()
 			u := ops.users[cid]
@@ -217,7 +248,10 @@ func opsTraceMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 					u = &opsUser{}
 					ops.users[cid] = u
 				}
-				u.loginAt, u.posted, u.seen = now, false, now
+				u.loginAt, u.loginStartAt, u.posted, u.seen = now, start, false, now
+				if len(ops.loginDur) < 100000 {
+					ops.loginDur = append(ops.loginDur, now.Sub(start))
+				}
 				return err
 			}
 			if u == nil {
@@ -225,12 +259,13 @@ func opsTraceMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 			}
 			u.seen = now
 			switch {
-			case req.Method == http.MethodGet && opsPastMonth(req, now):
+			case req.Method == http.MethodGet && opsPastMonth(req, cur):
 				if !u.loginAt.IsZero() {
 					if len(ops.loginMem) < 100000 {
 						ops.loginMem = append(ops.loginMem, now.Sub(u.loginAt))
+						ops.loginMemS = append(ops.loginMemS, now.Sub(u.loginStartAt))
 					}
-					u.loginAt = time.Time{}
+					u.loginAt, u.loginStartAt = time.Time{}, time.Time{}
 				}
 			case req.Method == http.MethodPost && p == "/api/posts":
 				u.posted = true
@@ -257,14 +292,33 @@ func opsPct(xs []time.Duration, q float64) time.Duration {
 	return xs[int(float64(len(xs)-1)*q)]
 }
 
-func opsLoop() {
+// opsRefreshCur: アプリの投稿期間の最新の月を DB から読む (実時間の月は使わない)。
+func opsRefreshCur(h *HandlerContext) {
+	if h == nil || h.reads == nil {
+		return
+	}
+	db := h.Reader()
+	if db == nil {
+		return
+	}
+	var m *string
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := db.GetContext(ctx, &m, `SELECT to_char(max(local_date), 'YYYY-MM') FROM posting_windows`); err == nil && m != nil {
+		opsCur.Store(*m)
+	}
+}
+
+func opsLoop(getH func() *HandlerContext) {
 	for range time.Tick(10 * time.Second) {
+		opsRefreshCur(getH())
 		ops.mu.Lock()
-		lm := ops.loginMem
+		lm, lms, ld := ops.loginMem, ops.loginMemS, ops.loginDur
+		ops.loginMemS, ops.loginDur = nil, nil
 		v, f, r, cm := ops.views, ops.feeds, ops.realmojis, ops.comments
 		waits := ops.waits
 		ops.loginMem, ops.views, ops.feeds, ops.realmojis, ops.comments = nil, 0, 0, 0, 0
-		ops.waits = map[string]*[3][]time.Duration{}
+		ops.waits = map[string]*[opsN][]time.Duration{}
 		cut := time.Now().Add(-10 * time.Minute)
 		for k, u := range ops.users {
 			if u.seen.Before(cut) {
@@ -274,6 +328,8 @@ func opsLoop() {
 		nUsers := len(ops.users)
 		ops.mu.Unlock()
 		attrs := []any{"ids", nUsers, "login_memories_n", len(lm), "login_memories_p50", opsPct(lm, 0.5), "login_memories_p90", opsPct(lm, 0.9),
+			"login_start_memories_p50", opsPct(lms, 0.5), "login_start_memories_p90", opsPct(lms, 0.9),
+			"login_n", len(ld), "login_p50", opsPct(ld, 0.5), "login_p90", opsPct(ld, 0.9), "cur_month", opsCurString(),
 			"after_post_views", v, "after_post_feeds", f, "after_post_realmojis", r, "after_post_comments", cm}
 		regions := make([]string, 0, len(waits))
 		for k := range waits {
@@ -282,9 +338,14 @@ func opsLoop() {
 		sort.Strings(regions)
 		for _, rg := range regions {
 			ws := waits[rg]
-			attrs = append(attrs, rg+"_slot_p50", opsPct(ws[0], 0.5), rg+"_persist_p50", opsPct(ws[1], 0.5), rg+"_repl_p50", opsPct(ws[2], 0.5),
-				rg+"_n", [3]int{len(ws[0]), len(ws[1]), len(ws[2])})
+			for i := range opsN {
+				if len(ws[i]) > 0 {
+					attrs = append(attrs, rg+"_"+opsKindName[i]+"_p50", opsPct(ws[i], 0.5), rg+"_"+opsKindName[i]+"_p90", opsPct(ws[i], 0.9), rg+"_"+opsKindName[i]+"_n", len(ws[i]))
+				}
+			}
 		}
 		slog.Info("ops-trace", attrs...)
 	}
 }
+
+func opsCurString() string { s, _ := opsCur.Load().(string); return s }

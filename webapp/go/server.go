@@ -50,6 +50,11 @@ func NewServer(config *Config) *echo.Echo {
 	e.Use(ActionLogMiddleware(config.LogLevel, os.Stdout))
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = APIErrorHandler
+	var opsH *HandlerContext
+	if opsTraceOn {
+		// Pre (prevalidate の前): Pre で転送される要求 (login を含む) も見る。h は下で入る (ops_trace.go)
+		e.Pre(opsTraceMiddlewareFn(func() *HandlerContext { return opsH }))
+	}
 	registerPrevalidate(e, config.Region)
 
 	db, err := sqlx.Open("pgx", traceDSN(config.DatabaseDSN(), "main"))
@@ -95,9 +100,7 @@ func NewServer(config *Config) *echo.Echo {
 		handlerContext.ImgRead = imgReadDB
 	}
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
-	if opsTraceOn {
-		e.Use(opsTraceMiddleware(handlerContext)) // ops_trace.go (観測だけ)
-	}
+	opsH = handlerContext // OPS_TRACE (Pre は上で登録済み)
 	e.Use(IPBanMiddleware(handlerContext))
 	e.Use(FwdPriorityMiddleware(handlerContext))
 	if storeEnabled && memEnabled && storeWALDir != "" {

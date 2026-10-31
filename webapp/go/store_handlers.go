@@ -33,6 +33,9 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 		after = t.after
 		return err
 	}, name != "createPost")
+	if opsTraceOn {
+		opsAdd(c.Request().Context(), opsApply, time.Since(applyStart))
+	}
 	if err == errStoreFallback {
 		e.count(name, 1)
 		e.syncPG()

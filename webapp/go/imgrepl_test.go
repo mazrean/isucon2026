@@ -103,7 +103,7 @@ func TestImageReplPushEndToEnd(t *testing.T) {
 	}
 	id := "1b0c5f3e-1111-4222-8333-944455556666"
 	data := bytes.Repeat([]byte{0xab}, 90_000)
-	r.enqueue(id, &imageObject{Owner: "o", MediaType: "image/jpeg", Data: data})
+	r.enqueue(id, &imageObject{Owner: "o", MediaType: "image/jpeg", Data: data}, nil)
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		if got, ok := store.mem.get(id); ok {

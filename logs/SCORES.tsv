@@ -109,3 +109,4 @@
 16:59	ffb86d4	job=31222 state=4 pass=true スコア=182308 種別エラー数=map[]	A の既定 + STORE_PRIO=1 (login・申請・承認を STORE の適用で先に)
 17:02	cc9f74e	job=31522 state=4 pass=true スコア=182455 種別エラー数=map[]	A の既定 + W5 (SYNC_VISIBLE+ACK_OWN+SYNC_SPLIT)
 17:04	ddf61b2	job=31838 state=4 pass=false スコア=0 種別エラー数=map[]	A の既定 + MEM_FULL v2 (29dc137: 世代取り消し・ストリームロード・ready 確認) COLD_ORIGIN=asia2 CACHE_ORIGIN 空
+17:07	24a9d19	job=32055 state=4 pass=true スコア=185111 種別エラー数=map[]	A の既定 + STORE_OWN_SEQ=1 + MEM_FEED_UNLOCKED=1 (要求ごとの書き戻し待ち、フィードの組み立てをロック外)

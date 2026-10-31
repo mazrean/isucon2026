@@ -52,6 +52,10 @@ func FwdPriorityMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 	p := newFwdPriority(h.Config.Region, fwdPriorityLocalSlots, fwdPriorityMaxWait, fwdPriorityIdle)
 	go p.statsLoop()
 	slog.Info("fwd-priority: on", "local_slots", fwdPriorityLocalSlots, "max_wait", fwdPriorityMaxWait, "idle", fwdPriorityIdle)
+	if gpFairOn && gpFairPostExempt {
+		prev := fwdPriorityLocalExempt
+		fwdPriorityLocalExempt = func(req *http.Request) bool { return prev(req) || gpFairPostExemptReq(h, req) }
+	}
 	return p.middleware(func(c *echo.Context) bool { return requestRegion(h, c) != h.Config.Region })
 }
 

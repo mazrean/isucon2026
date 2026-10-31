@@ -125,6 +125,9 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		// ISUREAL_POST_BATCH=1: 画像が tx の外で片付いている (DB に先に入れた / asia1 のディスクに置いた / 転送) ときは
 		// tx を 1 往復の batch で流す (post_batch.go に正しさの論証)。それ以外は従来どおり。
+		// ISUREAL_GP_FAIR: GP 中は DB 区間に入る順を締め切り順にする (gp_fair.go)。
+		gpRelease := gpFairEnter(h, c)
+		defer gpRelease()
 		if postBatchOn && (imageInserted || asiaKept || localImgFromCtx(ctx) != nil) {
 			user, post, ok, err := createPostBatch(ctx, h.DB, userID, uuid.NewString(), imageID, input, location)
 			if err != nil {

@@ -230,6 +230,7 @@ END: 2026-10-31 18:00 JST
 | 24013 | - | 166685 | 新既定 + STORE=1 の再現 2 本目。asia 934 / eu 416 / am 271、GP 529/103/…(eu 25%)。pass、dropped 0。STORE の 2 本: 180.8 / 166.7 (平均 173.7k、bare は 165k) |
 | 24289 | - | **188124** | **新最高**。新既定 + STORE=1 + USER_LOCK_SPLIT=1。asia 1042 / eu 376 / am 297、GP 586/246/226 (1058)。pass |
 | 24558 | - | 181989 | 新既定 + STORE=1 + FWD_POST_SLOTS=128。asia 704 / eu 353 / am 320、GP 489/302/210。pass。asia d5 が少ないのに 18.2 万。LOCK_SPLIT と重ねる候補 |
+| 25001 | - | 175990 | **STORE=1 + USER_LOCK_SPLIT=1 の再起動試験 pass**: 4 台同時の再起動、PG (posts/comments/friendships/login_sessions/friend_requests) と画像の正本のスナップショット一致、final-check OK。その後デプロイなしで 1 本 pass。asia 827 / eu 335 / am 369、GP 362/168/283 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

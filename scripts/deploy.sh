@@ -56,7 +56,7 @@ HEAVY_LIMIT=${HEAVY_LIMIT:-0}   # N>0 = at most N heavy DB reads (export, Memori
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
 ASIA_LOCALIMG=${ASIA_LOCALIMG:-1}   # 1 = asia1 keeps the bytes of images it commits (fsync, /home/isucon/asialocalimg); no image_objects row; other hosts pull from asia1 on DB miss (webapp/go/localimg.go). Turning it off again needs /api/initialize (old images are only on asia1)
 LOCAL_SESSION=${LOCAL_SESSION:-0}   # 1 = europe1/america1 commit login/logout in-region (webapp/go/local_session.go); needs MEM=1 MEM_WM=1 LOGREPL=0 STORE=0
-STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
+STORE=${STORE:-1}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 STORE_WAL=${STORE_WAL:-}   # dir (e.g. /home/isucon/storewal) = asia1 store fsyncs a local WAL and stops awaiting PG (ISUREAL_STORE_AWAIT_PG=0); only with STORE=1; the dir survives deploys/restarts (never cleared here)
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 # ASIA_LOCALIMG_FAST (all hosts, default 0): 1 = eu/am/asia2 pull asia1-tagged images from asia1 before PG (skips the replica + cross-region primary miss, ~1 RTT); asia1 answers pulls from its memory LRU first (webapp/go/localimg.go)
@@ -90,6 +90,8 @@ for h in "${HOSTS[@]}"; do
     r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-127.0.0.1}; [[ $f == 1 ]] || pvt=""; mt=$ht; [[ $h == asia1 ]] && mt=${MEMORIES_TARGET-$ht}
     ls=$LOCAL_SESSION; { [[ $h == asia1 || $f != 1 || $MEM != 1 || $MEM_WM != 1 || $LOGREPL == 1 || $STORE == 1 ]]; } && ls=0
     sed -e "s/__MEMORIES_TARGET__/$mt/" -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
+    # NGX_REQBUF_OFF=1: stream request bodies to the app (no /var/lib/nginx/body temp file per image upload)
+    if [ "${NGX_REQBUF_OFF:-0}" = 1 ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  proxy_request_buffering off;|" "$OUT/isureal.$h.conf"; fi
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf
@@ -129,7 +131,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_GP_FAIR_FWD_LEAD_MS '"${GP_FAIR_FWD_LEAD_MS:-1000}"'
       setenv ISUREAL_GP_FAIR_POST_EXEMPT '"${GP_FAIR_POST_EXEMPT:-0}"'
       setenv ISUREAL_FRIEND_BATCH '"${FRIEND_BATCH:-1}"'
-      setenv ISUREAL_USER_LOCK_SPLIT '"${USER_LOCK_SPLIT:-0}"'
+      setenv ISUREAL_USER_LOCK_SPLIT '"${USER_LOCK_SPLIT:-1}"'
       setenv ISUREAL_LOGIN_BATCH '"${LOGIN_BATCH:-0}"'
       setenv ISUREAL_MEM_LOGREPL '"$LOGREPL"'
       setenv ISUREAL_LOCAL_ONLY_WRITE '"${LOCAL_ONLY_WRITE:-1}"'

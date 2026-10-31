@@ -3,6 +3,7 @@ package isureal
 import (
 	"context"
 	"net/http"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -15,6 +16,7 @@ const ipBanReloadInterval = 200 * time.Millisecond
 
 type IPBanList struct {
 	reloading sync.Mutex
+	asyncOnce sync.Once
 	snapshot  atomic.Pointer[ipBanSnapshot]
 }
 
@@ -28,8 +30,35 @@ type ipBan struct {
 	BannedUntil time.Time `db:"banned_until"`
 }
 
+// ISUREAL_IPBAN_ASYNC=1 (既定 0): ip_bans の再読込を背景の 1 本 (200ms 周期) に移し、リクエストは待たない。
+// 従来も、再読込を担当した 1 件以外は「直近の読込 (≦ 200ms + 1 往復前)」の snapshot で判定しているので、
+// 鮮度の上限は変わらない。変わるのは、200ms ごとに 1 件のリクエストが primary への 1 往復
+// (europe1 / america1 では約 100ms) を待たされなくなること。背景の読込が 2 秒止まったら従来の同期読込に戻る。
+var ipBanAsync = os.Getenv("ISUREAL_IPBAN_ASYNC") == "1"
+
+const ipBanAsyncStale = 2 * time.Second
+
+func (l *IPBanList) loop(db *sqlx.DB) {
+	t := time.NewTicker(ipBanReloadInterval)
+	defer t.Stop()
+	for range t.C {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		if loaded, err := loadIPBans(ctx, db); err == nil {
+			l.snapshot.Store(loaded)
+		}
+		cancel()
+	}
+}
+
 func (l *IPBanList) Banned(ctx context.Context, db *sqlx.DB, ip string) (bool, error) {
 	snapshot := l.snapshot.Load()
+	if ipBanAsync {
+		l.asyncOnce.Do(func() { go l.loop(db) })
+		if snapshot != nil && time.Since(snapshot.loadedAt) < ipBanAsyncStale {
+			until, ok := snapshot.bans[ip]
+			return ok && time.Now().Before(until), nil
+		}
+	}
 	if (snapshot == nil || time.Since(snapshot.loadedAt) >= ipBanReloadInterval) && l.reloading.TryLock() {
 		defer l.reloading.Unlock()
 		loaded, err := loadIPBans(ctx, db)

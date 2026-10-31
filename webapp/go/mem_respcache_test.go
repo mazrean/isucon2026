@@ -179,11 +179,16 @@ func TestMemRespCacheMatchesDB(t *testing.T) {
 	t.Logf("local: %d comparisons, %d cache hits", n, hits)
 
 	// misses computed by an origin app (asia2 role: no mem model)
-	defer func(o, s string) { memRespOrigin, forwardSecret = o, s }(memRespOrigin, forwardSecret)
+	defer func(o, s, rg string) { memRespOrigin, forwardSecret, memRespOriginRegion = o, s, rg }(memRespOrigin, forwardSecret, memRespOriginRegion)
+	// europe1 / america1 as the cache host: the origin must see the request's region (fwd headers)
+	memRespOriginRegion = "europe"
 	ho := &HandlerContext{DB: db, reads: &readRouter{primary: db}, Config: &Config{}}
-	originHits := 0
+	originHits, badRegion := 0, 0
 	origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		originHits++
+		if r.Header.Get(forwardedRegionHeader) != "europe" || r.Header.Get(forwardedSecretHeader) != "test-secret" {
+			badRegion++
+		}
 		c := e.NewContext(r, w)
 		c.Set("session", &Session{UserID: strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")})
 		var err error
@@ -208,6 +213,9 @@ func TestMemRespCacheMatchesDB(t *testing.T) {
 	t.Logf("origin: %d comparisons, %d cache hits, %d origin requests", n, hits, originHits)
 	if originHits == 0 {
 		t.Fatal("origin not used")
+	}
+	if badRegion != 0 {
+		t.Fatalf("%d origin requests without the europe fwd region headers", badRegion)
 	}
 	if hits == 0 {
 		t.Fatal("no cache hits")

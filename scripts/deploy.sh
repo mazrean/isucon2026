@@ -36,7 +36,7 @@ FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.1
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
 MEM_WM=${MEM_WM:-1}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
 MEM_WM_HB=${MEM_WM_HB:-0}   # 1 (needs MEM_WM=1) = shorter wm waits: 10ms poll, 16 in-flight pushes to wm peers, wm rides the data push (webapp/go/mem_watermark.go); MEM_WM_SLACK_MS (default 0) loosens the read target
-# MEM_WM_MAXWAIT_MS (default 300): peer GET waits up to this for the wm before falling back to the primary (1 RTT per query from eu/am). DBTRACE=1: every 10s slog the SQL this app sent, per pool + 80-char prefix (webapp/go/dbtrace.go)
+# IPBAN_ASYNC=1: ip_bans reload in a 200ms background loop, requests never wait for it (webapp/go/ip_ban.go). MEM_WM_MAXWAIT_MS (default 300): peer GET waits up to this for the wm before falling back to the primary (1 RTT per query from eu/am). DBTRACE=1: every 10s slog the SQL this app sent, per pool + 80-char prefix (webapp/go/dbtrace.go)
 MEM_PUSH_STATS=${MEM_PUSH_STATS:-0}   # 1 = 10s slog "mem: push stats" (pump: bytes/batches/ack; peer: net/lock/apply/pulls) (webapp/go/mem_push_stats.go)
 # MEM_PULL_UNLOCKED=1 (eu/am receivers) = release the receiver lock during a gap pull so other pushes / wm keep applying (webapp/go/mem_peers.go fillGap)
 MEM_PUSH_GZIP=${MEM_PUSH_GZIP:-0}   # 1 = asia1 gzips push bodies >= 1KiB (receivers always accept gzip; deploy all hosts together)
@@ -46,6 +46,7 @@ MEMORIES_PAR=${MEMORIES_PAR:-1}   # 1 = Memories run posts/RealMojis/comments qu
 MEMORIES_MEM=${MEMORIES_MEM:-1}   # 1 (needs MEM=1) = Memories for periods inside the in-memory hot range come from memory (webapp/go/mem_memories.go)
 MEMORIES_CACHE=${MEMORIES_CACHE:-1}   # 1 (needs MEM=1) = Memories/export DB-path answers cached per viewer, dropped by the mem change stream (webapp/go/mem_respcache.go). For asia also set HEAVY_TARGET=127.0.0.1 (asia2 has no mem model)
 # MEMORIES_CACHE_ORIGIN (asia1 only, with MEMORIES_CACHE=1 HEAVY_TARGET=127.0.0.1): e.g. 192.168.4.10:8080 = cache misses are computed by the asia2 app (webapp/go/mem_respcache_origin.go)
+# MEMORIES_CACHE_ORIGIN_PEERS (europe1/america1, default empty = off): e.g. 192.168.4.10:8080 = their Memories/export cache misses are computed by the asia2 app too (1 HTTP RTT instead of 2+ DB RTTs; request carries the fwd region headers)
 # MEMORIES_TARGET (asia1 only): where nginx sends /api/memories; default = HEAVY_TARGET. 127.0.0.1 = asia1's own app (memory path)
 HEAVY_LIMIT=${HEAVY_LIMIT:-0}   # N>0 = at most N heavy DB reads (export, Memories/search DB path) at once per app (webapp/go/heavy_limit.go)
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
@@ -94,6 +95,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_WM_SLACK_MS '"${MEM_WM_SLACK_MS:-0}"'
       setenv ISUREAL_MEM_WM_MAXWAIT_MS '"${MEM_WM_MAXWAIT_MS:-300}"'
       setenv ISUREAL_DBTRACE '"${DBTRACE:-0}"'
+      setenv ISUREAL_IPBAN_ASYNC '"${IPBAN_ASYNC:-0}"'
       setenv ISUREAL_MEM_PUSH_STATS '"$MEM_PUSH_STATS"'
       setenv ISUREAL_MEM_PUSH_GZIP '"$MEM_PUSH_GZIP"'
       setenv ISUREAL_MEM_REORDER_WAIT_MS '"${MEM_REORDER_WAIT_MS:-50}"'
@@ -123,7 +125,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_IMG_DEDUP '"$IMG_DEDUP"'
       setenv ISUREAL_MEMORIES_MEM '"$MEMORIES_MEM"'
       setenv ISUREAL_MEMORIES_CACHE '"$MEMORIES_CACHE"'
-      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-192.168.4.10:8080}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN ""; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-192.168.4.10:8080}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN_PEERS-}"'; fi
       setenv ISUREAL_HEAVY_LIMIT '"$HEAVY_LIMIT"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-2}"'

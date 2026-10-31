@@ -21,6 +21,7 @@ import (
 // body, later ones are applied by this host's model and veto / remove the entry.
 var (
 	memRespOrigin       = os.Getenv("ISUREAL_MEMORIES_CACHE_ORIGIN")
+	memRespOriginRegion = os.Getenv("ISUREAL_REGION")
 	memRespOriginClient = &http.Client{Timeout: 30 * time.Second, Transport: &http.Transport{MaxIdleConnsPerHost: 128, MaxIdleConns: 256, IdleConnTimeout: 90 * time.Second}}
 )
 
@@ -62,6 +63,13 @@ func fetchOrigin(c *echo.Context) (memOriginResp, bool) {
 		req.Header.Set(echo.HeaderAuthorization, v)
 	}
 	req.Header.Set(memRespOriginHeader, forwardSecret)
+	// europe1 / america1 (ISUREAL_MEMORIES_CACHE_ORIGIN set there too): the origin (asia2) checks the
+	// viewer's region against the request's, so say which region the request arrived in, the way a
+	// forwarded write does (trusted only from the app hosts' addresses with the secret).
+	if memRespOriginRegion != "" && memRespOriginRegion != "asia" {
+		req.Header.Set(forwardedRegionHeader, memRespOriginRegion)
+		req.Header.Set(forwardedSecretHeader, forwardSecret)
+	}
 	resp, err := memRespOriginClient.Do(req)
 	if err != nil {
 		return r, false

@@ -26,6 +26,8 @@ type memPump struct {
 
 	snap string // 最後に反映済みのスナップショット (pg_snapshot text)
 
+	pollFailures int // 連続した poll 失敗 (cycleMu 下)
+
 	pmu       sync.Mutex
 	cond      *sync.Cond
 	started   uint64
@@ -69,7 +71,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 	switch memRole(h.Config) {
 	case "pump":
 		m := &memStore{d: newMemData()}
-		p := &memPump{m: m, db: h.DB}
+		p := &memPump{m: m, db: h.BG}
 		p.cond = sync.NewCond(&p.pmu)
 		p.peers = newMemPeersFromEnv(p)
 		h.Mem = m
@@ -179,10 +181,20 @@ func (p *memPump) cycle() {
 		}
 		return
 	}
+	// a failed poll leaves p.snap unchanged, so retrying is safe; only reload
+	// (seconds, blocks every write) when polling keeps failing.
 	if err := p.poll(); err != nil {
+		p.pollFailures++
+		if p.pollFailures < 3 {
+			slog.Warn("mem: poll failed; retrying", "error", err, "failures", p.pollFailures)
+			return
+		}
 		slog.Error("mem: poll failed; reloading", "error", err)
+		p.pollFailures = 0
 		p.invalidate()
+		return
 	}
+	p.pollFailures = 0
 }
 
 type memPollRow struct {

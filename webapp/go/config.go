@@ -31,7 +31,7 @@ func ConfigFromEnv() *Config {
 		LogLevel:   envOrDefault("ISUREAL_LOG_LEVEL", "debug"),
 		ReadHost:   os.Getenv("ISUREAL_DB_READ_HOST"),
 		NodeName:   os.Getenv("ISUREAL_NODE_NAME"),
-		DBMaxOpen:  envIntOrDefault("ISUREAL_DB_MAX_OPEN", 30),
+		DBMaxOpen:  envIntOrDefault("ISUREAL_DB_MAX_OPEN", 80),
 	}
 }
 

@@ -264,3 +264,13 @@ END: 2026-10-31 18:00 JST
 6. **公式ベンチを同じ版で 2 回、両方 pass**。`scripts/portal-bench.sh run` (または lock を取って同じ手順)。間にデプロイも変更もしない。pass=false なら原因を直す。ただし 16:30 以降は変更できないので、直前の pass 版に戻すかどうかだけを判断する。**最終スコアは最後の走行**で決まる。
 7. **最後の走行の後**に、4 台の df と `scripts/final-check.sh` をもう一度。OK であることと、ディスクに余裕があることを確認する。一時的な FW ルール (fw-local.sh で開けたもの) が残っていないことも見る。final-check は logs/fw-local.log で閉じていない OPEN を NG にする。
 8. **18:00 までにやめる**。最後の pass の後はベンチもデプロイも再起動もしない。終了間際の走行は、FAIL すると最終スコアが失われる。
+
+## 全地域・全日 2.9 倍の計画 (14:06、ユーザー指示)
+条件: 各地域・各日の p90 < 0.1s。
+| 地域・日 | 今の律速 | 打ち手 (担当) |
+|---|---|---|
+| asia d1〜d3 | ほぼ達成 (2.8〜2.9) | ea1ffec を revert して維持 |
+| asia d4〜GP | 投稿の列 (JPEG の検証の容量 + 画像 INSERT + DB) | JC=1 + JPEG 枠 2 (ベンチ中)、JPEG のマーカー走査 (GP 担当)、STORE の直列化の修正 (store 担当)、PG の CPU 削減 (PG 担当)、画像プールの拡大 (DB_IMG_OPEN) |
+| eu/am 全日 | 書き込みの転送 1 RTT + d4 以降の asia1 の待ち、読みの WM 待ち 1 RTT | 転送の書き込みの 1 RTT 超えの削減と push の尾 (転送担当)、自分の投稿を地域内で確定 (REGION_POST 担当)、login/logout を地域内で確定 (LOCAL_SESSION、未ベンチ) |
+| 全地域 GP | asia: 投稿の列、eu/am: JC=1 + 枠 2 でほぼ 100% (15345) | 上と同じ |
+| 検証役 | Memories・export・画像 | MEMORIES_CACHE (既定)、画像の sendfile と export のメモリ化 (検証役担当) |

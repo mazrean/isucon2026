@@ -1,10 +1,8 @@
 package isureal
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
-	"example.com/isureal-company/isureal/internal/jpegcheck"
 	"io"
 	"net/http"
 
@@ -21,8 +19,8 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		imgW, imgH, err := jpegcheck.Check(bytes.NewReader(data))
-		if err != nil {
+		imgW, imgH, imgOK := checkJPEG(c.Request().Context(), data)
+		if !imgOK {
 			c.Set("abuse", "invalid_image")
 			return NewAPIError(http.StatusBadRequest, "invalid_profile_image")
 		}

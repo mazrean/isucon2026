@@ -1,10 +1,8 @@
 package isureal
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
-	"example.com/isureal-company/isureal/internal/jpegcheck"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -55,8 +53,8 @@ func replaceRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		imgW, imgH, err := jpegcheck.Check(bytes.NewReader(data))
-		if err != nil {
+		imgW, imgH, imgOK := checkJPEG(c.Request().Context(), data)
+		if !imgOK {
 			return NewAPIError(http.StatusBadRequest, "invalid_realmoji")
 		}
 		if imgW > 512 || imgH > 512 {

@@ -1,10 +1,8 @@
 package isureal
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
-	"example.com/isureal-company/isureal/internal/jpegcheck"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -76,8 +74,8 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		imgW, imgH, err := jpegcheck.Check(bytes.NewReader(imageData))
-		if err != nil {
+		imgW, imgH, imgOK := checkJPEG(c.Request().Context(), imageData)
+		if !imgOK {
 			return NewAPIError(http.StatusBadRequest, "invalid_post")
 		}
 		if imgW > 4096 || imgH > 4096 {

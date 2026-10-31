@@ -167,7 +167,7 @@ func loginHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		defer tx.Rollback()
 		var user User
-		err = tx.GetContext(ctx, &user, `SELECT id, username, secret_key_hash, display_name, bio, profile_image_id, region, account_type, status FROM users WHERE username = $1 FOR NO KEY UPDATE`, input.Username)
+		err = tx.GetContext(ctx, &user, lockUserRowSQL(`SELECT id, username, secret_key_hash, display_name, bio, profile_image_id, region, account_type, status FROM users WHERE username = $1`, userAdvSession), input.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusUnauthorized, "invalid_credentials")
 		}

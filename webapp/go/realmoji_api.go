@@ -204,7 +204,8 @@ func deleteRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		defer tx.Rollback()
 		var lockedID string
-		if err := tx.GetContext(ctx, &lockedID, `SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE`, actor); err != nil {
+		// split: KEY SHARE だけ (退会とは排他)。二重削除・付け直しとの競合は realmojis の行の FOR UPDATE / UPDATE が直列にする。
+		if err := tx.GetContext(ctx, &lockedID, lockUserRowSQL(`SELECT id FROM users WHERE id=$1`, userAdvNone), actor); err != nil {
 			return err
 		}
 		var record struct {

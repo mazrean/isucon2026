@@ -90,7 +90,7 @@ func InvalidateLoginSession(db *sqlx.DB, userID string, tokenHash string) error 
 	defer tx.Rollback()
 
 	var lockedUserID string
-	if err := tx.Get(&lockedUserID, `SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID); err != nil {
+	if err := tx.Get(&lockedUserID, lockUserRowSQL(`SELECT id FROM users WHERE id = $1`, userAdvSession), userID); err != nil {
 		return fmt.Errorf("failed to lock user: %w", err)
 	}
 
@@ -136,7 +136,7 @@ func createLoginSessionTx(ctx context.Context, tx *sqlx.Tx, userID string, userL
 	tokenHash := hex.EncodeToString(tokenHashBytes[:])
 	if !userLocked {
 		var lockedUserID string
-		if err := tx.GetContext(ctx, &lockedUserID, `SELECT id FROM users WHERE id = $1 AND status = 'active' FOR NO KEY UPDATE`, userID); err != nil {
+		if err := tx.GetContext(ctx, &lockedUserID, lockUserRowSQL(`SELECT id FROM users WHERE id = $1 AND status = 'active'`, userAdvSession), userID); err != nil {
 			return nil, fmt.Errorf("failed to lock user: %w", err)
 		}
 	}

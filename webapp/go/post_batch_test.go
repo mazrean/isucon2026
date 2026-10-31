@@ -106,7 +106,7 @@ func TestPostBatchWithDeletes(t *testing.T) {
 		tx := db.MustBegin()
 		defer tx.Rollback()
 		var id string
-		tx.MustExec(`SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID)
+		tx.MustExec(lockUserRowSQL(`SELECT id FROM users WHERE id = $1`, userAdvPost), userID)
 		if err := tx.Get(&id, `SELECT id FROM posts WHERE author_id = $1 AND deleted_at IS NULL`, userID); err != nil {
 			return
 		}
@@ -149,7 +149,7 @@ func TestPostBatchWithDeletes(t *testing.T) {
 	go func() {
 		defer wg2.Done()
 		tx := db.MustBegin()
-		tx.MustExec(`SELECT id FROM users WHERE id=$1 AND status='active' FOR NO KEY UPDATE`, u2)
+		tx.MustExec(deleteAccountLockSQL(), u2) // 退会と同じロック
 		time.Sleep(20 * time.Millisecond)
 		tx.MustExec(`UPDATE users SET status='deleted', deleted_at=clock_timestamp() WHERE id=$1`, u2)
 		_ = tx.Commit()

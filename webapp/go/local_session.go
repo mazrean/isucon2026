@@ -273,7 +273,7 @@ func localLoginSQL(userID, secretHash, sessionID, tokenHash string) (string, boo
 		return "", false
 	}
 	cond := fmt.Sprintf(`id = %s AND status = 'active' AND secret_key_hash = %s`, u, h)
-	return fmt.Sprintf(`SELECT id, username, display_name, bio, region, account_type, status FROM users WHERE %[1]s FOR NO KEY UPDATE;
+	return fmt.Sprintf(lockUserRowSQL(`SELECT id, username, display_name, bio, region, account_type, status FROM users WHERE %[1]s`, userAdvSession)+`;
 UPDATE login_sessions SET active = false, invalidated_at = clock_timestamp(), reason = 'replaced' WHERE user_id = %[2]s AND active = true AND EXISTS (SELECT 1 FROM users WHERE %[1]s);
 INSERT INTO login_sessions (id, user_id, token_hash) SELECT %[3]s, id, %[4]s FROM users WHERE %[1]s`, cond, u, s, t), true
 }
@@ -284,7 +284,7 @@ func localLogoutSQL(userID, tokenHash string) (string, bool) {
 	if !ok1 || !ok2 {
 		return "", false
 	}
-	return fmt.Sprintf(`SELECT id FROM users WHERE id = %[1]s AND status = 'active' FOR NO KEY UPDATE;
+	return fmt.Sprintf(lockUserRowSQL(`SELECT id FROM users WHERE id = %[1]s AND status = 'active'`, userAdvSession)+`;
 UPDATE login_sessions SET active = false, invalidated_at = clock_timestamp(), reason = 'logout' WHERE user_id = %[1]s AND active = true AND token_hash = %[2]s AND EXISTS (SELECT 1 FROM users WHERE id = %[1]s AND status = 'active')`, u, t), true
 }
 

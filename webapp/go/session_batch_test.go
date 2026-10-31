@@ -37,7 +37,7 @@ func legacyLogin(ctx context.Context, db *sqlx.DB, username, secret string) (*Se
 	}
 	defer tx.Rollback()
 	var user User
-	if err := tx.GetContext(ctx, &user, `SELECT id, username, secret_key_hash, display_name, bio, profile_image_id, region, account_type, status FROM users WHERE username = $1 FOR NO KEY UPDATE`, username); err != nil {
+	if err := tx.GetContext(ctx, &user, lockUserRowSQL(`SELECT id, username, secret_key_hash, display_name, bio, profile_image_id, region, account_type, status FROM users WHERE username = $1`, userAdvSession), username); err != nil {
 		return nil, err
 	}
 	h := sha256.Sum256([]byte(secret))

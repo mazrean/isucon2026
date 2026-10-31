@@ -38,7 +38,10 @@ import (
 //   - session_replication_role は触らない (mem_changelog のトリガーはそのまま動く)。
 var postBatchOn = os.Getenv("ISUREAL_POST_BATCH") == "1"
 
-var postBatchUserSQL = `SELECT ` + strings.Join(userColumns, ", ") + ` FROM users WHERE id = $1 FOR NO KEY UPDATE`
+// postBatchUserSQL: USER_LOCK_SPLIT=1 では FOR KEY SHARE + advisory (user, post) (user_lock_split.go)。
+func postBatchUserSQL() string {
+	return lockUserRowSQL(`SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE id = $1`, userAdvPost)
+}
 
 const postBatchInsertSQL = `
 WITH w AS (
@@ -100,7 +103,7 @@ func createPostBatchOnce(ctx context.Context, db *sqlx.DB, userID, postID, image
 		postedAt := time.Now().UTC()
 		b := &pgx.Batch{}
 		b.Queue("BEGIN")
-		b.Queue(postBatchUserSQL, userID)
+		b.Queue(postBatchUserSQL(), userID)
 		b.Queue(postBatchInsertSQL, userID, postID, imageID, input.Caption, input.Visibility,
 			location.Kind, location.Latitude, location.Longitude, location.Locality, postedAt)
 		b.Queue("COMMIT")

@@ -17,6 +17,8 @@ FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
 FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
+FRONT=${FRONT:-0}   # 1 = Go listens on :80 itself (webapp/go/frontproxy.go) and nginx is stopped+disabled
+FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
   (
@@ -24,6 +26,7 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/app/nginx.conf "$h:/tmp/nginx.conf"
     scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
     scp -q etc/systemd/isureal-go.service.d/10-tune.conf "$h:/tmp/10-tune.conf"
+    scp -q etc/systemd/isureal-go.service.d/30-front.conf "$h:/tmp/30-front.conf"
     r=$(region_of "$h"); f=$FWD; g=$FWD_GET; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && ht=${HEAVY_TARGET-192.168.4.10}
     sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__HEAVY_TARGET__/$ht/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
@@ -41,12 +44,26 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-192.168.2.10:8080,192.168.3.10:8080}"'; else setenv ISUREAL_IMG_PEERS ""; fi
+      setenv ISUREAL_FRONT '"$FRONT"'
+      setenv ISUREAL_FRONT_FWD '"$f"'
+      setenv ISUREAL_FRONT_FWD_GET '"$g"'
+      setenv ISUREAL_FRONT_FWD_TARGET '"$FWD_TARGET"':8080
+      if [ "'"$ht"'" = 127.0.0.1 ] || [ -z "'"$ht"'" ]; then setenv ISUREAL_FRONT_HEAVY_TARGET ""; else setenv ISUREAL_FRONT_HEAVY_TARGET '"$ht"':8080; fi
+      setenv ISUREAL_FRONT_LOG "'"$FRONT_LOG"'"
       sudo nginx -t -q
       sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf
-      sudo install -D -m 644 /tmp/10-tune.conf /etc/systemd/system/isureal-go.service.d/10-tune.conf && sudo systemctl daemon-reload
+      sudo install -D -m 644 /tmp/10-tune.conf /etc/systemd/system/isureal-go.service.d/10-tune.conf
+      sudo install -D -m 644 /tmp/30-front.conf /etc/systemd/system/isureal-go.service.d/30-front.conf && sudo systemctl daemon-reload
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
       sudo systemctl restart isureal-go
-      sudo systemctl reload nginx
+      if [ "'"$FRONT"'" = 1 ]; then
+        # the Go front retries bind(:80) every 200ms, so it takes over as soon as nginx is gone
+        sudo systemctl disable -q --now nginx
+        for i in $(seq 50); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/); [ "$c" = 200 ] && break; sleep 0.2; done; echo "front :80 -> $c"
+      else
+        sudo systemctl enable -q nginx
+        if systemctl is-active -q nginx; then sudo systemctl reload nginx; else sudo systemctl start nginx; fi
+      fi
       for i in $(seq 100); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/posting-window/current); [ "$c" != 000 ] && break; sleep 0.2; done
       sha1sum /home/isucon/webapp/go/isureal | cut -c1-12' </dev/null | sed "s/^/$h: /"
   ) &

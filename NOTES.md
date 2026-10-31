@@ -279,3 +279,5 @@ END: 2026-10-31 18:00 JST
 | 検証役 | Memories・export・画像 | MEMORIES_CACHE (既定)、画像の sendfile と export のメモリ化 (検証役担当) |
 - 凍結 (16:30) の時に: deploy.sh の `PPROF-127.0.0.1:6060` の既定を空に変える (今は担当が pprof を使うので on のまま)。
 - REGION_POST (eu/am の投稿を地域内で確定) は実装前に中止: asia の active 利用者の 10.7% (581/5433) が eu/am の友達を持つ → asia の feed/posts の GET に eu/am の wm 待ち (60〜75ms) が乗り、asia の 2.9 倍を壊す。eu/am 側も転送の書き込みが 9〜20% 残り p90 は RTT に縛られる。
+- 最終の既定に full_page_writes=off (PGFPW=1) は入れない (追試の再起動でページが壊れると PG が起動しない)。
+- PGCPU=1 (max_wal_size 12GB、checkpoint_timeout 20min) を採るなら、再起動試験で asia2 の再起動から PG が接続を受けるまでの秒数と、アプリの初回応答までを測る。

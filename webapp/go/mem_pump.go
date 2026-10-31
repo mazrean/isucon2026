@@ -128,7 +128,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 			e.Use(coldMiddleware(true)) // cold_origin.go
 		}
 		if memFull {
-			memFullDB = h.DB
+			memFullDB, memFullDSN = h.DB, h.Config.DatabaseDSN()
 		}
 		rcv := newMemReceiver(m)
 		if memFull {

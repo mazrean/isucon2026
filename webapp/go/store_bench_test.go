@@ -109,6 +109,24 @@ func TestStoreBench(t *testing.T) {
 	stop := time.Now().Add(5 * time.Second)
 	start := time.Now()
 	small := mdJPEG(64, 64, 2)
+	// 読み (フィード) を並行に流す: STORE_BENCH_READERS 本
+	var rlat []time.Duration
+	readers := 0
+	fmt.Sscan(os.Getenv("STORE_BENCH_READERS"), &readers)
+	for rd := 0; rd < readers; rd++ {
+		wg.Add(1)
+		go func(rd int) {
+			defer wg.Done()
+			for time.Now().Before(stop) {
+				st := time.Now()
+				users[rd%len(users)].c.do("GET", "/api/feeds/public", nil, "")
+				d := time.Since(st)
+				mu.Lock()
+				rlat = append(rlat, d)
+				mu.Unlock()
+			}
+		}(rd)
+	}
 	for w := range users {
 		wg.Add(1)
 		go func(w int) {
@@ -132,5 +150,9 @@ func TestStoreBench(t *testing.T) {
 		}(w)
 	}
 	wg.Wait()
-	report("mixed writes", lat, time.Since(start))
+	elapsed := time.Since(start)
+	report("mixed writes", lat, elapsed)
+	if len(rlat) > 0 {
+		report("feed reads", rlat, elapsed)
+	}
 }

@@ -12,7 +12,9 @@
   mem_pump.go は 2 箇所 (memWriteBarrier の skip、reload 前の preReload フック)。
 - 正本 = asia1 の memData (読みモデル)。ホット集合 (開いている投稿期間の最小 local_date 以降の投稿/コメント/RealMoji、
   全ユーザー、有効セッション、関係、保留申請、全投稿期間) はメモリが完全なので検証もメモリで行う。
-- store.write(fn): 排他 (store.mu → pump.cycleMu → memData.mu) の中で fn がメモリを読んで検証し、
+- store.write(fn): 適用役 1 本が、たまった書き込み (最大 512) をまとめて 1 回の排他 (store.mu → pump.cycleMu → memData.mu) の中で順に実行する
+  (書き込みごとに memData.mu を排他で取ると重い読みと交互に待ち合う: job13083 で読み p90 7 倍・書き込み p50 2.5s の原因と推定)。
+  login のセッション無効化はユーザー別索引、register は並べ替えの差し込み。各 fn はメモリを読んで検証し、
   memChange (トリガーの to_jsonb と同じ {tbl, op, row}) を emit (その場で applyChange) と PG 文を積む。
   → peers.publish(changes) → 書き戻しキューへ。画像の複製 (replicateImage) はロック外・バリア待ちの前に開始。
 - 応答前の待ち: PG 書き戻し ≥ seq (ISUREAL_STORE_AWAIT_PG=1, 既定) ∧ 全 peer ack。両者は並行に進むので
@@ -63,5 +65,6 @@ pump の 200ms poll (フォールバック書き込み分のみ)、initialize。
 - 未検証: LOCALIMG/PREVALIDATE で peer から転送された書き込み (externalImage=true) の store 経路は main のロジックを写しただけで、
   store のテストでは通っていない (ハーネスに転送リクエストが無い)。
 - deleted_at / starts_at などの時刻の出どころが asia2 の clock_timestamp() から asia1 の時計に変わった (NTP 誤差 ms)。
+- TestStoreBench + 読み 64 本 (STORE_BENCH_READERS=64): バッチ化前 909〜1387 rps / p50 31〜69ms → 後 2935〜4142 rps / p50 10〜17ms。
 - TestStoreBench (main マージ前に計測。エンジンは同じ。ローカル RTT≒0 なので差は過小評価、peer なし): 64 並列の混合書き込み
   STORE=0 p50 17.7ms / p99 74〜82ms / 2.9k rps → STORE=1 p50 8.5ms / p99 15ms / 7.4k rps。

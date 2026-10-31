@@ -8,6 +8,7 @@ import (
 	"hash/fnv"
 	"log/slog"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -57,6 +58,10 @@ type storeEngine struct {
 	// PG 書き戻しのレーン: 0 = 画像以外すべて (1 本で順序を保つ)、1..N = image_objects (画像 ID でシャード、各 1 本)。
 	// 画像の INSERT/DELETE は同じ ID なら同じレーンなので順序が保たれる。大きい画像が小さい書き込みを待たせない。
 	lanes []*storeLane
+
+	reqs chan *storeReq
+
+	userSess map[string]map[string]struct{} // user id -> 有効セッションの token hash (memData.sessions の索引)
 }
 
 type storeLane struct {
@@ -96,6 +101,8 @@ func setupStore(h *HandlerContext) {
 		e.lanes = append(e.lanes, l)
 		go e.flusher(l)
 	}
+	e.reqs = make(chan *storeReq, 8192)
+	go e.applier()
 	h.Store = e
 	h.memPump.preReload = e.syncPG
 	storeCurrent = e
@@ -137,6 +144,12 @@ func (t *storeTx) emit(tbl, op string, row any) {
 		} else {
 			delete(t.e.realmojis, r.ID)
 		}
+	case memSessionRow:
+		if r.Active {
+			t.e.addSess(r.UserID, r.TokenHash)
+		} else if m := t.e.userSess[r.UserID]; m != nil {
+			delete(m, r.TokenHash)
+		}
 	case memFriendRequestRow:
 		if r.Status == "pending" {
 			t.e.requests[r.ID] = t.d.users[r.RequesterID].outgoing[r.ID]
@@ -167,6 +180,10 @@ func (e *storeEngine) ensureIndex(d *memData) {
 	e.realmojis = map[string]string{}
 	e.requests = map[string]*memReq{}
 	e.finalized = map[string]memFriendRequestRow{}
+	e.userSess = map[string]map[string]struct{}{}
+	for th, s := range d.sessions {
+		e.addSess(s.UserID, th)
+	}
 	for _, p := range d.posts {
 		for _, c := range p.comments {
 			e.comments[c.ID] = p.ID
@@ -184,45 +201,110 @@ func (e *storeEngine) ensureIndex(d *memData) {
 
 // write は fn を排他の中で実行する。fn はエラーを返すなら変更を emit する前に返すこと。
 // 戻り値の seq を commitWait に渡す。errStoreFallback なら元の DB 経路へ。
+type storeReq struct {
+	fn   func(t *storeTx) error
+	done chan storeRes
+}
+
+type storeRes struct {
+	seqs storeSeqs
+	err  error
+}
+
+const storeMaxBatch = 512
+
+// write は fn を適用役 (1 本) に渡して結果を待つ。適用役はたまった書き込みをまとめて 1 回の排他
+// (store.mu → pump.cycleMu → memData.mu) の中で順に実行し、publish と書き戻しの積み込みも 1 回にする
+// (書き込みごとに memData.mu を排他で取ると、重い読みと交互に待ち合って両方遅くなる)。
+// fn はエラーを返すなら変更を emit する前に返すこと。errStoreFallback なら元の DB 経路へ。
 func (e *storeEngine) write(fn func(t *storeTx) error) (storeSeqs, error) {
+	r := &storeReq{fn: fn, done: make(chan storeRes, 1)}
+	e.reqs <- r
+	res := <-r.done
+	return res.seqs, res.err
+}
+
+func (e *storeEngine) applier() {
+	for {
+		batch := []*storeReq{<-e.reqs}
+	drain:
+		for len(batch) < storeMaxBatch {
+			select {
+			case r := <-e.reqs:
+				batch = append(batch, r)
+			default:
+				break drain
+			}
+		}
+		e.applyBatch(batch)
+	}
+}
+
+func (e *storeEngine) applyBatch(batch []*storeReq) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	p := e.p
 	p.cycleMu.Lock()
 	defer p.cycleMu.Unlock()
 	if !p.m.ready.Load() || p.loadedGen != p.wantGen.Load() {
-		return nil, errStoreFallback
+		for _, r := range batch {
+			r.done <- storeRes{err: errStoreFallback}
+		}
+		return
 	}
 	m := p.m
 	m.mu.Lock()
 	e.ensureIndex(m.d)
-	t := &storeTx{e: e, d: m.d, now: storeNow()}
-	err := func() (err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				err = fmt.Errorf("store: panic: %v", r)
-			}
+	errs := make([]error, len(batch))
+	work := make([]bool, len(batch))
+	var changes []memChange
+	var ops []storeOp
+	partial := false
+	for i, r := range batch {
+		t := &storeTx{e: e, d: m.d, now: storeNow()}
+		err := func() (err error) {
+			defer func() {
+				if x := recover(); x != nil {
+					err = fmt.Errorf("store: panic: %v", x)
+				}
+			}()
+			return r.fn(t)
 		}()
-		return fn(t)
-	}()
-	if t.d.sortedDirty {
-		t.d.sortedUsers()
+		errs[i] = err
+		if err != nil && len(t.changes) > 0 {
+			// 途中まで反映してしまった: 送らずに、バッチの後でメモリを PG から作り直す
+			slog.Error("store: partial write; reloading", "error", err)
+			partial = true
+			continue
+		}
+		if len(t.changes) > 0 || len(t.ops) > 0 {
+			work[i] = true
+			changes = append(changes, t.changes...)
+			ops = append(ops, t.ops...)
+		}
+	}
+	if m.d.sortedDirty {
+		m.d.sortedUsers()
 	}
 	m.mu.Unlock()
-	if err != nil && len(t.changes) > 0 {
-		// 途中まで反映してしまった: メモリを PG から作り直す
-		slog.Error("store: partial write; reloading", "error", err)
+	var seqs storeSeqs
+	if len(changes) > 0 || len(ops) > 0 {
+		if p.peers != nil && len(changes) > 0 {
+			p.peers.publish(changes)
+		}
+		seqs = e.enqueue(ops)
+	}
+	if partial {
 		e.enqueue(nil)
 		p.invalidate()
-		return nil, err
 	}
-	if len(t.changes) == 0 && len(t.ops) == 0 {
-		return nil, err
+	for i, r := range batch {
+		res := storeRes{err: errs[i]}
+		if work[i] {
+			res.seqs = seqs
+		}
+		r.done <- res
 	}
-	if p.peers != nil && len(t.changes) > 0 {
-		p.peers.publish(t.changes)
-	}
-	return e.enqueue(t.ops), err
 }
 
 // enqueue は e.mu 保持中に呼ばれる (各レーン内の順序 = 書き込み順)。レーン 0 には常に 1 つ積む。
@@ -376,3 +458,40 @@ func (e *storeEngine) runBatch(ops []storeOp) error {
 func strPtr(s string) *string { return &s }
 
 func timePtr(t time.Time) *time.Time { return &t }
+
+func (e *storeEngine) addSess(userID, tokenHash string) {
+	m := e.userSess[userID]
+	if m == nil {
+		m = map[string]struct{}{}
+		e.userSess[userID] = m
+	}
+	m[tokenHash] = struct{}{}
+}
+
+// sessionsOf はユーザーの有効セッション (memData で確認済み)。
+func (t *storeTx) sessionsOf(userID string) map[string]memSession {
+	out := map[string]memSession{}
+	for th := range t.e.userSess[userID] {
+		if s, ok := t.d.sessions[th]; ok && s.UserID == userID {
+			out[th] = s
+		}
+	}
+	return out
+}
+
+// insertSortedUser: 登録で 1 人増えたとき、全員の並べ替えをせずに差し込む (読み手が古いスライスを持っていてもよいようコピーする)。
+func (d *memData) insertSortedUser(u *memUser) {
+	list := d.sorted
+	i := sort.Search(len(list), func(i int) bool {
+		if list[i].Username != u.Username {
+			return list[i].Username > u.Username
+		}
+		return list[i].ID > u.ID
+	})
+	next := make([]*memUser, 0, len(list)+1)
+	next = append(next, list[:i]...)
+	next = append(next, u)
+	next = append(next, list[i:]...)
+	d.sorted = next
+	d.sortedDirty = false
+}

@@ -1,0 +1,11 @@
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "初期データの検証に失敗しました: 初期データのユーザー panya_shugyo_386: GET /api/memories?month=2026-09: ステータスコード 401 が返りました（期待値 200、invalid_session）",
+    "初期データのユーザー min_zhang_4: GET /api/memories?month=2025-12: ステータスコード 401 が返りました（期待値 200、invalid_session）"
+  ]
+}
+
+reason= 初期データの検証に失敗しました
+job=26073 state=4 pass=false スコア=0 種別エラー数=map[]

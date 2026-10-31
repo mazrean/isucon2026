@@ -39,7 +39,14 @@
 ## 永続化 / 再起動
 - AWAIT_PG=1 (既定): 2xx を返した書き込みは必ず PG (asia2, synchronous_commit=on) に入っている。
   再起動 = 従来の pump と同じく PG からロード。kill -9 でも応答済みの書き込みは失われない (TestStoreCrash)。
-- **ローカル WAL は実装していない。** AWAIT_PG=1 では応答済みの書き込みは既に PG にあるので WAL は何も足さない。
+- **ローカル WAL (ISUREAL_STORE_WAL=dir, 既定 空, store_wal.go)**: 適用役がバッチの PG 文 (画像レーン以外) を JSON 1 行で追記し、
+  groupSyncer (ASIA_LOCALIMG と同じ syncfs のグループコミット) の後に書き手を解放。WAL 有効時だけ AWAIT_PG=0 を許す
+  (無効のまま AWAIT_PG=0 は警告して 1 に強制)。画像レーンは WAL に入れず従来どおり PG を待つ。各レーンは flush と同じ tx で
+  store_wal_applied(lane, seq) を更新。起動時 (setupMem の前) に WAL の未適用分を流し直し (INSERT は ON CONFLICT DO NOTHING)、
+  WAL を truncate → applied を DELETE。initialize は init.sh の前に truncate、後に applied を DELETE。
+  storePGBarrier / storeCurrentSeq / storePGApplied を store_pgbarrier.go のフックに接続。TestStoreCrashWAL (書き戻し 3s 遅延で kill -9、
+  応答済みで PG 未反映のコメントが再起動後に残る) が通る。テスト DB は isureal_storewal (isureal_store を template に作成)。
+- (以下は WAL 以前の記述) **ローカル WAL は実装していない。** AWAIT_PG=1 では応答済みの書き込みは既に PG にあるので WAL は何も足さない。
   AWAIT_PG=0 (PG を待たない) は、Memories / export / 画像の有効性確認 / 通知 hub / ホット外の読み / peer の DB フォールバックが
   PG を読むため read-your-writes が崩れる → それらをメモリに移すまで使わないこと (そのときに WAL が必要になる)。
 

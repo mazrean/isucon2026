@@ -201,7 +201,7 @@ END: 2026-10-31 18:00 JST
 | 15134 | - | 145177 | 13426 の構成 (HEAVY_TARGET=127.0.0.1) + 往復削減 + 409612f + ea1ffec。エラー 0 件。asia 18/52/146/250/324 (d3→d4 1.71、d4→d5 1.30)、eu 229 / am 349 (am 過去最高)、GP asia 206。409612f (投稿を枠外) 入りの回は asia d4→d5 がどれも崩れる → 枠外しを ISUREAL_POST_SLOT_EXEMPT=1 の後ろへ |
 | 15345 | - | 144584 | 15134 の構成 (ea1ffec 入り) + JC=1 + JPEG_LOCAL_SLOTS=2。エラー 0。eu 281 / am 294、GP eu 280 (100%)・am 290 (99%) = eu/am の GP はほぼ満点。asia は ea1ffec で d3→d4 1.95・d4→d5 1.31 に崩れたまま、GP 136 |
 | 15544 | - | **148713** | ea1ffec を revert + JC=1 + JPEG_LOCAL_SLOTS=2 + HEAVY_TARGET=127.0.0.1 + MEMORIES_CACHE=1。asia 18/51/146/309/395、eu 291 / am 285、GP 237/290/283 (eu/am ほぼ 100%)。503 が 1 件 → この 3 つを既定に |
-| 15806 | - | 123052 | STORE=1 (適用役パイプライン a449f26) on 新既定。エラー 0 だが既定 148713 より低い → STORE は最終候補から外す |
+| 15806 | - | 123052 | STORE=1 (適用役パイプライン a449f26) on 新既定。エラー 0。asia 18/50/144/349/584、GP asia 546 (93%、過去最高) だが eu 136 / am 169、GP 134/167 に崩壊 → eu/am 側の原因を直せば大きい |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

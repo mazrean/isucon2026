@@ -17,6 +17,7 @@ FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
 FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
 PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
+LOCALIMG=${LOCALIMG:-0}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 FRONT=${FRONT:-0}   # 1 = Go listens on :80 itself (webapp/go/frontproxy.go) and nginx is stopped+disabled
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
@@ -42,6 +43,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM '"$MEM"'
       setenv ISUREAL_PREVALIDATE '"$pv"'
       setenv ISUREAL_PREVALIDATE_TARGET '"$pvt"'
+      setenv ISUREAL_LOCALIMG '"$LOCALIMG"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
@@ -78,6 +80,7 @@ if true; then
   "${SSH[@]}" asia2 'set -e
     grep -q "^ISUREAL_DB_MAX_OPEN=" /home/isucon/env.sh && sed -i "s|^ISUREAL_DB_MAX_OPEN=.*|ISUREAL_DB_MAX_OPEN=30|" /home/isucon/env.sh || echo "ISUREAL_DB_MAX_OPEN=30" >> /home/isucon/env.sh
     grep -q "^ISUREAL_FWD_SECRET=" /home/isucon/env.sh && sed -i "s|^ISUREAL_FWD_SECRET=.*|ISUREAL_FWD_SECRET='"$SECRET"'|" /home/isucon/env.sh || echo "ISUREAL_FWD_SECRET='"$SECRET"'" >> /home/isucon/env.sh
+    grep -q "^ISUREAL_LOCALIMG=" /home/isucon/env.sh && sed -i "s|^ISUREAL_LOCALIMG=.*|ISUREAL_LOCALIMG='"$LOCALIMG"'|" /home/isucon/env.sh || echo "ISUREAL_LOCALIMG='"$LOCALIMG"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_PREVALIDATE=" /home/isucon/env.sh && sed -i "s|^ISUREAL_PREVALIDATE=.*|ISUREAL_PREVALIDATE='"$PREVALIDATE"'|" /home/isucon/env.sh || echo "ISUREAL_PREVALIDATE='"$PREVALIDATE"'" >> /home/isucon/env.sh
     sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
     install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal

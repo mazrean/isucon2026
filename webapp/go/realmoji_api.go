@@ -88,9 +88,12 @@ func replaceRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 		if _, err := tx.ExecContext(ctx, `UPDATE realmojis SET replaced_at=clock_timestamp() WHERE post_id=$1 AND reactor_id=$2 AND replaced_at IS NULL AND deleted_at IS NULL`, post.ID, actor); err != nil {
 			return err
 		}
-		imageID := uuid.NewString()
-		if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects(id,owner_user_id,data,media_type) VALUES($1,$2,$3,'image/jpeg')`, imageID, actor, data); err != nil {
-			return err
+		imageID := newImageID(ctx)
+		external := externalImage(c, actor)
+		if !external {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects(id,owner_user_id,data,media_type) VALUES($1,$2,$3,'image/jpeg')`, imageID, actor, data); err != nil {
+				return err
+			}
 		}
 		id := uuid.NewString()
 		if _, err := tx.ExecContext(ctx, `INSERT INTO realmojis(id,post_id,reactor_id,image_id,reaction_type,created_at) VALUES($1,$2,$3,$4,$5,clock_timestamp())`, id, post.ID, actor, imageID, input.ReactionType); err != nil {
@@ -107,7 +110,9 @@ func replaceRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
-		replicateImage(imageID, actor, "image/jpeg", data)
+		if !external {
+			replicateImage(imageID, actor, "image/jpeg", data)
+		}
 		return c.JSON(http.StatusCreated, newRealMojiResponse(reaction, user))
 	}
 }

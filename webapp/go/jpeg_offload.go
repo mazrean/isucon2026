@@ -115,6 +115,11 @@ func checkJPEGLocal(data []byte) (w, h int, ok bool) {
 // first. A failed remote call is redone locally, so the result never depends
 // on a remote.
 func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
+	// the decoder rejects anything that does not start with SOI (FF D8): skip the
+	// queue (remote/local slots) for those.
+	if len(data) < 2 || data[0] != 0xff || data[1] != 0xd8 {
+		return 0, 0, false
+	}
 	if w, h, ok, hit := prevalidated(ctx, data); hit {
 		return w, h, ok
 	}

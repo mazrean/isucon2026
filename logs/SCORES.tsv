@@ -24,3 +24,4 @@
 12:14	4ee944b	job=7184 state=4 pass=false スコア=0 種別エラー数=map[]	統合: 全投稿メモリ化 + Memories/export メモリ + push パイプライン + lease 修正 + AVX-512 署名 (heavy は asia1 ローカル)
 12:18	c157c9a	job=7382 state=4 pass=true スコア=9478 種別エラー数=map[]	統合版 再: initialize で peer を待たない + PREVALIDATE + STORAGE EXTERNAL
 12:22	6e86484	job=7706 state=4 pass=true スコア=93068 種別エラー数=map[]	revert 全投稿メモリ化、AVX-512 署名 + PREVALIDATE + STORAGE EXTERNAL + lease/barrier 修正なし(旧 mem)
+12:25	0b781f4	job=7851 state=4 pass=true スコア=111842 種別エラー数=map[]	LOCALIMG=1 (eu/am 画像を自地域保存、asia1 はメタデータのみ)

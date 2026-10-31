@@ -175,3 +175,4 @@ END: 2026-10-31 18:00 JST
 - `FRONT=0 scripts/batch.sh ...` か `FRONT=0 scripts/deploy.sh` で再デプロイ → deploy が nginx を enable して start/reload する。
 - 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
 - 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。
+| 7851 | - | **111842** | LOCALIMG=1 (eu/am の画像を自地域に fsync 保存、asia1 はメタデータのみ、PG へ非同期 flush)。asia 742 / eu 175 / am 95、GP 545/161/84。flush_err 0。409 post_slot_unavailable が 1 件 (要観察) |

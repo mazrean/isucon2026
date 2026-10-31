@@ -66,3 +66,4 @@
 14:43	ad0d760	job=18619 state=4 pass=true スコア=165858 種別エラー数=map[]	新既定 (インデックス削除済み) で ASIA_LOCALIMG_FAST=0 (asia1 の送信上限 bw_out の仮説を切り分け)
 14:47	4e86192	job=18975 state=4 pass=true スコア=148426 種別エラー数=map[]	新既定 (165858 の構成、インデックス復元済み) + GP_FAIR=1 (GP 中の投稿を締め切り順、eu/am は 1s 先行)
 14:50	cdb06ec	job=19256 state=4 pass=true スコア=153175 種別エラー数=map[]	新既定 + GP_FAIR=1 (FWD_LEAD 200ms に縮める) + MEMORIES_PREBUILD=1 + MEMORIES_ORIGIN_DEADLINE_MS=1500 (検証役の過去月 Memories、今月の外れの締め切り)
+14:52	409cf81	job=19508 state=4 pass=true スコア=167878 種別エラー数=map[]	bare 既定 (18619 の構成、インデックスあり) — 最終候補の基準 1 本目

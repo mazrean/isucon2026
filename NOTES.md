@@ -212,6 +212,7 @@ END: 2026-10-31 18:00 JST
 | 18619 | - | **165858** | 新既定 + ASIA_LOCALIMG_FAST=0 (インデックスは走行中は削除のまま、走行後に復元)。asia 18/52/152/436/977、eu 334 / am 232、GP 664/310/217 (asia の GP 68%)。asia1 bw_out +384 → LOCALIMG_FAST を既定 0 に |
 | 18975 | - | 148426 | 165858 の構成 (インデックスあり) + GP_FAIR=1 (FWD_LEAD 1000ms)。asia 18/46/130/374/960、eu 355 / am 294、GP 208/336/277 → eu/am の GP は 95% に上がり、asia の GP は 22% に崩れた。差し引きで負け。FWD_LEAD を縮めて再試行 |
 | 19256 | - | 153175 | 新既定 + GP_FAIR=1 (FWD_LEAD 200、判定の誤りで無効のはず) + MEMORIES_PREBUILD=1 + ORIGIN_DEADLINE 1500。asia 18/49/142/408/920、eu 345 / am 357 (am 最多)、GP 603/132/144 → eu/am の GP が 40% に崩れた。asia1 の prebuild が GP の時刻 (05:49) にも走っていて、originDeadline の打ち切りが 491 件 |
+| 19508 | - | **167878** | bare 既定 (18619 の構成、インデックスあり)。asia 18/52/151/428/1062、eu 20/56/151/380、am 16/56/148/311 (eu/am とも d5 は最多級)、GP 699/211/155 → 過去最高。インデックスは残す (確定)。残りは eu/am の GP (56% / 50%) |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

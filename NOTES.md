@@ -258,8 +258,8 @@ END: 2026-10-31 18:00 JST
 
 ## 最終の段取り (14:05 作成、ドライバーが実行)
 `scripts/final-check.sh` は読み取りのみ (再起動・lock・ポータル操作なし)。最終行が `OK ...` か `NG: 理由; ...` (NG なら exit 1)。`WARN` は判断材料で、失敗ではない。
-1. **凍結 16:30**。以降はコード・設定の変更とデプロイをしない。やるのは再起動、確認、ベンチだけ。
-2. **既定を固める** (16:30 まで)。最終候補を **引数も環境変数も無しの bare `scripts/deploy.sh`** で再現できるよう、採用するノブを deploy.sh の既定に上げて commit。bare の既定は、14:10 時点で MEM=1 MEM_WM=1 FWD=1 (宛先 asia1) PREVALIDATE=1 LOCALIMG=1 MEMORIES_PAR/MEM/CACHE=1 FWD_PRIORITY=1 LOCAL_ONLY_WRITE=1 MEM_REORDER_WAIT_MS=50 PGSSL=allow で、残りは 0 か空 (**JC=0**、JPEG_LOCAL_SLOTS=1、STORE/LOCAL_SESSION/LOGREPL/FRONT/PACE/CWND/ASIA_LOCALIMG/IMG_*=0。DB_IMG_OPEN=12、DB_IMG_READ_OPEN=16、POST_SLOT_EXEMPT=0)。repo は凍結まで動き続けるので、凍結のときに `grep -oE '[A-Z_]+:-[^}]*\}' scripts/deploy.sh | sort -u` で一覧を取り直すこと。14:02 時点の env.sh は JPEG_LOCAL_SLOTS=2 と jpegcheckd 稼働 (JC=1) で、bare の既定と違う。採用するなら既定に上げること。
+1. **凍結 17:00 (ユーザー承認 14:41)**。以降はコード・設定の変更とデプロイをしない。やるのは再起動、確認、ベンチだけ。
+2. **既定を固める** (17:00 まで)。最終候補を **引数も環境変数も無しの bare `scripts/deploy.sh`** で再現できるよう、採用するノブを deploy.sh の既定に上げて commit。bare の既定は、14:10 時点で MEM=1 MEM_WM=1 FWD=1 (宛先 asia1) PREVALIDATE=1 LOCALIMG=1 MEMORIES_PAR/MEM/CACHE=1 FWD_PRIORITY=1 LOCAL_ONLY_WRITE=1 MEM_REORDER_WAIT_MS=50 PGSSL=allow で、残りは 0 か空 (**JC=0**、JPEG_LOCAL_SLOTS=1、STORE/LOCAL_SESSION/LOGREPL/FRONT/PACE/CWND/ASIA_LOCALIMG/IMG_*=0。DB_IMG_OPEN=12、DB_IMG_READ_OPEN=16、POST_SLOT_EXEMPT=0)。repo は凍結まで動き続けるので、凍結のときに `grep -oE '[A-Z_]+:-[^}]*\}' scripts/deploy.sh | sort -u` で一覧を取り直すこと。14:02 時点の env.sh は JPEG_LOCAL_SLOTS=2 と jpegcheckd 稼働 (JC=1) で、bare の既定と違う。採用するなら既定に上げること。
    - pprof: deploy.sh は `ISUREAL_PPROF_ADDR=127.0.0.1:6060` を無条件に書く (127.0.0.1 だけで待ち受け)。final-check は WARN を出す。消すなら 16:30 までに deploy.sh を直す。残すならそう決めて、ここに書く。
    - ログ: `ISUREAL_LOG_LEVEL` は未設定で、既定は debug。ただし action log が出すのは guard 用の行と 5xx だけ。nginx の access_log (timed buffer=64k) は有効のまま。
    - 固めたら `scripts/batch.sh "final candidate"` で 1 回デプロイし、ベンチまで流す。
@@ -284,7 +284,7 @@ END: 2026-10-31 18:00 JST
 | eu/am 全日 | 書き込みの転送 1 RTT + d4 以降の asia1 の待ち、読みの WM 待ち 1 RTT | 転送の書き込みの 1 RTT 超えの削減と push の尾 (転送担当)、自分の投稿を地域内で確定 (REGION_POST 担当)、login/logout を地域内で確定 (LOCAL_SESSION、未ベンチ) |
 | 全地域 GP | asia: 投稿の列、eu/am: JC=1 + 枠 2 でほぼ 100% (15345) | 上と同じ |
 | 検証役 | Memories・export・画像 | MEMORIES_CACHE (既定)、画像の sendfile と export のメモリ化 (検証役担当) |
-- 凍結 (16:30) の時に: deploy.sh の `PPROF-127.0.0.1:6060` の既定を空に変える (今は担当が pprof を使うので on のまま)。
+- 凍結 (17:00) の時に: deploy.sh の `PPROF-127.0.0.1:6060` の既定を空に変える (今は担当が pprof を使うので on のまま)。
 - REGION_POST (eu/am の投稿を地域内で確定) は実装前に中止: asia の active 利用者の 10.7% (581/5433) が eu/am の友達を持つ → asia の feed/posts の GET に eu/am の wm 待ち (60〜75ms) が乗り、asia の 2.9 倍を壊す。eu/am 側も転送の書き込みが 9〜20% 残り p90 は RTT に縛られる。
 - 最終の既定に full_page_writes=off (PGFPW=1) は入れない (追試の再起動でページが壊れると PG が起動しない)。
 - PGCPU=1 (max_wal_size 12GB、checkpoint_timeout 20min) を採るなら、再起動試験で asia2 の再起動から PG が接続を受けるまでの秒数と、アプリの初回応答までを測る。

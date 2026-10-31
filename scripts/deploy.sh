@@ -59,6 +59,7 @@ PACE=${PACE:-0}   # 1 = asia1 shapes egress to europe/america /24s at PACE_RATE 
 CWND=${CWND:-0}   # 1 = per-region /24 routes with initcwnd 64 initrwnd 64 + tcp_slow_start_after_idle=0 on all app hosts; 0 = removed
 ASIA2_GOMAXPROCS=${ASIA2_GOMAXPROCS:-1}   # asia2 app (JPEG offload / forwarded work) GOMAXPROCS; 1 = leave the 2nd vCPU to PostgreSQL; "" = Go default (2)
 PGCPU=${PGCPU:-1}   # 1 = install etc/pg/primary-cpu.conf as asia2 conf.d/zz-cpu.conf (max_wal_size 12GB, jit off, ...) + pg_reload_conf; 0 = remove it
+IMG_HOTPART=${IMG_HOTPART:-1}   # 1 = new image IDs get a d0d0d0 tag; tagged IDs are read from the contest partition only (webapp/go/image_hotpart.go); 0 = old all-partition lookup
 PGFPW=${PGFPW:-0}   # 1 = install etc/pg/primary-fpw-off.conf (full_page_writes=off; torn-page corruption risk on a crash) ; 0 = remove it
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
@@ -81,6 +82,7 @@ for h in "${HOSTS[@]}"; do
       setenv() { grep -q "^$1=" /home/isucon/env.sh && sed -i "s|^$1=.*|$1=$2|" /home/isucon/env.sh || echo "$1=$2" >> /home/isucon/env.sh; }
       setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-192.168.4.10}"'
       setenv ISUREAL_NODE_NAME '"$h"'
+      setenv ISUREAL_IMG_HOTPART '"$IMG_HOTPART"'
       setenv PGSSLMODE '"${PGSSL:-allow}"'
       setenv ISUREAL_PPROF_ADDR 127.0.0.1:6060
       setenv ISUREAL_MEM '"$MEM"'
@@ -148,6 +150,7 @@ if true; then
   scp -q etc/pg/primary-fpw-off.conf asia2:/tmp/zz-fpw.conf
   "${SSH[@]}" asia2 'set -e
     pgconf() { if [ "$2" = 1 ]; then sudo install -m 644 -o postgres -g postgres "/tmp/$1" "/etc/postgresql/16/main/conf.d/$1"; else sudo rm -f "/etc/postgresql/16/main/conf.d/$1"; fi; }
+    grep -q "^ISUREAL_IMG_HOTPART=" /home/isucon/env.sh && sed -i "s|^ISUREAL_IMG_HOTPART=.*|ISUREAL_IMG_HOTPART='"$IMG_HOTPART"'|" /home/isucon/env.sh || echo "ISUREAL_IMG_HOTPART='"$IMG_HOTPART"'" >> /home/isucon/env.sh
     pgconf zz-cpu.conf '"$PGCPU"'; pgconf zz-fpw.conf '"$PGFPW"'
     sudo -u postgres psql -XAtqc "select pg_reload_conf()" >/dev/null
     if [ -n "'"$ASIA2_GOMAXPROCS"'" ]; then grep -q "^GOMAXPROCS=" /home/isucon/env.sh && sed -i "s|^GOMAXPROCS=.*|GOMAXPROCS='"$ASIA2_GOMAXPROCS"'|" /home/isucon/env.sh || echo "GOMAXPROCS='"$ASIA2_GOMAXPROCS"'" >> /home/isucon/env.sh; else sed -i "/^GOMAXPROCS=/d" /home/isucon/env.sh; fi

@@ -118,6 +118,8 @@ END: 2026-10-31 18:00 JST
 - メモリに持つもの: 全ユーザー/有効セッション/関係/保留申請/全投稿期間/ホット投稿 (開いている期間の最小 local_date 以降) とその有効コメント・RealMoji。ホット外は終了済み期間のみ → DB へフォールバック。Memories/export/SSE は DB のまま。
 - ロード前・initialize 中・poll 失敗時は not-ready → 全て元の DB 経路。initialize は init.sh → TRUNCATE mem_changelog → 再ロード → peer 再構築完了待ち。
 - 分散モード: asia1 に `ISUREAL_MEM_PEERS=192.168.2.10:8080,192.168.3.10:8080`、europe1/america1 に `ISUREAL_MEM=1 ISUREAL_MEM_PUMP=192.168.1.10:8080` (ISUREAL_FWD_SECRET 共有, /internal/mem/* は 192.168.x + secret のみ)。peer は DB を読まず、pump のダンプ (gzip JSON) + 連番バッチで同期。欠番は pump のバッファから pull、epoch 変化で再構築。peer は heartbeat (250ms) が lease 1s 途絶えると自発的に DB 経路 (pump の push タイムアウト 3s > lease)。
+- push のパイプライン化 (12:10〜): peer ごとに未 ack の push を最大 4 本並列に送る (heartbeat は送信中でないときだけ)。publish 時に即送信するので、書き込みのバリア待ちは「自分のサイクルの poll + 1 RTT」。peer は seq 順に適用し、先行分が未着なら最大 50ms 待ってから従来どおり pump のバッファから pull (失敗なら invalidate)。
+- lease 規則: push に pump の送信時刻を載せ、peer の lease は min(受信時刻, 送信時刻) + 1s。pump は peer ごとに「lease を与えうる push の最終送信時刻」+ 1s + 時計ずれ 200ms を過ぎたら ack 無しでも先に進む (ack 受信時刻ベースより厳密: 応答待ちの push で延びた lease も上界に入る)。down の peer への送信は probe (lease を延ばさない) にして、復帰を確認してから lease を与える。前提: ホスト間の時計ずれ < 200ms (chrony)。
 - 撤去: 各テーブルの `DROP TRIGGER mem_changelog ON <tbl>`、`DROP TABLE mem_changelog`。フラグ off でもトリガーは残る (1 行 insert/変更行、負荷小)。
 - 検証: ローカル PG (primary のダンプ, 画像除く) で `go test -tags memdiff -run TestMemDiff` (DB 経路 / pump / peer の GET 応答を 1500 ステップの書き込み列で比較、差分 0)。
 ## 他チーム考察 (10:55 時点のリーダーボード)
@@ -176,3 +178,5 @@ END: 2026-10-31 18:00 JST
 - 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
 - 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。
 | 7851 | - | **111842** | LOCALIMG=1 (eu/am の画像を自地域に fsync 保存、asia1 はメタデータのみ、PG へ非同期 flush)。asia 742 / eu 175 / am 95、GP 545/161/84。flush_err 0。409 post_slot_unavailable が 1 件 (要観察) |
+| 8010 | - | 84958 | FRONT=1 (asia1 nginx 撤去、LOCALIMG=0)。93068 の構成より低い → 不採用 (既定 FRONT=0)。旧 lease のため「見えるべき」4 件 |
+| 8178 | - | 0 FAIL | 既定 (LOCALIMG=1) の再現: 整合性違反「見えてはいけない投稿」(旧 lease の穴) → lease を送信時刻で上限する修正を投入 |

@@ -14,7 +14,7 @@ import (
 func wmTestStore() *memStore {
 	m := &memStore{d: newMemData(), useLease: true}
 	m.ready.Store(true)
-	m.extendLease()
+	m.extendLeaseFrom(0)
 	m.w.pumpWM.Store(true)
 	return m
 }
@@ -193,6 +193,7 @@ func TestMemReadWaitMiddleware(t *testing.T) {
 func wmTestReceiver(m *memStore, epoch string, seq int64) *memReceiver {
 	r := &memReceiver{m: m, pumpAddr: "127.0.0.1:1", epoch: epoch, seq: seq}
 	r.rsCond = sync.NewCond(&r.rsMu)
+	r.seqCond = sync.NewCond(&r.mu)
 	return r
 }
 
@@ -264,7 +265,7 @@ func TestMemWaitAckedSkipsWMPeers(t *testing.T) {
 	old := memWatermark
 	memWatermark = true
 	t.Cleanup(func() { memWatermark = old })
-	wmPeer := &memPeer{addr: "127.0.0.1:1", lastAckAt: time.Now(), wmMode: true}
+	wmPeer := &memPeer{addr: "127.0.0.1:1", lastGrantAt: time.Now(), wmMode: true}
 	ps := &memPeers{epoch: "e1", peers: []*memPeer{wmPeer}}
 	ps.cond = sync.NewCond(&ps.mu)
 	ps.seq = 3
@@ -273,7 +274,7 @@ func TestMemWaitAckedSkipsWMPeers(t *testing.T) {
 	if el := time.Since(start); el > 50*time.Millisecond {
 		t.Fatalf("waitAcked on wm peer took %v", el)
 	}
-	ps.peers = append(ps.peers, &memPeer{addr: "127.0.0.1:2", lastAckAt: time.Now()})
+	ps.peers = append(ps.peers, &memPeer{addr: "127.0.0.1:2", lastGrantAt: time.Now()})
 	start = time.Now()
 	ps.waitAcked()
 	if el := time.Since(start); el < memLease {
@@ -281,7 +282,7 @@ func TestMemWaitAckedSkipsWMPeers(t *testing.T) {
 	}
 	// フラグ off なら wm 申告があっても待つ (既定の挙動は不変)
 	memWatermark = false
-	wmPeer.lastAckAt = time.Now()
+	wmPeer.lastGrantAt = time.Now()
 	ps.peers = ps.peers[:1]
 	start = time.Now()
 	ps.waitAcked()

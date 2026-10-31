@@ -56,7 +56,7 @@ func getAdminSessionFromHeader(c *echo.Context, db *sqlx.DB) (*AdminSession, err
 func AdminSessionMiddleware(h *HandlerContext, authRequired bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			session, err := getAdminSessionFromHeader(c, h.Reader())
+			session, err := getAdminSessionFromHeader(c, h.adminDB())
 			if err != nil {
 				return err
 			}
@@ -112,4 +112,12 @@ func InvalidateAdminSession(db *sqlx.DB, administratorID, tokenHash string) erro
 		return fmt.Errorf("failed to invalidate admin session: %w", err)
 	}
 	return nil
+}
+
+// adminDB: 管理者用の専用プール (未設定ならリクエスト用の primary)。primary なので RYW も保たれる。
+func (h *HandlerContext) adminDB() *sqlx.DB {
+	if h.Admin != nil {
+		return h.Admin
+	}
+	return h.DB
 }

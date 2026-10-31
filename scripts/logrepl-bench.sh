@@ -34,7 +34,7 @@ for h in asia1 europe1 america1; do echo "== $h"; ssh $h 'sudo journalctl -u isu
 ssh asia2 'sudo journalctl -u pg-logrepl-watchdog --since "-6 min" --no-pager -o cat | tail -8 | cut -c1-200' </dev/null
 [[ ${KEEP:-0} == 1 ]] && { echo "KEEP=1: leaving LOGREPL on"; exit 0; }
 echo "== revert"
-ssh asia2 'echo off | sudo tee /etc/postgresql/16/main/pg-logrepl.mode >/dev/null; sleep 4; sudo systemctl disable --now pg-logrepl-watchdog; sudo rm -f /etc/postgresql/16/main/conf.d/zz-zlogrepl.conf; sudo systemctl enable --now pg-sync-watchdog 2>/dev/null || true' </dev/null
+ssh asia2 'echo off | sudo tee /etc/postgresql/16/main/pg-logrepl.mode >/dev/null; sleep 4; sudo systemctl disable --now pg-logrepl-watchdog; sudo rm -f /etc/postgresql/16/main/conf.d/zz-zlogrepl.conf' </dev/null
 ssh asia2 "sudo -u postgres psql -AtX -c 'ALTER SYSTEM RESET synchronous_standby_names' -c 'select pg_reload_conf()'" </dev/null
 scripts/deploy.sh 2>&1 | tail -2
 sleep 3

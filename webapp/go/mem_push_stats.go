@@ -73,6 +73,7 @@ type memPushStatsData struct {
 	// pump
 	n, bytes, wire, batches, changes, maxBytes int
 	ack                                        memDurSet
+	fetch, papply, queue                       memDurSet // poll の changelog 読み / asia1 の applyBatch / publish → 送信 (並列上限の順番待ち)
 	// peer
 	rn, pulls             int
 	net, lock, apply, tot memDurSet
@@ -108,6 +109,29 @@ func (s *memPushStatsT) recordSend(bytes, wire int, req *memPushRequest, ack tim
 	s.mu.Unlock()
 }
 
+// recordPoll: pump の poll 1 回の内訳 (MEM_PUSH_STATS)。
+func (s *memPushStatsT) recordPoll(fetch, apply time.Duration) {
+	if !memPushStatsOn {
+		return
+	}
+	s.start()
+	s.mu.Lock()
+	s.fetch.add(fetch)
+	s.papply.add(apply)
+	s.mu.Unlock()
+}
+
+// recordQueue: バッチが publish されてから push として送り出されるまで (kick 時)。
+func (s *memPushStatsT) recordQueue(d time.Duration) {
+	if !memPushStatsOn {
+		return
+	}
+	s.start()
+	s.mu.Lock()
+	s.queue.add(d)
+	s.mu.Unlock()
+}
+
 func (s *memPushStatsT) recordRecv(sentAt int64, recv, locked, done time.Time, pulls int) {
 	if !memPushStatsOn {
 		return
@@ -137,7 +161,15 @@ func (s *memPushStatsT) loop() {
 		if cp.n > 0 {
 			a := []any{"n", cp.n, "bytesAvg", cp.bytes / cp.n, "bytesMax", cp.maxBytes, "wireAvg", cp.wire / cp.n,
 				"batchesAvg", float64(cp.batches) / float64(cp.n), "changesAvg", float64(cp.changes) / float64(cp.n)}
-			slog.Info("mem: push stats (pump)", append(a, cp.ack.attrs("ack")...)...)
+			a = append(a, cp.ack.attrs("ack")...)
+			a = append(a, cp.queue.attrs("queue")...)
+			slog.Info("mem: push stats (pump)", a...)
+		}
+		if len(cp.fetch.d) > 0 {
+			a := []any{"n", len(cp.fetch.d)}
+			a = append(a, cp.fetch.attrs("fetch")...)
+			a = append(a, cp.papply.attrs("apply")...)
+			slog.Info("mem: poll stats (pump)", a...)
 		}
 		if cp.rn > 0 {
 			a := []any{"n", cp.rn, "pulls", cp.pulls}

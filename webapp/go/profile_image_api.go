@@ -47,7 +47,16 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		imageID := newImageID(ctx)
 		external := externalImage(c, userID)
+		asiaKept, committed := false, false
+		defer func() {
+			if asiaKept && !committed {
+				asiaLocalImgDrop(imageID)
+			}
+		}()
 		if !external {
+			asiaKept = asiaLocalImgKeep(ctx, imageID, userID, data)
+		}
+		if !external && !asiaKept {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects(id,owner_user_id,data,media_type) VALUES ($1,$2,$3,'image/jpeg')`, imageID, userID, data); err != nil {
 				return err
 			}
@@ -63,6 +72,7 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+		committed = true
 		if !external {
 			replicateImage(imageID, userID, "image/jpeg", data)
 		}

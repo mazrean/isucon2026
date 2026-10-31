@@ -109,7 +109,13 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		// 同じ tx の中なので、409 などで rollback すれば画像の行も消える (挙動は従来と同じ)。
 		imageID := newImageID(ctx)
 		imageInserted := false
-		if postWindowFast && localImgFromCtx(ctx) == nil {
+		asiaKept, committed := false, false
+		defer func() {
+			if asiaKept && !committed {
+				asiaLocalImgDrop(imageID)
+			}
+		}()
+		if postWindowFast && localImgFromCtx(ctx) == nil && !asiaLocalImgOn {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, time.Now().UTC()); err != nil {
 				return err
 			}
@@ -153,6 +159,9 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		external := externalImage(c, userID)
 		if !external && !imageInserted {
+			asiaKept = asiaLocalImgKeep(ctx, imageID, userID, imageData)
+		}
+		if !external && !imageInserted && !asiaKept {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt); err != nil {
 				return err
 			}
@@ -173,6 +182,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+		committed = true
 		if !external {
 			replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
 		}

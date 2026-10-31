@@ -24,6 +24,7 @@ func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 			h.Store.syncPG()
 		}
 		localImgPurgePeers(c.Request().Context())
+		asiaLocalImgPurge()
 		imgCachePurgePeers(c.Request().Context())
 		cmd := exec.Command("../sql/init.sh")
 		cmd.Stdout = os.Stdout

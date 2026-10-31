@@ -429,6 +429,9 @@ func newImageID(ctx context.Context) string {
 	if m := localImgFromCtx(ctx); m != nil {
 		return m.id
 	}
+	if asiaLocalImgOn {
+		return newAsiaLocalImageID()
+	}
 	return uuid.NewString()
 }
 
@@ -447,6 +450,10 @@ func externalImage(c *echo.Context, owner string) bool {
 // localImgLoad is consulted by imageStore.load: own store first (before the
 // DB), then — after a DB miss — the origin.
 func localImgOwn(id string) *imageObject {
+	if asiaLocalImgOn && isAsiaLocalID(id) {
+		obj, _ := asiaStore.read(id)
+		return obj
+	}
 	if !localImgOn || localImgRegion == "" || localImgOriginOf(id) != localImgRegion {
 		return nil
 	}
@@ -457,13 +464,23 @@ func localImgOwn(id string) *imageObject {
 // localImgPull: (nil, nil) = the origin does not have it; (nil, err) = the
 // origin could not be reached (the caller answers 5xx, never 403).
 func localImgPull(ctx context.Context, id string) (*imageObject, error) {
-	if !localImgOn {
-		return nil, nil
-	}
-	origin := localImgOriginOf(id)
-	addr := localImgOrigins[origin]
-	if origin == "" || origin == localImgRegion || addr == "" {
-		return nil, nil
+	var addr string
+	if isAsiaLocalID(id) {
+		// asia1-origin (ISUREAL_ASIA_LOCALIMG): never in PostgreSQL. Tried on
+		// every other host, so the flag only has to be set on asia1.
+		if asiaLocalImgOn || forwardSecret == "" || asiaLocalImgAddr == "" {
+			return nil, nil
+		}
+		addr = asiaLocalImgAddr
+	} else {
+		if !localImgOn {
+			return nil, nil
+		}
+		origin := localImgOriginOf(id)
+		addr = localImgOrigins[origin]
+		if origin == "" || origin == localImgRegion || addr == "" {
+			return nil, nil
+		}
 	}
 	var lastErr error
 	for attempt := 0; attempt < 4; attempt++ {
@@ -547,7 +564,23 @@ func localImgPurgePeers(ctx context.Context) {
 // registerLocalImg installs the routes, the asia1-side header check and, on
 // an origin host, the flusher and the journal replay.
 func registerLocalImg(e *echo.Echo, h *HandlerContext) {
+	if asiaLocalImgOn && (forwardSecret == "" || h.Config.Region != "asia") {
+		asiaLocalImgOn = false // pullers need the secret; only asia1 commits locally
+	}
+	if asiaLocalImgOn {
+		os.MkdirAll(asiaStore.dir, 0o755)
+		go func() {
+			for range time.Tick(10 * time.Second) {
+				if n := asiaLocalImgN.Swap(0); n > 0 {
+					slog.Info("asia localimg", "stored", n)
+				}
+			}
+		}()
+	}
 	if !localImgOn || !prevalidateOn || forwardSecret == "" {
+		if asiaLocalImgOn {
+			registerLocalImgRoutes(e)
+		}
 		return
 	}
 	if _, ok := localImgTags[h.Config.Region]; ok && prevalidateTarget != "" {
@@ -590,7 +623,12 @@ func registerLocalImgRoutes(e *echo.Echo) {
 		if !memAuthOK(c) {
 			return c.NoContent(http.StatusForbidden)
 		}
-		obj, _ := localStore.read(c.Param("id"))
+		var obj *imageObject
+		if id := c.Param("id"); isAsiaLocalID(id) {
+			obj, _ = asiaStore.read(id)
+		} else {
+			obj, _ = localStore.read(id)
+		}
 		if obj == nil {
 			return c.NoContent(http.StatusNotFound)
 		}
@@ -605,4 +643,67 @@ func registerLocalImgRoutes(e *echo.Echo) {
 		localStore.purge()
 		return c.NoContent(http.StatusNoContent)
 	})
+}
+
+// ---------- asia1 as an origin (ISUREAL_ASIA_LOCALIMG=1, asia1 only) ----------
+//
+// asia1 keeps the bytes of the images it commits itself (posts, RealMoji,
+// profile images): data + meta are fsynced into asiaStore before the commit,
+// and image_objects gets no row at all (an empty-data row would be served as
+// a zero-byte image). No flusher: the bytes never reach PostgreSQL, so the
+// bytea no longer crosses asia1 -> asia2. The push to eu/am (replicateImage)
+// is unchanged. Other hosts (eu/am, asia2 for export) miss in the DB and pull
+// from asia1 (/internal/localimg/:id), like the eu/am origins. initialize
+// purges the store; after a restart read() serves it from disk.
+
+const asiaLocalImgTag = "a51a51"
+
+var (
+	asiaLocalImgOn   = os.Getenv("ISUREAL_ASIA_LOCALIMG") == "1"
+	asiaLocalImgAddr = envOrDefault("ISUREAL_ASIA_LOCALIMG_ORIGIN", "192.168.1.10:8080")
+	asiaStore        = &localImgStore{dir: envOrDefault("ISUREAL_ASIA_LOCALIMG_DIR", "/home/isucon/asialocalimg"), queue: make(chan localImgJob, 1)}
+	asiaLocalImgN    atomic.Int64
+)
+
+func isAsiaLocalID(id string) bool { return len(id) == 36 && strings.HasSuffix(id, asiaLocalImgTag) }
+
+func newAsiaLocalImageID() string {
+	id := uuid.NewString()
+	return id[:len(id)-6] + asiaLocalImgTag
+}
+
+// asiaLocalImgKeep stores the image on asia1 (data + meta, fsynced). true =
+// the caller must not INSERT image_objects. On a write error it returns false
+// and the caller INSERTs as before (the tagged ID is then served from PG).
+func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
+	if !asiaLocalImgOn || localImgFromCtx(ctx) != nil || !isAsiaLocalID(id) || owner == "" || len(data) == 0 {
+		return false
+	}
+	asiaStore.mu.RLock() // purge (initialize) takes the write lock
+	defer asiaStore.mu.RUnlock()
+	if err := writeFileSync(asiaStore.p("data", id), data); err != nil {
+		slog.Warn("asia localimg data", "error", err)
+		return false
+	}
+	meta := owner + "\n" + strconv.FormatInt(time.Now().UnixNano(), 10) + "\n"
+	if err := writeFileSync(asiaStore.p("meta", id), []byte(meta)); err != nil {
+		slog.Warn("asia localimg meta", "error", err)
+		os.Remove(asiaStore.p("data", id))
+		return false
+	}
+	asiaLocalImgN.Add(1)
+	return true
+}
+
+// asiaLocalImgDrop removes a kept image whose transaction did not commit.
+func asiaLocalImgDrop(id string) {
+	os.Remove(asiaStore.p("meta", id))
+	os.Remove(asiaStore.p("data", id))
+}
+
+// asiaLocalImgPurge is called by initialize on asia1 before the DB reset.
+func asiaLocalImgPurge() {
+	if asiaLocalImgOn {
+		asiaStore.purge()
+	}
 }

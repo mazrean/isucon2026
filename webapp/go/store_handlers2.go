@@ -68,7 +68,7 @@ func (e *storeEngine) putProfileImage(c *echo.Context, userID string, data []byt
 		old := u.ProfileImageID
 		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, userID)
-		if !external {
+		if !external && !asiaLocalImgKeep(c.Request().Context(), imageID, userID, data) {
 			t.execImage(imageID, `INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES ($1,$2,$3,'image/jpeg',$4)`, imageID, userID, data, t.now)
 		}
 		t.exec(`UPDATE users SET profile_image_id=$2,updated_at=$3 WHERE id=$1`, userID, imageID, t.now)

@@ -14,6 +14,7 @@ SECRET_FILE=${FWD_SECRET_FILE:-$HOME/.config/isucon2026/fwd_secret}
 if [[ ! -s $SECRET_FILE ]]; then mkdir -p "${SECRET_FILE%/*}"; head -c 24 /dev/urandom | base64 | tr -d '/+=' >| "$SECRET_FILE"; chmod 600 "$SECRET_FILE"; fi
 SECRET=$(cat "$SECRET_FILE")
 FWD=${FWD:-1}   # 1 = europe1/america1 forward non-GET /api/ to asia1
+FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.10, asia2=192.168.4.10)
 FWD_GET=${FWD_GET:-1}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
@@ -22,7 +23,7 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/app/nginx.conf "$h:/tmp/nginx.conf"
     scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
     r=$(region_of "$h"); f=$FWD; g=$FWD_GET; [[ $h == asia1 ]] && f=0 && g=0
-    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
+    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf
@@ -40,5 +41,19 @@ for h in "${HOSTS[@]}"; do
       sha1sum /home/isucon/webapp/go/isureal | cut -c1-12' </dev/null | sed "s/^/$h: /"
   ) &
 done
+if [[ $FWD_TARGET == 192.168.4.10 ]]; then
+  # app on asia2 (same host as PostgreSQL) serves forwarded requests; no nginx there
+  scp -q "$OUT/isureal" asia2:/tmp/isureal.new
+  scp -q etc/systemd/isureal-go.service.d/20-stop.conf asia2:/tmp/20-stop.conf
+  "${SSH[@]}" asia2 'set -e
+    grep -q "^ISUREAL_FWD_SECRET=" /home/isucon/env.sh && sed -i "s|^ISUREAL_FWD_SECRET=.*|ISUREAL_FWD_SECRET='"$SECRET"'|" /home/isucon/env.sh || echo "ISUREAL_FWD_SECRET='"$SECRET"'" >> /home/isucon/env.sh
+    sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
+    install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
+    sudo systemctl enable isureal-go >/dev/null 2>&1; sudo systemctl restart isureal-go
+    for i in $(seq 100); do c=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/posting-window/current); [ "$c" != 000 ] && break; sleep 0.2; done
+    sha1sum /home/isucon/webapp/go/isureal | cut -c1-12' </dev/null | sed "s/^/asia2: /" &
+else
+  "${SSH[@]}" asia2 'systemctl is-enabled isureal-go >/dev/null 2>&1 && { sudo systemctl disable --now isureal-go; echo "asia2: app disabled"; } || true' </dev/null &
+fi
 wait
 rm -rf "$OUT"

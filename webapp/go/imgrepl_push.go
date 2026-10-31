@@ -45,7 +45,12 @@ type imgReplicator struct {
 	jobs    chan imgReplJob
 	client  *http.Client
 	dropped atomic.Int64
+	queued  atomic.Int64 // bytes referenced by queued jobs (kept out of the GC'd heap budget)
 }
+
+// imgReplMaxQueuedBytes bounds the memory pinned by unsent images; beyond it new
+// jobs are dropped and peers fall back to fetching on a cache miss.
+const imgReplMaxQueuedBytes = 128 << 20
 
 var imageReplicator = newImgReplicator(os.Getenv("ISUREAL_IMG_PEERS"), forwardSecret)
 
@@ -94,9 +99,18 @@ func (r *imgReplicator) enqueue(id string, obj *imageObject) {
 }
 
 func (r *imgReplicator) submit(j imgReplJob) {
+	n := int64(len(j.obj.Data))
+	if r.queued.Add(n) > imgReplMaxQueuedBytes {
+		r.queued.Add(-n)
+		if d := r.dropped.Add(1); d%100 == 1 {
+			log.Printf("imgrepl: queue over %d bytes, dropped %d", imgReplMaxQueuedBytes, d)
+		}
+		return
+	}
 	select {
 	case r.jobs <- j:
 	default:
+		r.queued.Add(-n)
 		if n := r.dropped.Add(1); n%100 == 1 {
 			log.Printf("imgrepl: queue full, dropped %d", n)
 		}
@@ -105,6 +119,7 @@ func (r *imgReplicator) submit(j imgReplJob) {
 
 func (r *imgReplicator) worker() {
 	for j := range r.jobs {
+		r.queued.Add(-int64(len(j.obj.Data)))
 		if err := r.send(j); err != nil {
 			j.attempt++
 			if j.attempt >= imgReplMaxAttempts {

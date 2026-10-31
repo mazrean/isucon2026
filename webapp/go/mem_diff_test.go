@@ -19,7 +19,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -104,6 +106,24 @@ func TestMemDiff(t *testing.T) {
 	os.Setenv("ISUREAL_MEM_ROLE", "peer")
 	os.Setenv("ISUREAL_MEM_PUMP", sb.Listener.Addr().String())
 	sc.Config.Handler = NewServer(config)
+	// MD_PEER_DELAY_MS: pump -> peer の push に RTT 相当の遅延を入れる (eu/am の 100ms を模擬)
+	if ms, _ := strconv.Atoi(os.Getenv("MD_PEER_DELAY_MS")); ms > 0 {
+		inner := sc.Config.Handler
+		sc.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/internal/mem/push") {
+				time.Sleep(time.Duration(ms) * time.Millisecond)
+			}
+			inner.ServeHTTP(w, r)
+		})
+	}
+	var barrierMu sync.Mutex
+	var barrierSamples []time.Duration
+	memBarrierObserve = func(d time.Duration) {
+		barrierMu.Lock()
+		barrierSamples = append(barrierSamples, d)
+		barrierMu.Unlock()
+	}
+	defer func() { memBarrierObserve = nil }()
 	os.Unsetenv("ISUREAL_MEM_ROLE")
 	os.Unsetenv("ISUREAL_MEM_PUMP")
 	sb.Start()
@@ -453,6 +473,10 @@ func TestMemDiff(t *testing.T) {
 	}
 	check(1501)
 	t.Logf("posts=%d comments=%d realmojis=%d mismatches=%d notOn=%d", len(postIDs), len(commentIDs), len(realmojiIDs), mismatches, notOn)
+	barrierMu.Lock()
+	p50, p90, pmax := memDurPercentiles(barrierSamples)
+	t.Logf("barrier n=%d p50=%v p90=%v max=%v lease_skips=%d", len(barrierSamples), p50, p90, pmax, memLeaseSkipsTotal.Load())
+	barrierMu.Unlock()
 }
 
 func trunc(b []byte) string {

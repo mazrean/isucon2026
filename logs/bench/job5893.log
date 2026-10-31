@@ -1,0 +1,55 @@
+time=2026-10-31T02:55:00.919Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:55:04.126Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:55:06.901Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T02:55:10.009Z level=INFO msg="asia 2 日目: 46 人"
+time=2026-10-31T02:55:12.906Z level=INFO msg="europe 2 日目: 9 人"
+time=2026-10-31T02:55:15.891Z level=INFO msg="user moved" user=leoha.5274 from=asia to=europe
+time=2026-10-31T02:55:16.006Z level=INFO msg="america 2 日目: 9 人"
+time=2026-10-31T02:55:18.970Z level=INFO msg="asia 3 日目: 111 人"
+time=2026-10-31T02:55:21.997Z level=INFO msg="europe 3 日目: 17 人"
+time=2026-10-31T02:55:24.919Z level=INFO msg="america 3 日目: 17 人"
+time=2026-10-31T02:55:26.552Z level=INFO msg="user moved" user=leoha.5274 from=europe to=america
+time=2026-10-31T02:55:28.031Z level=INFO msg="asia 4 日目: 257 人"
+time=2026-10-31T02:55:31.289Z level=INFO msg="europe 4 日目: 27 人"
+time=2026-10-31T02:55:34.309Z level=INFO msg="america 4 日目: 32 人"
+time=2026-10-31T02:55:37.250Z level=INFO msg="user moved" user=tovinte_6630 from=asia to=europe
+time=2026-10-31T02:55:37.564Z level=INFO msg="asia 5 日目: 464 人"
+time=2026-10-31T02:55:40.302Z level=INFO msg="user moved" user=leoha.5274 from=america to=asia
+time=2026-10-31T02:55:42.495Z level=INFO msg="europe 5 日目: 28 人"
+time=2026-10-31T02:55:43.250Z level=INFO msg="america 5 日目: 31 人"
+time=2026-10-31T02:55:52.065Z level=INFO msg="europe 最終日（グランプリ）: 27 人"
+time=2026-10-31T02:55:52.065Z level=INFO msg="america 最終日（グランプリ）: 30 人"
+time=2026-10-31T02:55:52.176Z level=INFO msg="asia 最終日（グランプリ）: 464 人"
+time=2026-10-31T02:56:00.649Z level=INFO msg="グランプリ: アジア 445 人, ヨーロッパ 23 人, アメリカ 23 人"
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "整合性の違反: benka5364: フィード friends: benka5364 に見えてはいけない投稿 1e2e9212-7e58-4c43-9a4d-4b6d36b0d8c7 が返りました",
+    "benka5364: フィード friends: benka5364 に見えてはいけない投稿 1e2e9212-7e58-4c43-9a4d-4b6d36b0d8c7 が返りました",
+    "benka5364: フィード friends: benka5364 に見えてはいけない投稿 1e2e9212-7e58-4c43-9a4d-4b6d36b0d8c7 が返りました",
+    "maxnodan-5033: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）",
+    "rukevin-5916: フィード friends: rukevin-5916 に見えるべき投稿 55ffa3bd-a906-4f91-942a-67b6d6c7685c がありません",
+    "rukevin-5916: フィード friends: rukevin-5916 に見えるべき投稿 6bb46ab9-3c88-4845-861d-7691fe32ab9a がありません",
+    "rukevin-5916: フィード friends: rukevin-5916 に見えるべき投稿 103d869f-edb2-47d4-b4fb-7449f4d0eed1 がありません",
+    "rukevin-5916: フィード friends: rukevin-5916 に見えるべき投稿 d892bb9f-a249-4055-ba5e-144d7701812d がありません",
+    "sutane5919: フィード friends: sutane5919 に見えるべき投稿 6bb46ab9-3c88-4845-861d-7691fe32ab9a がありません",
+    "sutane5919: フィード friends: sutane5919 に見えるべき投稿 d4be14a4-4b94-4d70-96cc-3dd4b78ac9e1 がありません",
+    "sutane5919: フィード friends: sutane5919 に見えるべき投稿 8d41ad28-0f95-4bbc-bcba-fc4c76ca239c がありません",
+    "tolia.5131: フィード friends: tolia.5131 に見えるべき投稿 4a71e0bd-23b5-40cd-8aa3-fcaee89642be がありません",
+    "ulnueva.7189: フィード friends: ulnueva.7189 に見えるべき投稿 05ab882a-433d-4b2e-b16f-75bad95f2b16 がありません",
+    "ulnueva.7189: フィード friends: ulnueva.7189 に見えるべき投稿 6fcdc486-2e9e-470d-a005-a670ee18c5a8 がありません",
+    "hifumax7140: フィード friends: hifumax7140 に見えるべき投稿 9c9add86-27e9-4e8d-bdd7-d5d0abbc9287 がありません",
+    "hifumax7140: フィード friends: hifumax7140 に見えるべき投稿 15e4f02d-bacd-49b1-bc69-df90aa73a55c がありません",
+    "rito5909: フィード friends: rito5909 に見えるべき投稿 102ede95-1ec6-40bf-b220-b036fe470e2b がありません",
+    "tolia.5131: 投稿したのに今日の投稿が 404 になりました",
+    "benka5364: フィード friends: 投稿 e3753b65-0420-4505-b6d7-1cfb87558219 の公開範囲が違います",
+    "kuyaka5944: フィード friends: kuyaka5944 に見えるべき投稿 d4be14a4-4b94-4d70-96cc-3dd4b78ac9e1 がありません",
+    "kuyaka5944: フィード friends: kuyaka5944 に見えるべき投稿 a20de1cd-459b-48f1-920e-6c85dcae74be がありません",
+    "kuyaka5944: フィード friends: kuyaka5944 に見えるべき投稿 0dea1faf-3633-4df1-952f-8d542fde3f36 がありません",
+    "kuyaka5944: フィード friends: kuyaka5944 に見えるべき投稿 a4165c67-aa36-48b6-8c7d-a365cb2dfdd1 がありません"
+  ]
+}
+
+reason= 整合性の違反
+job=5893 state=4 pass=false スコア=0 種別エラー数=map[]

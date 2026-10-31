@@ -3,6 +3,7 @@ package isureal
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"sort"
 	"sync"
@@ -127,8 +128,19 @@ func (m *memStore) on() bool {
 	return !m.useLease || time.Now().UnixNano() < m.leaseUntil.Load()
 }
 
-func (m *memStore) extendLease() {
-	m.leaseUntil.Store(time.Now().Add(memLease).UnixNano())
+// extendLeaseFrom: lease を min(今, pump の送信時刻) + memLease まで延ばす (縮めない)。
+func (m *memStore) extendLeaseFrom(sentAt int64) {
+	base := time.Now().UnixNano()
+	if sentAt > 0 && sentAt < base {
+		base = sentAt
+	}
+	until := base + int64(memLease)
+	for {
+		cur := m.leaseUntil.Load()
+		if until <= cur || m.leaseUntil.CompareAndSwap(cur, until) {
+			return
+		}
+	}
 }
 
 // ---- row types (shared by primary load, changelog jsonb and peer dump) ----
@@ -398,7 +410,12 @@ func (d *memData) applyPost(r memPostRow) {
 	}
 	w := d.windows[r.PostingWindowID]
 	if w == nil {
-		return
+		// window row not applied yet: keep the post on a placeholder that
+		// applyWindow fills in later, instead of dropping it for good
+		w = &memWindow{}
+		w.ID = r.PostingWindowID
+		d.windows[r.PostingWindowID] = w
+		slog.Warn("mem: post before its window", "post", r.ID, "window", r.PostingWindowID)
 	}
 	author := d.user(r.AuthorID)
 	p := &memPost{Post: post, deleted: r.DeletedAt != nil, author: author, window: w}

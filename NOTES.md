@@ -118,6 +118,8 @@ END: 2026-10-31 18:00 JST
 - メモリに持つもの: 全ユーザー/有効セッション/関係/保留申請/全投稿期間/ホット投稿 (開いている期間の最小 local_date 以降) とその有効コメント・RealMoji。ホット外は終了済み期間のみ → DB へフォールバック。Memories/export/SSE は DB のまま。
 - ロード前・initialize 中・poll 失敗時は not-ready → 全て元の DB 経路。initialize は init.sh → TRUNCATE mem_changelog → 再ロード → peer 再構築完了待ち。
 - 分散モード: asia1 に `ISUREAL_MEM_PEERS=192.168.2.10:8080,192.168.3.10:8080`、europe1/america1 に `ISUREAL_MEM=1 ISUREAL_MEM_PUMP=192.168.1.10:8080` (ISUREAL_FWD_SECRET 共有, /internal/mem/* は 192.168.x + secret のみ)。peer は DB を読まず、pump のダンプ (gzip JSON) + 連番バッチで同期。欠番は pump のバッファから pull、epoch 変化で再構築。peer は heartbeat (250ms) が lease 1s 途絶えると自発的に DB 経路 (pump の push タイムアウト 3s > lease)。
+- push のパイプライン化 (12:10〜): peer ごとに未 ack の push を最大 4 本並列に送る (heartbeat は送信中でないときだけ)。publish 時に即送信するので、書き込みのバリア待ちは「自分のサイクルの poll + 1 RTT」。peer は seq 順に適用し、先行分が未着なら最大 50ms 待ってから従来どおり pump のバッファから pull (失敗なら invalidate)。
+- lease 規則: push に pump の送信時刻を載せ、peer の lease は min(受信時刻, 送信時刻) + 1s。pump は peer ごとに「lease を与えうる push の最終送信時刻」+ 1s + 時計ずれ 200ms を過ぎたら ack 無しでも先に進む (ack 受信時刻ベースより厳密: 応答待ちの push で延びた lease も上界に入る)。down の peer への送信は probe (lease を延ばさない) にして、復帰を確認してから lease を与える。前提: ホスト間の時計ずれ < 200ms (chrony)。
 - 撤去: 各テーブルの `DROP TRIGGER mem_changelog ON <tbl>`、`DROP TABLE mem_changelog`。フラグ off でもトリガーは残る (1 行 insert/変更行、負荷小)。
 - 検証: ローカル PG (primary のダンプ, 画像除く) で `go test -tags memdiff -run TestMemDiff` (DB 経路 / pump / peer の GET 応答を 1500 ステップの書き込み列で比較、差分 0)。
 ## 他チーム考察 (10:55 時点のリーダーボード)
@@ -154,3 +156,27 @@ END: 2026-10-31 18:00 JST
 | 3724 | 6973095 | 38515 | JPEG を asia2 へ (cap2)。GP 全滅: mem poll がプール枯渇でタイムアウト → 全リロード 4.5s |
 | 3997 | 6a62af1 | 41584 | bg プール + poll 再試行。too many clients 発生 (全ホスト 80) |
 | 4395 | 11cfa30 | **48422** | JPEG オフロード 3 台 + 画素バッファ無し + ホスト別プール。5 日目 362/62/41、GP 8/4/0 |
+| 4513 | 1cd1f59 | 49892 | GOMEMLIMIT 2600 / GOGC 400。GP asia 51 |
+| 4692 | 2b1c03c | **68277** | JPEG オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200。GP 322/54/44。asia1 CPU: HMAC 35% / Memories 19% / export 15% / JPEG 14% |
+| 4952 | f55196e | **70862** | 4xx はバリアを飛ばす。GP 376/55/33 |
+| 5168 | 6cb20bc | 69730 | A/B: 画像 push 停止 → 差なし (eu/am 減, asia 増)。push は維持 |
+| 5400 | 1f0a1d1 | 0 FAIL | PGO + v3 + Memories/export を asia2 へ。asia 5 日目 676 人 / GP 441。走行後の整合性で too many clients (asia2 プール既定 80 + 画像判定 40×4) |
+| 5642 | e2a74ab | 69709 | プール是正 + login バリア自ホスト + PG 400。asia2 が CPU 100% で Memories 平均 3.3s (タイムアウト多数) |
+| 5893 | cf55c32 | 0 FAIL | heavy 分担 + JPEG を eu/am のみ + push off。eu/am が 23〜31 人に低下 (JPEG の転送で回線を圧迫)。整合性違反 1 件: america のユーザーの friends フィードに、5.6s 後に削除された asia の投稿 (friends_of_friends) が見えた。原因は調査中 |
+| 6145 | cb15c96 | 0 FAIL | JPEG 配分を戻した。asia 5 日目 557。friends フィードで見えてはいけない投稿が 7 件 (読み手は america、削除されていない friends 投稿)。再発 → 潜在の競合を調査中 |
+| 6305 | 55b8f09 | 68929 | 切り分け: heavy を asia1 ローカル + push on + barrier 修正 → pass。ただし「見えるべき投稿がありません」3 件。致命的な「見えてはいけない」は push off + heavy 分担の 2 回 (5893, 6145) だけ → 既定を 5642 の構成 (heavy は asia2 + backup、push on) に戻す |
+| 6507 | 2b7a1c0 | **73358** | 5642 構成 (heavy は asia2 + backup、push on) + barrier 修正。pass だが「見えるべき投稿がありません」10 件 (dump は logs/faildump/job6507.txt) |
+- 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
+| 6869 | - | 69483 | synchronous_commit=off。73k とノイズの範囲。フィードの誤り 0 件 |
+| 7020 | - | 68859 | PREVALIDATE=1: eu/am の 4〜5 日目 74/61〜75/62 (前回 55/40)。GP の asia は 312 (asia2 の Memories タイムアウト)。eu/am が伸びるので既定 on |
+| 7184 | 8b2d632 | 0 FAIL | 統合版: initialize 504。起動時ロード 37s + initialize が peer の全量ダンプ (15〜17s × 数回) を待った → 待たないよう修正 |
+| 7382 | 7c40de3 | 9478 | 統合版 (全投稿メモリ化): ベンチ中に 62.5 万件の全量ダンプが 4 回 (15〜33s)、回線と CPU を占有して人数が 1 日目から増えず → 全投稿メモリ化を revert。署名 (AVX-512) だけ残す |
+| 7706 | 6e86484 | **93068** | 全投稿メモリ化を revert + AVX-512 署名 + PREVALIDATE + STORAGE EXTERNAL + sync commit off。asia 5 日目 663、eu 89、am 74、GP 466/67/50。フィードの誤り 0 |
+
+### FRONT (asia1 の nginx 撤去) のロールバック
+- `FRONT=0 scripts/batch.sh ...` か `FRONT=0 scripts/deploy.sh` で再デプロイ → deploy が nginx を enable して start/reload する。
+- 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
+- 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。
+| 7851 | - | **111842** | LOCALIMG=1 (eu/am の画像を自地域に fsync 保存、asia1 はメタデータのみ、PG へ非同期 flush)。asia 742 / eu 175 / am 95、GP 545/161/84。flush_err 0。409 post_slot_unavailable が 1 件 (要観察) |
+| 8010 | - | 84958 | FRONT=1 (asia1 nginx 撤去、LOCALIMG=0)。93068 の構成より低い → 不採用 (既定 FRONT=0)。旧 lease のため「見えるべき」4 件 |
+| 8178 | - | 0 FAIL | 既定 (LOCALIMG=1) の再現: 整合性違反「見えてはいけない投稿」(旧 lease の穴) → lease を送信時刻で上限する修正を投入 |

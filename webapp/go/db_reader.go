@@ -103,7 +103,7 @@ func newReadRouter(config *Config, primary *sqlx.DB) *readRouter {
 
 func configurePool(db *sqlx.DB, size int) {
 	db.SetMaxOpenConns(size)
-	db.SetMaxIdleConns(size)
-	db.SetConnMaxIdleTime(0)
+	db.SetMaxIdleConns(max(size/2, 1))
+	db.SetConnMaxIdleTime(30 * time.Second)
 	db.SetConnMaxLifetime(0)
 }

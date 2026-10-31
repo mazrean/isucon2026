@@ -1,0 +1,26 @@
+time=2026-10-31T03:27:44.761Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:27:46.714Z level=INFO msg="user moved" user=kiro5061 from=asia to=america
+time=2026-10-31T03:27:47.627Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:27:49.695Z level=INFO msg="user moved" user=shiraivy.5051 from=asia to=america
+time=2026-10-31T03:27:50.508Z level=INFO msg="america 1 日目: 8 人"
+time=2026-10-31T03:27:53.598Z level=INFO msg="asia 2 日目: 44 人"
+time=2026-10-31T03:27:56.498Z level=INFO msg="europe 2 日目: 16 人"
+time=2026-10-31T03:27:59.650Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T03:27:59.970Z level=INFO msg="user moved" user=torhetsu5292 from=asia to=europe
+time=2026-10-31T03:28:02.707Z level=INFO msg="asia 3 日目: 119 人"
+time=2026-10-31T03:28:04.922Z level=INFO msg="user moved" user=kiro5061 from=america to=europe
+time=2026-10-31T03:28:05.083Z level=INFO msg="user moved" user=shiraivy.5051 from=america to=europe
+time=2026-10-31T03:28:05.488Z level=INFO msg="europe 3 日目: 47 人"
+time=2026-10-31T03:28:08.487Z level=INFO msg="america 3 日目: 40 人"
+time=2026-10-31T03:28:09.241Z level=INFO msg="グランプリ: アジア 0 人, ヨーロッパ 0 人, アメリカ 0 人"
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "整合性の違反: maxho_5397: 見えてはいけない投稿 ec56fdc5-d933-4d20-b9d6-61ba528bd38a が取得できました",
+    "maxho_5397: 見えてはいけない投稿 ec56fdc5-d933-4d20-b9d6-61ba528bd38a が取得できました"
+  ]
+}
+
+reason= 整合性の違反
+job=8178 state=4 pass=false スコア=0 種別エラー数=map[]

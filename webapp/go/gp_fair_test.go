@@ -18,7 +18,7 @@ func TestPrioGateAllComplete(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			rel := g.acquire(context.Background(), int64(i%7), 10*time.Second)
+			rel, _ := g.acquire(context.Background(), int64(i%7), 10*time.Second)
 			c := inflight.Add(1)
 			for {
 				m := maxIn.Load()
@@ -47,7 +47,7 @@ func TestPrioGateAllComplete(t *testing.T) {
 // 待っている間は鍵の小さい順に通る (eu/am の転送を asia より先に)。
 func TestPrioGateOrder(t *testing.T) {
 	g := newPrioGate(1)
-	hold := g.acquire(context.Background(), 0, time.Second)
+	hold, _ := g.acquire(context.Background(), 0, time.Second)
 	var mu sync.Mutex
 	var order []int64
 	var wg sync.WaitGroup
@@ -56,7 +56,7 @@ func TestPrioGateOrder(t *testing.T) {
 		wg.Add(1)
 		go func(k int64) {
 			defer wg.Done()
-			rel := g.acquire(context.Background(), k, 10*time.Second)
+			rel, _ := g.acquire(context.Background(), k, 10*time.Second)
 			mu.Lock()
 			order = append(order, k)
 			mu.Unlock()
@@ -84,46 +84,89 @@ func TestPrioGateOrder(t *testing.T) {
 // 枠が取れないまま maxWait / ctx 切れになっても、断らずに進み、枠の数を壊さない。
 func TestPrioGateTimeoutProceeds(t *testing.T) {
 	g := newPrioGate(1)
-	hold := g.acquire(context.Background(), 0, time.Second)
+	hold, _ := g.acquire(context.Background(), 0, time.Second)
 	start := time.Now()
-	rel := g.acquire(context.Background(), 1, 20*time.Millisecond)
-	if time.Since(start) < 20*time.Millisecond {
-		t.Fatal("did not wait")
+	rel, got := g.acquire(context.Background(), 1, 20*time.Millisecond)
+	if time.Since(start) < 20*time.Millisecond || got {
+		t.Fatal("did not wait / should not have a slot")
 	}
 	rel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	g.acquire(ctx, 2, time.Second)()
+	r2, _ := g.acquire(ctx, 2, time.Second)
+	r2()
 	hold()
 	if g.free != 1 || len(g.q) != 0 {
 		t.Fatalf("free=%d q=%d", g.free, len(g.q))
 	}
 }
 
-func TestGPWindowDeadline(t *testing.T) {
+func gpTestMem(starts [3]time.Time, onTime time.Duration) *memStore {
 	m := &memStore{d: newMemData()}
 	m.ready.Store(true)
+	for i, r := range gpRegions {
+		m.d.open[r] = &memWindow{PostingWindow: PostingWindow{Region: r, StartsAt: starts[i], OnTimeDeadline: starts[i].Add(onTime)}}
+	}
+	return m
+}
+
+func TestGPWindowDeadline(t *testing.T) {
 	now := time.Now()
-	m.d.open["europe"] = &memWindow{PostingWindow: PostingWindow{StartsAt: now.Add(-2 * time.Second), OnTimeDeadline: now.Add(8 * time.Second)}}
-	m.d.open["asia"] = &memWindow{PostingWindow: PostingWindow{StartsAt: now.Add(-time.Hour), OnTimeDeadline: now.Add(23 * time.Hour)}}
-	if _, ok := m.gpWindowDeadline("europe", now); !ok {
-		t.Fatal("short window should be GP")
+	// 3 地域が同時に開いた = GP
+	gp := gpTestMem([3]time.Time{now.Add(-2 * time.Second), now.Add(-2*time.Second + 300*time.Millisecond), now.Add(-2 * time.Second)}, 24*time.Hour)
+	dl, ok := gp.gpWindowDeadline("europe", now)
+	if !ok {
+		t.Fatal("simultaneous open should be GP")
 	}
-	if _, ok := m.gpWindowDeadline("asia", now); ok {
-		t.Fatal("day window is not GP")
+	if want := now.Add(-2*time.Second + 300*time.Millisecond + gpFairActive); !dl.Equal(want) {
+		t.Fatalf("deadline %v want %v", dl, want)
 	}
-	if _, ok := m.gpWindowDeadline("europe", now.Add(time.Minute)); ok {
-		t.Fatal("after deadline+after is not GP")
+	if _, ok := gp.gpWindowDeadline("asia", now.Add(gpFairActive)); ok {
+		t.Fatal("after ACTIVE is not GP")
 	}
-	if _, ok := m.gpWindowDeadline("america", now); ok {
-		t.Fatal("no window")
+	// 3 秒おきに回して開く通常の日 = GP ではない
+	day := gpTestMem([3]time.Time{now.Add(-6 * time.Second), now.Add(-3 * time.Second), now}, 9*time.Second)
+	for _, r := range gpRegions {
+		if _, ok := day.gpWindowDeadline(r, now); ok {
+			t.Fatalf("staggered day is not GP (%s)", r)
+		}
+	}
+	// 窓が欠けている
+	miss := gpTestMem([3]time.Time{now, now, now}, time.Hour)
+	delete(miss.d.open, "america")
+	if _, ok := miss.gpWindowDeadline("asia", now); ok {
+		t.Fatal("missing window is not GP")
 	}
 	if gpMem.Load() == nil && gpLocalActive("europe") {
 		t.Fatal("nil mem must not be GP")
 	}
-	gpMem.Store(m)
+	gpMem.Store(gp)
 	defer gpMem.Store(nil)
-	if !gpLocalActive("europe") || gpLocalActive("asia") {
+	if !gpLocalActive("europe") {
 		t.Fatal("gpLocalActive mismatch")
 	}
+}
+
+// pump の適用 (書きロック) 中も、判定は古いキャッシュで即答して投稿を止めない。
+func TestGPWindowDeadlineNoBlock(t *testing.T) {
+	now := time.Now()
+	m := gpTestMem([3]time.Time{now, now, now}, time.Hour)
+	if _, ok := m.gpWindowDeadline("asia", now); !ok {
+		t.Fatal("want GP")
+	}
+	m.mu.Lock()
+	done := make(chan bool)
+	go func() {
+		_, ok := m.gpWindowDeadline("asia", now.Add(200*time.Millisecond))
+		done <- ok
+	}()
+	select {
+	case ok := <-done:
+		if !ok {
+			t.Fatal("stale cache should still say GP")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("blocked on the write lock")
+	}
+	m.mu.Unlock()
 }

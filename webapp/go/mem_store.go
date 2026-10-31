@@ -133,6 +133,8 @@ type memStore struct {
 
 	w memWM // ISUREAL_MEM_WATERMARK (peer のみ使う)
 
+	gp atomic.Pointer[gpSnap] // ISUREAL_GP_FAIR: GP の判定のキャッシュ (gp_fair.go)
+
 	marks sessMarks // ISUREAL_LOCAL_SESSION: 地域内で無効化中のユーザー (local_session.go)
 }
 

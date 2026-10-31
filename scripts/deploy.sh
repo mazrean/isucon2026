@@ -101,6 +101,8 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_REORDER_WAIT_MS '"${MEM_REORDER_WAIT_MS:-50}"'
       setenv ISUREAL_MEM_PULL_UNLOCKED '"${MEM_PULL_UNLOCKED:-0}"'
       setenv ISUREAL_DB_KEEP_IDLE '"${DB_KEEP_IDLE:-0}"'
+      setenv ISUREAL_POST_BATCH '"${POST_BATCH:-0}"'
+      setenv ISUREAL_FRIEND_BATCH '"${FRIEND_BATCH:-0}"'
       setenv ISUREAL_MEM_LOGREPL '"$LOGREPL"'
       setenv ISUREAL_LOCAL_ONLY_WRITE '"${LOCAL_ONLY_WRITE:-1}"'
       setenv ISUREAL_SIGN_SIMD_MIN '"${SIGN_SIMD_MIN:-}"'

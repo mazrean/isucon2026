@@ -178,7 +178,7 @@ func memFullMinDate(d *memData, minDate *time.Time) *time.Time {
 }
 
 // memLoadCold: peer のダンプにホット外の投稿/コメント/RealMoji を自分の PG から足す。
-// 行はストリームで読み (一括スライスを作らない)、新しく足した投稿の索引 (投稿期間ごとの投稿、投稿ごとのコメント/RealMoji)
+// 行はストリームで読み (一括スライスを作らない。StructScan の反射は 1 行 ~8µs かかるので列を直接 Scan)、新しく足した投稿の索引 (投稿期間ごとの投稿、投稿ごとのコメント/RealMoji)
 // には append だけして、最後に一度だけ整列する。ctx は世代ごと (invalidate で取り消される)。
 func memLoadCold(ctx context.Context, d *memData) error {
 	if memFullDB == nil {
@@ -225,7 +225,7 @@ func memLoadCold(ctx context.Context, d *memData) error {
    WHERE w.local_date < $1::date`, func(rows *sqlx.Rows) error {
 		var r memPostRow
 		t0 := time.Now()
-		if err := rows.StructScan(&r); err != nil {
+		if err := rows.Scan(&r.ID, &r.AuthorID, &r.PostingWindowID, &r.ImageID, &r.Caption, &r.Visibility, &r.LocationKind, &r.Latitude, &r.Longitude, &r.Locality, &r.PostedAt, &r.DeletedAt); err != nil {
 			return err
 		}
 		t1 := time.Now()
@@ -261,7 +261,7 @@ func memLoadCold(ctx context.Context, d *memData) error {
    WHERE w.local_date < $1::date AND c.deleted_at IS NULL`, func(rows *sqlx.Rows) error {
 		var r memCommentRow
 		t0 := time.Now()
-		if err := rows.StructScan(&r); err != nil {
+		if err := rows.Scan(&r.ID, &r.PostID, &r.AuthorID, &r.Body, &r.CreatedAt, &r.DeletedAt); err != nil {
 			return err
 		}
 		t1 := time.Now()
@@ -285,7 +285,7 @@ func memLoadCold(ctx context.Context, d *memData) error {
    WHERE w.local_date < $1::date AND r.replaced_at IS NULL AND r.deleted_at IS NULL`, func(rows *sqlx.Rows) error {
 		var r memRealMojiRow
 		t0 := time.Now()
-		if err := rows.StructScan(&r); err != nil {
+		if err := rows.Scan(&r.ID, &r.PostID, &r.ReactorID, &r.ImageID, &r.ReactionType, &r.CreatedAt, &r.ReplacedAt, &r.DeletedAt); err != nil {
 			return err
 		}
 		t1 := time.Now()

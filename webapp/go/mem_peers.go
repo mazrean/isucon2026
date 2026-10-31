@@ -745,6 +745,7 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 		r.loadCancel = lcancel
 		r.mu.Unlock()
 		err := memLoadCold(lctx, d)
+		slog.Info("mem-full: cold load returned", "gen", g, "error", err, "ctx", lctx.Err())
 		lcancel()
 		if err != nil {
 			if lctx.Err() == context.Canceled {

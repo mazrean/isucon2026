@@ -19,3 +19,4 @@
 11:59	7f5e427	job=6145 state=4 pass=false スコア=0 種別エラー数=map[]	JPEG 配分を戻す + heavy 分担 + push off + JPEG 統計
 12:02	55b8f09	job=6305 state=4 pass=true スコア=68929 種別エラー数=map[]	切り分け: 5642 相当の構成 (heavy 分担なし, push on) + barrier 修正
 12:05	de64c62	job=6507 state=4 pass=true スコア=73358 種別エラー数=map[]	既定を 5642 構成に戻す + barrier 修正 + JPEG 統計
+12:11	ccfde34	job=6869 state=4 pass=true スコア=69483 種別エラー数=map[]	synchronous_commit=off

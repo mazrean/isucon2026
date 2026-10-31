@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
 )
 
@@ -40,7 +41,8 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		// 画像の中身 (owner / media_type / data) は ID ごとに不変なのでキャッシュから引く。
-		obj, err := images.get(ctx, h.Reader(), h.DB, input.ImageID)
+		rdb, pdb := h.imageDBs()
+		obj, err := images.get(ctx, rdb, pdb, input.ImageID)
 		if err != nil {
 			return err
 		}
@@ -74,4 +76,16 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		return c.Blob(http.StatusOK, obj.MediaType, obj.Data)
 	}
+}
+
+// imageDBs: images.get の (reader, primary)。primary 向けは画像専用プール (h.Img) に回す。
+func (h *HandlerContext) imageDBs() (*sqlx.DB, *sqlx.DB) {
+	r, p := h.Reader(), h.DB
+	if h.Img != nil {
+		if r == h.DB {
+			r = h.Img
+		}
+		p = h.Img
+	}
+	return r, p
 }

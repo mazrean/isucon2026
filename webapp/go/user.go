@@ -2,6 +2,7 @@ package isureal
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"regexp"
 	"strings"
@@ -60,6 +61,20 @@ func getUser(ctx context.Context, db sqlx.QueryerContext, userID string) (User, 
 	err := sqlx.GetContext(ctx, db, &user, `SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE id = $1 AND status = 'active'`, userID)
 	if err != nil {
 		return user, err
+	}
+	return user, user.setImageKey()
+}
+
+// getUserForUpdate = `SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE` + getUser を 1 往復で行う。
+// 行が無ければロック側と同じく sql.ErrNoRows、active でなければ getUser と同じく sql.ErrNoRows。
+func getUserForUpdate(ctx context.Context, tx sqlx.QueryerContext, userID string) (User, error) {
+	var user User
+	err := sqlx.GetContext(ctx, tx, &user, `SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID)
+	if err != nil {
+		return user, err
+	}
+	if user.Status != "active" {
+		return User{}, sql.ErrNoRows
 	}
 	return user, user.setImageKey()
 }

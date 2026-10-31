@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"math/rand/v2"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/google/uuid"
@@ -136,6 +137,58 @@ func TestSignedImageURLsMatchesSingle(t *testing.T) {
 }
 
 func cpuHasAVX512Test() bool { return signHasAVX512 }
+
+func TestSignPoolConcurrentSingles(t *testing.T) {
+	jobs := randomJobs(rand.New(rand.NewPCG(7, 8)), 2000)
+	var bad atomic.Int64
+	sem := make(chan struct{}, 64)
+	for i := range jobs {
+		sem <- struct{}{}
+		go func() {
+			defer func() { <-sem }()
+			j := jobs[i]
+			if !bytes.Equal(imageSignature(j.key[:], j.imageID, j.exp), signatureReference(j.key[:], j.imageID, j.exp)) {
+				bad.Add(1)
+			}
+		}()
+	}
+	for range cap(sem) {
+		sem <- struct{}{}
+	}
+	if bad.Load() != 0 {
+		t.Fatalf("%d concurrent single mismatches", bad.Load())
+	}
+}
+
+// many concurrent single misses (image GET verifies) coalescing in the pool.
+func BenchmarkSignPoolSingles(b *testing.B) {
+	jobs := randomJobs(rand.New(rand.NewPCG(9, 10)), 1<<16)
+	b.SetParallelism(16)
+	var ctr atomic.Int64
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			j := jobs[ctr.Add(1)%int64(len(jobs))]
+			_ = computeSignature(j.key[:], j.imageID, j.exp)
+		}
+	})
+}
+
+func BenchmarkSignBatch50(b *testing.B) {
+	jobs := randomJobs(rand.New(rand.NewPCG(11, 12)), 50)
+	for i := 0; i < b.N; i++ {
+		computeSignatures(jobs)
+	}
+	b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*50), "ns/sig")
+}
+
+// uncontended single miss latency through the pool.
+func BenchmarkSignPoolSerial(b *testing.B) {
+	jobs := randomJobs(rand.New(rand.NewPCG(13, 14)), 1024)
+	for i := 0; i < b.N; i++ {
+		j := jobs[i%len(jobs)]
+		_ = computeSignature(j.key[:], j.imageID, j.exp)
+	}
+}
 
 func BenchmarkSignStd(b *testing.B) {
 	key := make([]byte, 32)

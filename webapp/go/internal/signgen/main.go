@@ -87,7 +87,7 @@ func main() {
 		emit("VMOVDQA32 %s, Z25", e)
 		emit("VPTERNLOGD $0xca, %s, %s, Z25", g, f) // e ? f : g
 		emit("VPADDD Z24, %s, %s", h, h)
-		emit("VPADDD Z25, %s, %s", h, h) // h = T1
+		emit("VPADDD Z25, %s, %s", h, h)   // h = T1
 		emit("VPADDD %s, %s, %s", h, d, d) // d = d + T1
 		emit("VPRORD $2, %s, Z24", a)
 		emit("VPRORD $13, %s, Z25", a)

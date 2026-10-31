@@ -8,9 +8,7 @@ import (
 	"math/bits"
 	"net/url"
 	"os"
-	"runtime"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -173,57 +171,6 @@ type signJob struct {
 	imageID string
 	exp     int64
 	sig     []byte
-}
-
-// computeSignatures fills jobs[i].sig, bit-identical to imageSignature.
-func computeSignatures(jobs []signJob) {
-	n := len(jobs)
-	if n == 0 {
-		return
-	}
-	if !signHasAVX512 || n < signSIMDMin {
-		parallelFor(n, func(i int) {
-			jobs[i].sig = signatureScalar(jobs[i].key[:], jobs[i].imageID, jobs[i].exp)
-		})
-		return
-	}
-	groups := (n + 15) / 16
-	parallelFor(groups, func(g int) {
-		lo, hi := g*16, min(g*16+16, n)
-		signGroupAVX512(jobs[lo:hi])
-	})
-}
-
-// parallelFor runs f(0..n-1) on up to GOMAXPROCS goroutines (the caller is one).
-func parallelFor(n int, f func(int)) {
-	workers := min(runtime.GOMAXPROCS(0), n)
-	if workers <= 1 {
-		for i := range n {
-			f(i)
-		}
-		return
-	}
-	var next int
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	work := func() {
-		for {
-			mu.Lock()
-			i := next
-			next++
-			mu.Unlock()
-			if i >= n {
-				return
-			}
-			f(i)
-		}
-	}
-	wg.Add(workers - 1)
-	for range workers - 1 {
-		go func() { defer wg.Done(); work() }()
-	}
-	work()
-	wg.Wait()
 }
 
 // signatureScalar is the uncached stdlib computation (same as imageSignature).

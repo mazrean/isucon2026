@@ -72,3 +72,4 @@
 15:01	34fe7dc	job=20203 state=4 pass=true スコア=145506 種別エラー数=map[]	bare 既定 + VM=1 (asia1/asia2 の vm の watermark・compaction・dirty) + ASIA2_GOMEM=900MiB:100 + LOGIN_BATCH=1 (login/logout/register を 1 往復)
 15:05	4e34776	job=20463 state=4 pass=true スコア=165725 種別エラー数=map[]	bare + LOGIN_BATCH=1 だけ
 15:07	4303c59	job=20730 state=4 pass=true スコア=163611 種別エラー数=map[]	bare + MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32 + MEM_PUSH_STATS=1 (eu/am の WM の待ち: push の枠 4 の順番待ちを解消、反映の前に配信)
+15:11	a5d63a0	job=20956 state=4 pass=true スコア=167525 種別エラー数=map[]	bare + IMG_FRIEND_PUSH=1 + IMG_FRIEND_PUSH_REV=1 (画像の事前転送: 作者の友達のいる地域へ、送信が空いている間だけ、GP 中は停止。逆向きも)

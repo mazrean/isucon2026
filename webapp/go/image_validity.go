@@ -50,7 +50,7 @@ func imageReader(h *HandlerContext) *sqlx.DB {
 			Host:   net.JoinHostPort(host, h.Config.DBPort),
 			Path:   "/" + h.Config.DBName,
 		}
-		db, err := sqlx.Open("pgx", u.String())
+		db, err := sqlx.Open("pgx", traceDSN(u.String(), "imgv"))
 		if err != nil {
 			return
 		}

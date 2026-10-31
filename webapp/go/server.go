@@ -52,7 +52,7 @@ func NewServer(config *Config) *echo.Echo {
 	e.HTTPErrorHandler = APIErrorHandler
 	registerPrevalidate(e, config.Region)
 
-	db, err := sqlx.Open("pgx", config.DatabaseDSN())
+	db, err := sqlx.Open("pgx", traceDSN(config.DatabaseDSN(), "main"))
 	if err != nil {
 		panic("failed to open database: " + err.Error())
 	}
@@ -71,14 +71,14 @@ func NewServer(config *Config) *echo.Echo {
 	}
 	// background pollers (SSE hub, mem pump) get their own small pool so a burst
 	// of writes holding every request connection cannot starve them.
-	bgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+	bgDB := sqlx.MustOpen("pgx", traceDSN(config.DatabaseDSN(), "bg"))
 	configurePool(bgDB, 4)
 	handlerContext.BG = bgDB
-	adminDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+	adminDB := sqlx.MustOpen("pgx", traceDSN(config.DatabaseDSN(), "admin"))
 	configurePool(adminDB, 4)
 	handlerContext.Admin = adminDB
 	if n := envIntOrDefault("ISUREAL_DB_IMG_OPEN", 12); n > 0 {
-		imgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+		imgDB := sqlx.MustOpen("pgx", traceDSN(config.DatabaseDSN(), "img"))
 		configurePool(imgDB, n)
 		handlerContext.Img = imgDB
 		// ASIA_LOCALIMG=1 では投稿が h.Img を使わず上限が無くなるので、枠から外さない。
@@ -90,7 +90,7 @@ func NewServer(config *Config) *echo.Echo {
 		}
 	}
 	if n := envIntOrDefault("ISUREAL_DB_IMG_READ_OPEN", 16); n > 0 && handlerContext.Img != nil {
-		imgReadDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+		imgReadDB := sqlx.MustOpen("pgx", traceDSN(config.DatabaseDSN(), "imgread"))
 		configurePool(imgReadDB, n)
 		handlerContext.ImgRead = imgReadDB
 	}

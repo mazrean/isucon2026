@@ -88,7 +88,7 @@ func setupStore(h *HandlerContext) {
 	if !storeEnabled || h.memPump == nil {
 		return
 	}
-	db, err := sqlx.Open("pgx", h.Config.DatabaseDSN())
+	db, err := sqlx.Open("pgx", traceDSN(h.Config.DatabaseDSN(), "store"))
 	if err != nil {
 		slog.Error("store: open db failed; store disabled", "error", err)
 		return

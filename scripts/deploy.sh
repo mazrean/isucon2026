@@ -36,6 +36,7 @@ FWD_TARGET=${FWD_TARGET:-192.168.1.10}   # forward target app (asia1=192.168.1.1
 MEM=${MEM:-1}   # 1 = in-memory read model (asia1 pump -> europe1/america1 peers)
 MEM_WM=${MEM_WM:-1}   # 1 = writes skip peer acks; europe1/america1 reads wait for the pump's watermark (all 3 hosts)
 MEM_WM_HB=${MEM_WM_HB:-0}   # 1 (needs MEM_WM=1) = shorter wm waits: 10ms poll, 16 in-flight pushes to wm peers, wm rides the data push (webapp/go/mem_watermark.go); MEM_WM_SLACK_MS (default 0) loosens the read target
+# MEM_WM_MAXWAIT_MS (default 300): peer GET waits up to this for the wm before falling back to the primary (1 RTT per query from eu/am). DBTRACE=1: every 10s slog the SQL this app sent, per pool + 80-char prefix (webapp/go/dbtrace.go)
 MEM_PUSH_STATS=${MEM_PUSH_STATS:-0}   # 1 = 10s slog "mem: push stats" (pump: bytes/batches/ack; peer: net/lock/apply/pulls) (webapp/go/mem_push_stats.go)
 # MEM_PULL_UNLOCKED=1 (eu/am receivers) = release the receiver lock during a gap pull so other pushes / wm keep applying (webapp/go/mem_peers.go fillGap)
 MEM_PUSH_GZIP=${MEM_PUSH_GZIP:-0}   # 1 = asia1 gzips push bodies >= 1KiB (receivers always accept gzip; deploy all hosts together)
@@ -88,6 +89,8 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
       setenv ISUREAL_MEM_WM_HB '"$MEM_WM_HB"'
       setenv ISUREAL_MEM_WM_SLACK_MS '"${MEM_WM_SLACK_MS:-0}"'
+      setenv ISUREAL_MEM_WM_MAXWAIT_MS '"${MEM_WM_MAXWAIT_MS:-300}"'
+      setenv ISUREAL_DBTRACE '"${DBTRACE:-0}"'
       setenv ISUREAL_MEM_PUSH_STATS '"$MEM_PUSH_STATS"'
       setenv ISUREAL_MEM_PUSH_GZIP '"$MEM_PUSH_GZIP"'
       setenv ISUREAL_MEM_REORDER_WAIT_MS '"${MEM_REORDER_WAIT_MS:-50}"'

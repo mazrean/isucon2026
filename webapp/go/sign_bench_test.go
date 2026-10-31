@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -179,6 +180,42 @@ func BenchmarkSignBatch50(b *testing.B) {
 		computeSignatures(jobs)
 	}
 	b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*50), "ns/sig")
+}
+
+func TestSignPrefetchNextExp(t *testing.T) {
+	step := int64((imageURLLifetime - imageURLReuseMargin) / time.Second)
+	base := time.Unix(1_800_000_000-1_800_000_000%step, 0).Add(-imageURLLifetime) // raw exactly on a boundary
+	if _, ok := signPrefetchTarget(base.Add(time.Duration(step-61) * time.Second)); ok {
+		t.Fatal("prefetch window opened too early")
+	}
+	next, ok := signPrefetchTarget(base.Add(time.Duration(step-60) * time.Second))
+	if !ok || next != base.Add(imageURLLifetime).Unix()+step {
+		t.Fatal("bad prefetch target")
+	}
+	// the target equals what currentImageExp yields right after the boundary.
+	raw := base.Add(imageURLLifetime).Unix() + step
+	if raw-raw%step != next {
+		t.Fatal("target is not the next floor boundary")
+	}
+
+	cur := currentImageExp()
+	jobs := randomJobs(rand.New(rand.NewPCG(15, 16)), 40)
+	signedURLCacheMu.Lock()
+	for _, j := range jobs {
+		signedURLCache[signedURLCacheKey{key: j.key, imageID: j.imageID}] = signedURLEntry{exp: cur, url: "x"}
+	}
+	signedURLCacheMu.Unlock()
+	if n := prefetchSignatures(cur + step); n < len(jobs) {
+		t.Fatalf("prefetched %d < %d", n, len(jobs))
+	}
+	for _, j := range jobs {
+		signatureCacheMu.RLock()
+		got := signatureCache[signatureCacheKey{key: j.key, imageID: j.imageID, exp: cur + step}]
+		signatureCacheMu.RUnlock()
+		if !bytes.Equal(got, signatureReference(j.key[:], j.imageID, cur+step)) {
+			t.Fatal("prefetched signature mismatch")
+		}
+	}
 }
 
 // uncontended single miss latency through the pool.

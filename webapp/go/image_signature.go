@@ -16,8 +16,8 @@ const imageURLLifetime = 24 * time.Hour
 const imageSignatureIterations = 1000
 
 // signed URLs are reused while they stay valid for at least this long, so the
-// 1000-round HMAC is computed about once per (key, image) per hour.
-const imageURLReuseMargin = imageURLLifetime - time.Hour
+// 1000-round HMAC is computed about once per (key, image) per 10 minutes.
+const imageURLReuseMargin = imageURLLifetime - 10*time.Minute
 
 func imageSigningKey(secretKeyHash string) ([]byte, error) {
 	key, err := hex.DecodeString(secretKeyHash)

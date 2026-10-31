@@ -1,0 +1,51 @@
+time=2026-10-31T02:58:54.986Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:58:57.938Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:59:00.887Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T02:59:03.961Z level=INFO msg="asia 2 日目: 47 人"
+time=2026-10-31T02:59:06.877Z level=INFO msg="europe 2 日目: 12 人"
+time=2026-10-31T02:59:09.865Z level=INFO msg="america 2 日目: 12 人"
+time=2026-10-31T02:59:11.288Z level=INFO msg="user moved" user=yanoa-5307 from=asia to=europe
+time=2026-10-31T02:59:12.954Z level=INFO msg="asia 3 日目: 124 人"
+time=2026-10-31T02:59:14.012Z level=INFO msg="user moved" user=solmia-5371 from=europe to=america
+time=2026-10-31T02:59:16.303Z level=INFO msg="europe 3 日目: 25 人"
+time=2026-10-31T02:59:19.040Z level=INFO msg="america 3 日目: 24 人"
+time=2026-10-31T02:59:21.866Z level=INFO msg="user moved" user=yanoa-5307 from=europe to=asia
+time=2026-10-31T02:59:21.943Z level=INFO msg="asia 4 日目: 282 人"
+time=2026-10-31T02:59:24.350Z level=INFO msg="user moved" user=reivy5425 from=america to=asia
+time=2026-10-31T02:59:25.232Z level=INFO msg="user moved" user=solmia-5371 from=america to=europe
+time=2026-10-31T02:59:26.370Z level=INFO msg="europe 4 日目: 28 人"
+time=2026-10-31T02:59:27.595Z level=INFO msg="user moved" user=reivy5425 from=asia to=europe
+time=2026-10-31T02:59:28.092Z level=INFO msg="america 4 日目: 38 人"
+time=2026-10-31T02:59:29.030Z level=INFO msg="user moved" user=noayuru_6027 from=europe to=asia
+time=2026-10-31T02:59:29.473Z level=INFO msg="user moved" user=musemi-6449 from=asia to=america
+time=2026-10-31T02:59:29.615Z level=INFO msg="user moved" user=seyuchi7003 from=asia to=america
+time=2026-10-31T02:59:29.916Z level=INFO msg="user moved" user=fuhinoa.7064 from=asia to=america
+time=2026-10-31T02:59:30.731Z level=INFO msg="user moved" user=elmedan.6605 from=asia to=europe
+time=2026-10-31T02:59:31.049Z level=INFO msg="user moved" user=kechi.7057 from=asia to=america
+time=2026-10-31T02:59:31.049Z level=INFO msg="asia 5 日目: 557 人"
+time=2026-10-31T02:59:31.049Z level=INFO msg="user moved" user=torel_6270 from=asia to=europe
+time=2026-10-31T02:59:31.049Z level=INFO msg="user moved" user=shiya6892 from=asia to=europe
+time=2026-10-31T02:59:36.748Z level=INFO msg="europe 5 日目: 31 人"
+time=2026-10-31T02:59:37.052Z level=INFO msg="america 5 日目: 42 人"
+time=2026-10-31T02:59:46.641Z level=INFO msg="asia 最終日（グランプリ）: 554 人"
+time=2026-10-31T02:59:46.641Z level=INFO msg="europe 最終日（グランプリ）: 30 人"
+time=2026-10-31T02:59:46.646Z level=INFO msg="america 最終日（グランプリ）: 42 人"
+time=2026-10-31T02:59:47.579Z level=INFO msg="グランプリ: アジア 0 人, ヨーロッパ 0 人, アメリカ 0 人"
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "整合性の違反: tasa7267: フィード friends: tasa7267 に見えてはいけない投稿 7307d5d6-b8ff-4216-80d6-69ef02301e0a が返りました",
+    "tasa7267: フィード friends: tasa7267 に見えてはいけない投稿 7307d5d6-b8ff-4216-80d6-69ef02301e0a が返りました",
+    "kavin_6120: フィード friends: kavin_6120 に見えてはいけない投稿 e16d55c5-8a1d-41f6-a490-b430da0bc6fd が返りました",
+    "kavin_6120: フィード friends: kavin_6120 に見えてはいけない投稿 7f6688a5-54f6-45a4-a01b-78b5cf0d827b が返りました",
+    "kavin_6120: フィード friends: kavin_6120 に見えてはいけない投稿 bc9804d3-d9ba-4f33-8869-383a913c11a8 が返りました",
+    "kavin_6120: フィード friends: kavin_6120 に見えてはいけない投稿 97407848-ad3d-417a-93ae-bd62f9043484 が返りました",
+    "kavin_6120: フィード friends: kavin_6120 に見えてはいけない投稿 c0588b56-6368-4fe5-92a5-bb1df09b94df が返りました",
+    "ttukbaegi_jeongeori_1581: 履歴を読めません: GET /api/memories?month=2025-11: 応答がタイムアウトしました",
+    "na_li_3430: 履歴を読めません: GET /api/memories?month=2025-11: 応答がタイムアウトしました"
+  ]
+}
+
+reason= 整合性の違反
+job=6145 state=4 pass=false スコア=0 種別エラー数=map[]

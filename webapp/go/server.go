@@ -15,6 +15,8 @@ type HandlerContext struct {
 	reads  *readRouter
 	Config *Config
 	IPBans *IPBanList
+
+	Notifications *notificationHub
 }
 
 // Reader は、トランザクション外の読み取り専用クエリに使う接続を返す。
@@ -51,6 +53,7 @@ func NewServer(config *Config) *echo.Echo {
 		Config: config,
 		IPBans: &IPBanList{},
 	}
+	handlerContext.Notifications = newNotificationHub(handlerContext.Reader)
 	e.Use(IPBanMiddleware(handlerContext))
 
 	e.POST("/api/initialize", initializeHandler(handlerContext))

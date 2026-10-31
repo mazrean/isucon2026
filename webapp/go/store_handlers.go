@@ -145,7 +145,7 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, userID)
 		postID := uuid.NewString()
-		if !external {
+		if !external && !asiaLocalImgKeep(c.Request().Context(), imageID, userID, imageData) {
 			t.execImage(imageID, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt)
 		}
 		t.exec(`INSERT INTO posts (id, author_id, posting_window_id, image_id, caption, visibility,
@@ -263,7 +263,7 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 		}
 		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, actor)
-		if !external {
+		if !external && !asiaLocalImgKeep(c.Request().Context(), imageID, actor, data) {
 			t.execImage(imageID, `INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES($1,$2,$3,'image/jpeg',$4)`, imageID, actor, data, t.now)
 		}
 		id := uuid.NewString()

@@ -1,0 +1,54 @@
+
+�"����� *��������2������Ŏ:�������B�������H��
+�<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����
+"��
+*�
+実行終了�time=2026-10-31T07:53:59.103Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T07:54:02.255Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T07:54:05.117Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T07:54:08.187Z level=INFO msg="asia 2 日目: 54 人"
+time=2026-10-31T07:54:10.530Z level=INFO msg="user moved" user=tosa-5301 from=asia to=america
+time=2026-10-31T07:54:11.157Z level=INFO msg="europe 2 日目: 19 人"
+time=2026-10-31T07:54:11.174Z level=INFO msg="user moved" user=tosa-5301 from=america to=asia
+time=2026-10-31T07:54:14.101Z level=INFO msg="america 2 日目: 17 人"
+time=2026-10-31T07:54:17.140Z level=INFO msg="asia 3 日目: 161 人"
+time=2026-10-31T07:54:19.613Z level=INFO msg="user moved" user=yashi5815 from=asia to=europe
+time=2026-10-31T07:54:19.821Z level=INFO msg="user moved" user=nuho_5926 from=asia to=america
+time=2026-10-31T07:54:19.890Z level=INFO msg="user moved" user=andanra5952 from=asia to=europe
+time=2026-10-31T07:54:20.101Z level=INFO msg="europe 3 日目: 57 人"
+time=2026-10-31T07:54:23.121Z level=INFO msg="america 3 日目: 53 人"
+time=2026-10-31T07:54:26.104Z level=INFO msg="asia 4 日目: 472 人"
+time=2026-10-31T07:54:26.555Z level=INFO msg="user moved" user=solzoeru-6802 from=asia to=europe
+time=2026-10-31T07:54:28.767Z level=INFO msg="user moved" user=solzoeru-6802 from=europe to=america
+time=2026-10-31T07:54:29.189Z level=INFO msg="europe 4 日目: 156 人"
+time=2026-10-31T07:54:29.776Z level=INFO msg="user moved" user=kusafu7321 from=asia to=europe
+time=2026-10-31T07:54:30.534Z level=INFO msg="user moved" user=tosa-5301 from=asia to=america
+time=2026-10-31T07:54:31.885Z level=INFO msg="user moved" user=tosa-5301 from=america to=asia
+time=2026-10-31T07:54:32.303Z level=INFO msg="america 4 日目: 144 人"
+time=2026-10-31T07:54:33.687Z level=INFO msg="user moved" user=nosetor_8773 from=asia to=europe
+time=2026-10-31T07:54:34.226Z level=INFO msg="user moved" user=kaki-9229 from=europe to=america
+time=2026-10-31T07:54:34.827Z level=INFO msg="user moved" user=noni9441 from=europe to=asia
+time=2026-10-31T07:54:35.129Z level=INFO msg="asia 5 日目: 1315 人"
+time=2026-10-31T07:54:35.131Z level=INFO msg="user moved" user=yaso-8278 from=asia to=america
+time=2026-10-31T07:54:35.664Z level=INFO msg="user moved" user=maxsaleo-9410 from=europe to=asia
+time=2026-10-31T07:54:36.048Z level=INFO msg="user moved" user=rumiano10045 from=america to=europe
+time=2026-10-31T07:54:36.878Z level=INFO msg="user moved" user=soaneva-9464 from=europe to=america
+time=2026-10-31T07:54:38.640Z level=INFO msg="europe 5 日目: 373 人"
+time=2026-10-31T07:54:41.275Z level=INFO msg="america 5 日目: 259 人"
+time=2026-10-31T07:54:50.597Z level=INFO msg="asia 最終日（グランプリ）: 1315 人"
+time=2026-10-31T07:54:51.177Z level=INFO msg="europe 最終日（グランプリ）: 372 人"
+time=2026-10-31T07:54:51.177Z level=INFO msg="america 最終日（グランプリ）: 258 人"
+time=2026-10-31T07:54:59.212Z level=INFO msg="グランプリ: アジア 708 人, ヨーロッパ 38 人, アメリカ 106 人"
+{
+  "pass": true,
+  "score": 173907,
+  "messages": [
+    "suhadan_8520: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "wadan-10568: 投稿できません: POST /api/posts: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/posts\": readfrom tcp 10.27.42.105:57728-\u003e57.183.58.128:8080: write tcp 10.27.42.105:57728-\u003e57.183.58.128:8080: use of closed network connection",
+    "keya.7239: 投稿できません: POST /api/posts: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/posts\": EOF",
+    "naivy_16285: 投稿できません: POST /api/posts: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/posts\": readfrom tcp 10.27.42.105:41138-\u003e57.183.58.128:8080: write tcp 10.27.42.105:41138-\u003e57.183.58.128:8080: use of closed network connection"
+  ]
+}
+ ���������(���������2���������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

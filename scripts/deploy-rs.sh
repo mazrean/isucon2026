@@ -35,6 +35,26 @@ sudo systemctl restart isureal-rs
 for i in $(seq 1 50); do curl -s -o /dev/null -m 1 http://127.0.0.1:8081/api/me && break; sleep 0.1; done
 code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/api/memories?month=2025-11)
 [ "$code" = 401 ] || { echo "isureal-rs not healthy (got $code); leaving nginx on Go" >&2; exit 1; }
+# host-environment smoke diff (TZ / env.sh / DB / imgcache perms): Go :8080 vs Rust :8081 on real data.
+# NOTE: logs yuma in once (1 session row) -> run only outside an official bench, under the env lock.
+systemctl show isureal-go -p Environment | sed 's/ISUREAL_FWD_SECRET=[^ ]*/ISUREAL_FWD_SECRET=***/'
+python3 - <<'PY' || { echo "smoke diff FAILED; leaving nginx on Go" >&2; exit 1; }
+import json, sys, urllib.request
+def get(port, path, tok):
+    r = urllib.request.Request(f"http://127.0.0.1:{port}{path}", headers={"Authorization": "Bearer " + tok})
+    try:
+        with urllib.request.urlopen(r, timeout=30) as x: return x.status, x.headers.get("Content-Type"), x.read()
+    except urllib.error.HTTPError as e: return e.code, e.headers.get("Content-Type"), e.read()
+r = urllib.request.Request("http://127.0.0.1:8080/api/auth/login", data=json.dumps({"username": "yuma_kobayashi_186", "secretKey": "0f6-BAnyBELD2MA-t-fekeDtQN4ynqD0mfgOF8JWwWs"}).encode(), headers={"Content-Type": "application/json"})
+tok = json.loads(urllib.request.urlopen(r, timeout=30).read())["token"]
+bad = 0
+for p in ["/api/memories?month=2025-11", "/api/memories?month=2025-12", "/api/memories/2025-11-09", "/api/me/export"]:
+    a, b = get(8080, p, tok), get(8081, p, tok)
+    ok = a == b
+    print(("ok  " if ok else "DIFF"), p, a[0], len(a[2]), b[0], len(b[2]))
+    bad += not ok
+sys.exit(1 if bad else 0)
+PY
 conf=/etc/nginx/sites-available/isureal.conf
 if ! grep -q 'app_rs' "$conf"; then
   sudo cp "$conf" /tmp/isureal.conf.pre-rs

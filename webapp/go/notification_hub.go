@@ -6,22 +6,39 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
 const notificationPollInterval = 100 * time.Millisecond
 
 // notificationHub は、SSE 接続ごとの DB ポーリングをプロセス内 1 本にまとめる。
-// アクティブな投稿期間の一覧を読み取り接続でポーリングし、新しい期間が見えたらその通知をまとめて読み込んで配る。
-// 期間と通知は同一トランザクションで作られるため、期間が見えた時点で通知も見えている。
-// 別リージョンのホストで作られた期間も DB 経由で検出するので届く。
+// アクティブな投稿期間の一覧を読み取り接続でポーリングし、新しい期間が見えたら該当リージョンの接続へ配る。
+//
+// 通知は notifications 行を作らずに (期間, 利用者) から導出する。元実装は開始時点で
+// region=期間のリージョン かつ status='active' の利用者全員に行を作っていたが、届けるのは
+// 「接続時刻より後に作られた通知」だけで、送信直前に現在のリージョン一致・有効を確認し、
+// リージョン変更・退会で接続を閉じる。よって届く相手は「期間開始前から同じリージョンで接続していて、
+// 送信時点でも有効かつ同じリージョン」の利用者に限られ、これは行の有無に依らず決まる。
+// ID は (user_id, posting_window_id) から UUID v5 で決定的に作り、createdAt は期間の starts_at。
 type notificationHub struct {
 	reader func() *sqlx.DB
 
 	mu      sync.Mutex
-	windows map[string]map[string]getNotificationsResponse // window id -> user id -> notification
+	windows map[string]notificationWindow // window id -> window
 	subs    map[string]map[*notificationSubscriber]struct{}
 	userCur time.Time
+}
+
+type notificationWindow struct {
+	Region   string    `db:"region"`
+	StartsAt time.Time `db:"starts_at"`
+}
+
+var notificationIDNamespace = uuid.MustParse("6f1d3c2a-8b4e-5a7f-9c0d-1e2f3a4b5c6d")
+
+func notificationID(userID, windowID string) string {
+	return uuid.NewSHA1(notificationIDNamespace, []byte(userID+"/"+windowID)).String()
 }
 
 type notificationSubscriber struct {
@@ -36,7 +53,7 @@ type notificationSubscriber struct {
 func newNotificationHub(reader func() *sqlx.DB) *notificationHub {
 	hub := &notificationHub{
 		reader:  reader,
-		windows: map[string]map[string]getNotificationsResponse{},
+		windows: map[string]notificationWindow{},
 		subs:    map[string]map[*notificationSubscriber]struct{}{},
 		userCur: time.Now().Add(-time.Minute),
 	}
@@ -53,7 +70,7 @@ func (h *notificationHub) subscribe(userID, region string, connectedAt time.Time
 	}
 	h.subs[userID][sub] = struct{}{}
 	// 接続前に検出済みの期間でも、接続時刻より後に作られた通知なら届ける。
-	if n, ok := h.earliestLocked(userID, connectedAt); ok {
+	if n, ok := h.earliestLocked(sub); ok {
 		h.deliverLocked(sub, &n)
 	}
 	return sub
@@ -85,16 +102,18 @@ func (h *notificationHub) deliverLocked(sub *notificationSubscriber, n *getNotif
 }
 
 // earliestLocked は、元実装の `ORDER BY n.created_at, n.id LIMIT 1` と同じ順で最初の通知を返す。
-func (h *notificationHub) earliestLocked(userID string, after time.Time) (getNotificationsResponse, bool) {
+// 対象は購読者のリージョンの期間のうち、接続時刻より後に開始したもの。
+func (h *notificationHub) earliestLocked(sub *notificationSubscriber) (getNotificationsResponse, bool) {
 	var best getNotificationsResponse
 	found := false
-	for _, byUser := range h.windows {
-		n, ok := byUser[userID]
-		if !ok || !n.CreatedAt.After(after) {
+	for windowID, w := range h.windows {
+		if w.Region != sub.region || !w.StartsAt.After(sub.connectedAt) {
 			continue
 		}
-		if !found || n.CreatedAt.Before(best.CreatedAt) || (n.CreatedAt.Equal(best.CreatedAt) && n.ID < best.ID) {
-			best, found = n, true
+		id := notificationID(sub.userID, windowID)
+		if !found || w.StartsAt.Before(best.CreatedAt) || (w.StartsAt.Equal(best.CreatedAt) && id < best.ID) {
+			best = getNotificationsResponse{ID: id, PostingWindowID: windowID, Region: w.Region, CreatedAt: w.StartsAt}
+			found = true
 		}
 	}
 	return best, found
@@ -115,17 +134,21 @@ func (h *notificationHub) poll() error {
 	defer cancel()
 	db := h.reader()
 
-	var active []string
-	if err := db.SelectContext(ctx, &active, `SELECT id FROM posting_windows WHERE ended_at IS NULL`); err != nil {
+	var active []struct {
+		ID string `db:"id"`
+		notificationWindow
+	}
+	if err := db.SelectContext(ctx, &active, `SELECT id, region, starts_at FROM posting_windows WHERE ended_at IS NULL`); err != nil {
 		return err
 	}
 	activeSet := make(map[string]bool, len(active))
-	var fresh []string
+	freshRegions := map[string]bool{}
 	h.mu.Lock()
-	for _, id := range active {
-		activeSet[id] = true
-		if _, ok := h.windows[id]; !ok {
-			fresh = append(fresh, id)
+	for _, w := range active {
+		activeSet[w.ID] = true
+		if _, ok := h.windows[w.ID]; !ok {
+			h.windows[w.ID] = w.notificationWindow
+			freshRegions[w.Region] = true
 		}
 	}
 	for id := range h.windows {
@@ -133,38 +156,22 @@ func (h *notificationHub) poll() error {
 			delete(h.windows, id)
 		}
 	}
-	h.mu.Unlock()
-
-	for _, windowID := range fresh {
-		var rows []struct {
-			getNotificationsResponse
-			UserID string `db:"user_id"`
-		}
-		if err := db.SelectContext(ctx, &rows, `
-   SELECT n.id, n.user_id, n.posting_window_id, w.region, n.created_at
-   FROM notifications n JOIN posting_windows w ON w.id = n.posting_window_id
-   WHERE n.posting_window_id = $1
-  `, windowID); err != nil {
-			return err
-		}
-		byUser := make(map[string]getNotificationsResponse, len(rows))
-		for _, row := range rows {
-			byUser[row.UserID] = row.getNotificationsResponse
-		}
-		var targets []*notificationSubscriber
-		h.mu.Lock()
-		h.windows[windowID] = byUser
-		for userID, subs := range h.subs {
-			if _, ok := byUser[userID]; !ok {
-				continue
-			}
+	var targets []*notificationSubscriber
+	if len(freshRegions) > 0 {
+		for _, subs := range h.subs {
 			for sub := range subs {
-				targets = append(targets, sub)
+				if !freshRegions[sub.region] {
+					continue
+				}
+				// 元実装と同じく、届ける通知がある接続だけを対象にする。
+				if _, ok := h.earliestLocked(sub); ok {
+					targets = append(targets, sub)
+				}
 			}
 		}
-		h.mu.Unlock()
-		h.deliver(ctx, db, targets)
 	}
+	h.mu.Unlock()
+	h.deliver(ctx, db, targets)
 	return h.checkUsers(ctx, db)
 }
 
@@ -190,7 +197,7 @@ func (h *notificationHub) deliver(ctx context.Context, db *sqlx.DB, targets []*n
 			h.deliverLocked(sub, nil)
 			continue
 		}
-		if n, ok := h.earliestLocked(sub.userID, sub.connectedAt); ok {
+		if n, ok := h.earliestLocked(sub); ok {
 			h.deliverLocked(sub, &n)
 		}
 	}

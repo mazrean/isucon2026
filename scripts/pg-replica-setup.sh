@@ -12,9 +12,13 @@ cd "$(dirname "$0")/.."
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=10"
 PGC=/etc/postgresql/16/main
 REPL_PASS=isurepl2026
-mkdir -p /tmp/isucon; exec 9>/tmp/isucon/env.lock; flock 9
+# env.lock は設定変更・再起動の瞬間だけ取る (WAL 追従待ち・確認中は保持しない)
+mkdir -p /tmp/isucon
+lock() { exec 9>/tmp/isucon/env.lock; flock 9; }
+unlock() { flock -u 9; exec 9>&-; }
 
 primary() {
+  lock
   $SSH asia2 "sudo tee $PGC/conf.d/isucon-repl.conf >/dev/null" < etc/pg/primary-repl.conf
   $SSH asia2 "sudo tee $PGC/conf.d/isucon-tuning.conf >/dev/null" < etc/pg/primary-tuning.conf
   $SSH asia2 "sudo tee /tmp/pg-hba-add >/dev/null" < etc/pg/primary-hba.conf
@@ -38,25 +42,31 @@ SQL
   $SSH asia2 "sudo tee /usr/local/bin/pg-sync-watchdog >/dev/null && sudo chmod 755 /usr/local/bin/pg-sync-watchdog" < scripts/pg-sync-watchdog.sh
   $SSH asia2 "sudo tee /etc/systemd/system/pg-sync-watchdog.service >/dev/null" < etc/pg/pg-sync-watchdog.service
   $SSH asia2 "test -f $PGC/pg-sync.mode || echo off | sudo tee $PGC/pg-sync.mode >/dev/null; sudo systemctl daemon-reload && sudo systemctl enable pg-sync-watchdog && sudo systemctl restart pg-sync-watchdog" </dev/null
+  unlock
 }
 
 walserve() {
   case "$1" in
-    start) $SSH asia2 "cd /var/lib/postgresql/walsave && sudo -u postgres setsid nohup python3 -m http.server 18081 --bind 192.168.4.10 >/tmp/walserve.log 2>&1 </dev/null & sleep 1; ss -ltn | grep 18081" </dev/null ;;
-    stop)  $SSH asia2 "sudo pkill -f '[h]ttp.server 18081' || true" </dev/null ;;
+    # systemd-run の一時ユニットで起動 (ssh セッションを掴まない)
+    start) $SSH asia2 "sudo systemd-run --unit=pg-walserve -p User=postgres -p WorkingDirectory=/var/lib/postgresql/walsave python3 -m http.server 18081 --bind 192.168.4.10; sleep 1; ss -ltn | grep 18081" </dev/null ;;
+    stop)  $SSH asia2 "sudo systemctl stop pg-walserve 2>/dev/null; sudo pkill -f '[h]ttp.server 18081' || true" </dev/null ;;
   esac
 }
 
 standby() {
   for h in "$@"; do
     echo "== $h"
+    lock
     sed "s/@HOST@/$h/g" etc/pg/standby.conf | $SSH "$h" "sudo tee $PGC/conf.d/isucon-standby.conf >/dev/null && sudo chown postgres:postgres $PGC/conf.d/isucon-standby.conf && sudo chmod 640 $PGC/conf.d/isucon-standby.conf"
     $SSH "$h" "sudo -u postgres touch /var/lib/postgresql/16/main/standby.signal && sudo systemctl enable --now postgresql && sleep 2 && systemctl is-active postgresql@16-main" </dev/null
+    unlock
   done
 }
 
 restart_primary() { # restart 必須パラメータ (shared_buffers/max_connections) の反映。公式ベンチ外で。
+  lock
   $SSH asia2 "sudo -u postgres psql -XAtc \"select name,setting,pending_restart from pg_settings where pending_restart\"; sudo systemctl restart postgresql@16-main && sudo -u postgres psql -XAtc 'show shared_buffers' -c 'show max_connections'" </dev/null
+  unlock
 }
 
 status() {

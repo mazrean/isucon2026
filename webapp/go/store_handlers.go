@@ -78,8 +78,8 @@ func (e *storeEngine) login(c *echo.Context, input loginRequest) (bool, error) {
 		}
 		// 文は再実行しても同じ結果になるよう対象を ID で指定する (書き戻しの再送対策)
 		var old []string
-		for th, s := range d.sessions {
-			if s.UserID == u.ID {
+		for th, s := range t.sessionsOf(u.ID) {
+			{
 				t.emit("login_sessions", "U", sessionRow(th, s, false))
 				old = append(old, th)
 			}

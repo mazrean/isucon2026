@@ -29,8 +29,12 @@ func (e *storeEngine) register(c *echo.Context, input registerRequest) (bool, er
 		hashHex := hex.EncodeToString(hash[:])
 		t.exec(`INSERT INTO users (id, username, secret_key_hash, display_name, region, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $6)`,
 			userID, input.Username, hashHex, input.DisplayName, input.Region, t.now)
+		clean := !t.d.sortedDirty && t.d.sorted != nil
 		t.emit("users", "I", memUserRow{ID: userID, Username: input.Username, SecretKeyHash: hashHex, DisplayName: input.DisplayName,
 			Region: input.Region, AccountType: "regular", Status: "active"})
+		if clean {
+			t.d.insertSortedUser(t.d.users[userID])
+		}
 		resp := registerResponse{SecretKey: secretKey, User: newSessionUserResponse(t.d.users[userID].User)}
 		return func() error { return c.JSON(http.StatusCreated, resp) }, nil
 	})
@@ -119,8 +123,8 @@ func (e *storeEngine) deleteAccount(c *echo.Context, userID string) (bool, error
 		next := u.User
 		next.Status = "deleted"
 		t.emit("users", "U", userRow(next))
-		for th, s := range t.d.sessions {
-			if s.UserID == userID {
+		for th, s := range t.sessionsOf(userID) {
+			{
 				t.emit("login_sessions", "U", sessionRow(th, s, false))
 			}
 		}

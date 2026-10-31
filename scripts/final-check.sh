@@ -86,6 +86,7 @@ for p in $ports; do for path in /api/ /api/posting-window/current; do
   echo "  :$p$path -> $c"
   case "$c" in 000|5*) ng "GET :$p$path -> $c";; esac
 done; done
+true   # pin exit status: non-zero means ssh itself failed
 EOF
 )
 

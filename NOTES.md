@@ -249,7 +249,7 @@ END: 2026-10-31 18:00 JST
 ## 最終の段取り (14:05 作成、ドライバーが実行)
 `scripts/final-check.sh` は読み取りのみ (再起動・lock・ポータル操作なし)。最終行が `OK ...` か `NG: 理由; ...` (NG なら exit 1)。`WARN` は判断材料で、失敗ではない。
 1. **凍結 16:30**。以降はコード・設定の変更とデプロイをしない。やるのは再起動、確認、ベンチだけ。
-2. **既定を固める** (16:30 まで)。最終候補を **引数も環境変数も無しの bare `scripts/deploy.sh`** で再現できるよう、採用するノブを deploy.sh の既定に上げて commit。bare の現状の既定は MEM=1 MEM_WM=1 FWD=1 (宛先 asia1) PREVALIDATE=1 LOCALIMG=1 MEMORIES_PAR/MEM/CACHE=1 FWD_PRIORITY=1 LOCAL_ONLY_WRITE=1 MEM_REORDER_WAIT_MS=50 PGSSL=allow で、残りは 0 か空 (**JC=0**、JPEG_LOCAL_SLOTS=1、STORE/LOCAL_SESSION/LOGREPL/FRONT/PACE/CWND/ASIA_LOCALIMG/IMG_*=0)。14:02 時点の env.sh は JPEG_LOCAL_SLOTS=2 と jpegcheckd 稼働 (JC=1) で、bare の既定と違う。採用するなら既定に上げること。
+2. **既定を固める** (16:30 まで)。最終候補を **引数も環境変数も無しの bare `scripts/deploy.sh`** で再現できるよう、採用するノブを deploy.sh の既定に上げて commit。bare の既定は、14:10 時点で MEM=1 MEM_WM=1 FWD=1 (宛先 asia1) PREVALIDATE=1 LOCALIMG=1 MEMORIES_PAR/MEM/CACHE=1 FWD_PRIORITY=1 LOCAL_ONLY_WRITE=1 MEM_REORDER_WAIT_MS=50 PGSSL=allow で、残りは 0 か空 (**JC=0**、JPEG_LOCAL_SLOTS=1、STORE/LOCAL_SESSION/LOGREPL/FRONT/PACE/CWND/ASIA_LOCALIMG/IMG_*=0。DB_IMG_OPEN=12、DB_IMG_READ_OPEN=16、POST_SLOT_EXEMPT=0)。repo は凍結まで動き続けるので、凍結のときに `grep -oE '[A-Z_]+:-[^}]*\}' scripts/deploy.sh | sort -u` で一覧を取り直すこと。14:02 時点の env.sh は JPEG_LOCAL_SLOTS=2 と jpegcheckd 稼働 (JC=1) で、bare の既定と違う。採用するなら既定に上げること。
    - pprof: deploy.sh は `ISUREAL_PPROF_ADDR=127.0.0.1:6060` を無条件に書く (127.0.0.1 だけで待ち受け)。final-check は WARN を出す。消すなら 16:30 までに deploy.sh を直す。残すならそう決めて、ここに書く。
    - ログ: `ISUREAL_LOG_LEVEL` は未設定で、既定は debug。ただし action log が出すのは guard 用の行と 5xx だけ。nginx の access_log (timed buffer=64k) は有効のまま。
    - 固めたら `scripts/batch.sh "final candidate"` で 1 回デプロイし、ベンチまで流す。

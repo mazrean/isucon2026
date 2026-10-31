@@ -85,3 +85,4 @@
 15:47	9cb553c	job=24289 state=4 pass=true スコア=188124 種別エラー数=map[]	新既定 + STORE=1 + USER_LOCK_SPLIT=1
 15:50	2e9df7e	job=24558 state=4 pass=true スコア=181989 種別エラー数=map[]	新既定 + STORE=1 + FWD_POST_SLOTS=128
 15:55	0ed6ada	job=25001 state=4 pass=true スコア=175990 種別エラー数=map[]	STORE=1 + USER_LOCK_SPLIT=1、4 台同時の再起動の後に、デプロイなしで 1 本
+15:58	7f1c1d9	job=25309 state=4 pass=true スコア=184337 種別エラー数=map[]	STORE=1 + USER_LOCK_SPLIT=1 + POST_TIMING=1 (投稿の段ごとの計測、最終には使わない)

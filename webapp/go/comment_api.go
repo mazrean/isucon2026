@@ -55,14 +55,11 @@ func createCommentHandler(h *HandlerContext) echo.HandlerFunc {
 			return err
 		}
 		defer tx.Rollback()
-		// 組の advisory lock + 行の共有ロック (relationship.go の lockRelationshipPair を参照)。
-		// 以前と同じく status は問わず、行が無ければ sql.ErrNoRows を返す。
-		lockedIDs, err := lockRelationshipPair(ctx, tx, actor, post.AuthorID, false)
-		if err != nil {
-			return err
-		}
-		if len(lockedIDs) != len(slices.Compact([]string{min(actor, post.AuthorID), max(actor, post.AuthorID)})) {
-			return sql.ErrNoRows
+		for _, id := range slices.Compact([]string{min(actor, post.AuthorID), max(actor, post.AuthorID)}) {
+			var lockedID string
+			if err := tx.GetContext(ctx, &lockedID, `SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE`, id); err != nil {
+				return err
+			}
 		}
 		allowed, err := canComment(ctx, tx, actor, post.ID)
 		if err != nil {

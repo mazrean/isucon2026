@@ -1,0 +1,40 @@
+time=2026-10-31T03:53:48.195Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:53:51.410Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:53:54.199Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:53:57.338Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T03:53:58.920Z level=INFO msg="user moved" user=nanoa5197 from=asia to=europe
+time=2026-10-31T03:54:00.295Z level=INFO msg="europe 2 日目: 20 人"
+time=2026-10-31T03:54:03.200Z level=INFO msg="america 2 日目: 12 人"
+time=2026-10-31T03:54:06.342Z level=INFO msg="asia 3 日目: 151 人"
+time=2026-10-31T03:54:07.406Z level=INFO msg="user moved" user=ulsuko.5558 from=asia to=america
+time=2026-10-31T03:54:08.916Z level=INFO msg="user moved" user=ulsuko.5558 from=america to=asia
+time=2026-10-31T03:54:09.307Z level=INFO msg="europe 3 日目: 53 人"
+time=2026-10-31T03:54:12.236Z level=INFO msg="america 3 日目: 33 人"
+time=2026-10-31T03:54:13.229Z level=INFO msg="user moved" user=evamiare.6279 from=europe to=asia
+time=2026-10-31T03:54:14.770Z level=INFO msg="user moved" user=nanoa5197 from=europe to=america
+time=2026-10-31T03:54:15.221Z level=INFO msg="asia 4 日目: 408 人"
+time=2026-10-31T03:54:18.736Z level=INFO msg="europe 4 日目: 141 人"
+time=2026-10-31T03:54:19.644Z level=INFO msg="user moved" user=chini-6595 from=asia to=europe
+time=2026-10-31T03:54:19.782Z level=INFO msg="user moved" user=tefuho5505 from=america to=europe
+time=2026-10-31T03:54:20.022Z level=INFO msg="user moved" user=evamiare.6279 from=asia to=europe
+time=2026-10-31T03:54:20.218Z level=INFO msg="user moved" user=yosu.6601 from=asia to=europe
+time=2026-10-31T03:54:21.127Z level=INFO msg="user moved" user=ulsuko.5558 from=asia to=america
+time=2026-10-31T03:54:23.038Z level=INFO msg="america 4 日目: 87 人"
+time=2026-10-31T03:54:24.419Z level=INFO msg="user moved" user=kerore-7019 from=asia to=america
+time=2026-10-31T03:54:25.033Z level=INFO msg="user moved" user=hene_8160 from=asia to=europe
+time=2026-10-31T03:54:25.200Z level=INFO msg="user moved" user=teno_8390 from=asia to=europe
+time=2026-10-31T03:54:25.338Z level=INFO msg="asia 5 日目: 685 人"
+time=2026-10-31T03:54:28.031Z level=INFO msg="europe 5 日目: 189 人"
+time=2026-10-31T03:54:31.643Z level=INFO msg="america 5 日目: 88 人"
+time=2026-10-31T03:54:39.915Z level=INFO msg="asia 最終日（グランプリ）: 685 人"
+time=2026-10-31T03:54:40.292Z level=INFO msg="america 最終日（グランプリ）: 88 人"
+time=2026-10-31T03:54:41.250Z level=INFO msg="europe 最終日（グランプリ）: 188 人"
+time=2026-10-31T03:54:48.203Z level=INFO msg="グランプリ: アジア 450 人, ヨーロッパ 176 人, アメリカ 84 人"
+{
+  "pass": true,
+  "score": 113557,
+  "messages": []
+}
+
+reason= 実行終了
+job=10125 state=4 pass=true スコア=113557 種別エラー数=map[]

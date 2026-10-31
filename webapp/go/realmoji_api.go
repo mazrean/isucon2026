@@ -133,6 +133,11 @@ func getRealMojisHandler(h *HandlerContext) echo.HandlerFunc {
 		if (input.BeforeCreatedAt == nil) != (input.BeforeID == "") {
 			return NewAPIError(http.StatusBadRequest, "invalid_pagination")
 		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.realmojis(c, input); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		allowed, err := canViewPost(ctx, h.Reader(), GetSession(c).UserID, input.PostID)
 		if err != nil {

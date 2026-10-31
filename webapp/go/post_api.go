@@ -179,6 +179,11 @@ type getMyCurrentPostResponse createPostResponse
 
 func getMyCurrentPostHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
+		if h.Mem.on() {
+			if ok, err := h.Mem.myCurrentPost(c); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
 		var postID string
@@ -222,6 +227,11 @@ func getPostHandler(h *HandlerContext) echo.HandlerFunc {
 		var input getPostRequest
 		if err := c.Bind(&input); err != nil {
 			return err
+		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.getPost(c, input.PostID); ok {
+				return err
+			}
 		}
 		ctx := c.Request().Context()
 		post, err := getPostWithAuthor(ctx, h.Reader(), input.PostID)

@@ -26,6 +26,11 @@ type getCurrentPostingWindowResponse struct {
 
 func getCurrentPostingWindowHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
+		if h.Mem.on() {
+			if ok, err := h.Mem.currentPostingWindow(c); ok {
+				return err
+			}
+		}
 		var state struct {
 			PostingWindow
 			Active  int `db:"active"`

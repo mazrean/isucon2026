@@ -47,6 +47,11 @@ func getFeedHandler(h *HandlerContext) echo.HandlerFunc {
 		if ranked && (input.BeforeScore == nil) != (input.BeforeID == "") {
 			return NewAPIError(http.StatusBadRequest, "invalid_pagination")
 		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.feed(c, input); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		viewer, err := loadViewerContext(ctx, h.Reader(), GetSession(c).UserID)
 		if errors.Is(err, sql.ErrNoRows) {

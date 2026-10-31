@@ -17,6 +17,9 @@ type HandlerContext struct {
 	IPBans *IPBanList
 
 	Notifications *notificationHub
+
+	Mem     *memStore // ISUREAL_MEM=1 のときだけ非 nil
+	memPump *memPump
 }
 
 // Reader は、トランザクション外の読み取り専用クエリに使う接続を返す。
@@ -55,6 +58,7 @@ func NewServer(config *Config) *echo.Echo {
 	}
 	handlerContext.Notifications = newNotificationHub(handlerContext.Reader)
 	e.Use(IPBanMiddleware(handlerContext))
+	setupMem(handlerContext, e)
 
 	e.POST("/api/initialize", initializeHandler(handlerContext))
 	e.POST("/api/auth/register", registerHandler(handlerContext))

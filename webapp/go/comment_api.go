@@ -102,6 +102,11 @@ func getCommentsHandler(h *HandlerContext) echo.HandlerFunc {
 		if (input.AfterCreatedAt == nil) != (input.AfterID == "") {
 			return NewAPIError(http.StatusBadRequest, "invalid_pagination")
 		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.comments(c, input); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		allowed, err := canComment(ctx, h.Reader(), GetSession(c).UserID, input.PostID)
 		if err != nil {

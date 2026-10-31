@@ -175,6 +175,11 @@ func getMeHandler(h *HandlerContext) echo.HandlerFunc {
 		if session == nil {
 			return NewAPIError(http.StatusUnauthorized, "invalid_session")
 		}
+		if h.Mem.on() {
+			if ok, err := h.Mem.getMe(c); ok {
+				return err
+			}
+		}
 		user, err := getUser(c.Request().Context(), h.Reader(), session.UserID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusNotFound, "account_not_found")

@@ -3,6 +3,7 @@ package isureal
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"sort"
 	"sync"
@@ -418,7 +419,12 @@ func (d *memData) applyPost(r memPostRow) {
 	}
 	w := d.windows[r.PostingWindowID]
 	if w == nil {
-		return
+		// window row not applied yet: keep the post on a placeholder that
+		// applyWindow fills in later, instead of dropping it for good
+		w = &memWindow{}
+		w.ID = r.PostingWindowID
+		d.windows[r.PostingWindowID] = w
+		slog.Warn("mem: post before its window", "post", r.ID, "window", r.PostingWindowID)
 	}
 	author := d.user(r.AuthorID)
 	author.exportVer = memExportVerSeq.Add(1)

@@ -41,18 +41,37 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		// 画像の中身 (owner / media_type / data) は ID ごとに不変なのでキャッシュから引く。
-		rdb, pdb := h.imageDBs()
-		obj, err := images.get(ctx, rdb, pdb, input.ImageID)
-		if err != nil {
-			return err
+		var obj *imageObject
+		var file *imageFile // ISUREAL_IMG_SENDFILE: disk-cache hit, sent with sendfile
+		if imgSendfileOn {
+			if o, ok := images.mem.get(input.ImageID); ok {
+				imgStats.memHit.Add(1)
+				obj = o
+			} else if file = images.openDisk(input.ImageID); file != nil {
+				imgStats.diskHit.Add(1)
+				defer file.f.Close()
+			}
 		}
-		if obj == nil {
-			return NewAPIError(http.StatusForbidden, "image_forbidden")
+		if obj == nil && file == nil {
+			rdb, pdb := h.imageDBs()
+			obj, err = images.get(ctx, rdb, pdb, input.ImageID)
+			if err != nil {
+				return err
+			}
+			if obj == nil {
+				return NewAPIError(http.StatusForbidden, "image_forbidden")
+			}
+		}
+		owner := ""
+		if obj != nil {
+			owner = obj.Owner
+		} else {
+			owner = file.owner
 		}
 		// owner の状態と削除状態は毎回 (1 秒以内の鮮度で) 確認する。
-		validity, ok := memImageValid(h, input.ImageID, obj.Owner)
+		validity, ok := memImageValid(h, input.ImageID, owner)
 		if !ok {
-			validity, err = checkImageValidity(ctx, h, input.ImageID, obj.Owner)
+			validity, err = checkImageValidity(ctx, h, input.ImageID, owner)
 			if err != nil {
 				return err
 			}
@@ -73,6 +92,9 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		if exp <= time.Now().Unix() {
 			return NewAPIError(http.StatusForbidden, "image_forbidden")
+		}
+		if file != nil {
+			return sendImageFile(c, file)
 		}
 		return c.Blob(http.StatusOK, obj.MediaType, obj.Data)
 	}

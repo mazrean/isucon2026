@@ -92,3 +92,5 @@
 16:08	fa8a55f	job=26281 state=4 pass=true スコア=184132 種別エラー数=map[]	新既定 (STORE+SPLIT) + ASIA_LOCALIMG_FSYNC=gp
 16:12	15651ce	job=26530 state=4 pass=true スコア=199880 種別エラー数=map[]	新既定 (STORE+SPLIT) + NGX_BODYBUF=512k
 16:14	7b08446	job=26843 state=4 pass=true スコア=121444 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL (再挑戦: MEMORIES_CACHE_ORIGIN 空、peer にも WAL の barrier)
+16:17	63dd555	job=27110 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + NOTE=1
+16:20	179a4bb	job=27389 state=4 pass=true スコア=173589 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + MEM_SYNC_VISIBLE=1

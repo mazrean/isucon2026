@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-// 到達不能な peer は即失敗するが、lease (lastAckAt + memLease) が切れるまでは書き込みを保留する。
+// 到達不能な peer は即失敗するが、lease (lastSentAt + memLease) が切れるまでは書き込みを保留する。
 func TestMemWaitAckedDeadPeerWaitsLease(t *testing.T) {
-	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", lastAckAt: time.Now()}}}
+	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", lastAckAt: time.Now(), lastSentAt: time.Now()}}}
 	ps.cond = sync.NewCond(&ps.mu)
 	start := time.Now()
 	ps.publish(nil)

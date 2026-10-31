@@ -37,6 +37,9 @@ type memPushRequest struct {
 	Epoch   string     `json:"e"`
 	Seq     int64      `json:"q"` // pump の最新連番 (heartbeat でも送る。peer はこれで欠番を検知)
 	Batches []memBatch `json:"b"`
+	// LeaseUntil: pump の送信時刻 + memLease (unix ns)。peer の lease はこれより先へ延びない
+	// (遅れて届いた push が、新しい書き込みを含まないまま lease を生き返らせないため)。0 = 延長しない。
+	LeaseUntil int64 `json:"l,omitempty"`
 }
 
 // peer は最後に push/heartbeat を受け取ってから memLease を過ぎたら自発的にメモリ読みをやめる (DB 経路)。
@@ -90,6 +93,8 @@ type memPeer struct {
 	beat    bool
 	// 最後に ok ack を受けた時刻。peer の lease はこれ + memLease より前に必ず切れる。
 	lastAckAt time.Time
+	// lastSentAt: lease を延ばしうる push を最後に送った時刻。peer の lease は lastSentAt + memLease 以下。
+	lastSentAt time.Time
 	// この epoch で invalidate (not-ready 化) の成功を確認済み
 	invalidatedEpoch string
 }
@@ -114,7 +119,7 @@ func newMemPeersFromEnv(p *memPump) *memPeers {
 	for _, a := range strings.Split(list, ",") {
 		if a = strings.TrimSpace(a); a != "" {
 			// 前プロセスが与えた lease を考慮して起動時刻で初期化 (保守的)
-			ps.peers = append(ps.peers, &memPeer{addr: a, lastAckAt: time.Now()})
+			ps.peers = append(ps.peers, &memPeer{addr: a, lastAckAt: time.Now(), lastSentAt: time.Now()})
 		}
 	}
 	return ps
@@ -157,9 +162,15 @@ func (ps *memPeers) sender(peer *memPeer, epoch string) {
 		if len(batches) > 0 {
 			last = batches[len(batches)-1].Seq
 		}
+		var leaseUntil int64
+		if !peer.down { // a down peer gets no lease until it acks again
+			now := time.Now()
+			peer.lastSentAt = now
+			leaseUntil = now.Add(memLease).UnixNano()
+		}
 		ps.mu.Unlock()
 
-		body, err := memHTTPPost(peer.addr, "/internal/mem/push", memPushRequest{Epoch: epoch, Seq: last, Batches: batches}, memPushTimeout)
+		body, err := memHTTPPost(peer.addr, "/internal/mem/push", memPushRequest{Epoch: epoch, Seq: last, Batches: batches, LeaseUntil: leaseUntil}, memPushTimeout)
 		var resp memPushResponse
 		if err == nil {
 			err = json.Unmarshal(body, &resp)
@@ -237,7 +248,7 @@ func (ps *memPeers) waitAcked() {
 			if ps.epoch != epoch && peer.invalidatedEpoch == ps.epoch {
 				continue
 			}
-			leaseEnd := peer.lastAckAt.Add(memLease + 50*time.Millisecond)
+			leaseEnd := peer.lastSentAt.Add(memLease + 100*time.Millisecond)
 			if !now.Before(leaseEnd) {
 				continue
 			}
@@ -688,7 +699,7 @@ func (r *memReceiver) push(req memPushRequest) bool {
 			return false
 		}
 	}
-	r.m.extendLease()
+	r.m.extendLeaseUntil(req.LeaseUntil)
 	return true
 }
 

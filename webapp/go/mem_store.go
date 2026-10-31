@@ -128,6 +128,19 @@ func (m *memStore) on() bool {
 	return !m.useLease || time.Now().UnixNano() < m.leaseUntil.Load()
 }
 
+// extendLeaseUntil は lease を until (pump の送信時刻 + memLease) まで延ばす。今 + memLease を超えず、縮めない。
+func (m *memStore) extendLeaseUntil(until int64) {
+	if until <= 0 {
+		return
+	}
+	if lim := time.Now().Add(memLease).UnixNano(); until > lim {
+		until = lim
+	}
+	if until > m.leaseUntil.Load() {
+		m.leaseUntil.Store(until)
+	}
+}
+
 func (m *memStore) extendLease() {
 	m.leaseUntil.Store(time.Now().Add(memLease).UnixNano())
 }

@@ -17,7 +17,7 @@ type poolJob struct {
 const signPoolSpins = 4
 
 var (
-	signQueue   chan poolJob
+	signQueue    chan poolJob
 	signPoolOnce sync.Once
 )
 

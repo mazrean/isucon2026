@@ -44,3 +44,4 @@
 13:20	114477d	job=12063 state=4 pass=false スコア=0 種別エラー数=map[]	既定 (枠 128) + PGSSLMODE=allow + MEMORIES_MEM=1 (eu/am の Memories をメモリから)
 13:24	62716d1	job=12395 state=4 pass=false スコア=0 種別エラー数=map[]	再走: 既定 (枠 128、PGSSLMODE=allow) + MEMORIES_MEM=1 + admin 専用プール
 13:25	d7978a1	job=12488 state=4 pass=false スコア=0 種別エラー数=map[]	切り分け: PGSSL=prefer + MEMORIES_MEM=0 (他は既定)
+13:31	75aef94	job=12846 state=4 pass=true スコア=146736 種別エラー数=map[]	ディスク上限の修正 + 既定 (枠 128、PGSSL=allow) + MEMORIES_MEM=1 + admin 専用プール

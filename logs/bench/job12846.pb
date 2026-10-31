@@ -1,0 +1,54 @@
+
+�'�d��� *�ݕ���D2�ޕ����:�ݕ����rB�ޕ����H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008���$��"��*�$
+実行終了�$time=2026-10-31T04:29:54.793Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T04:29:57.941Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T04:30:00.780Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T04:30:03.877Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T04:30:06.786Z level=INFO msg="europe 2 日目: 17 人"
+time=2026-10-31T04:30:09.779Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T04:30:12.988Z level=INFO msg="asia 3 日目: 144 人"
+time=2026-10-31T04:30:15.857Z level=INFO msg="europe 3 日目: 44 人"
+time=2026-10-31T04:30:16.640Z level=INFO msg="user moved" user=seru5967 from=asia to=europe
+time=2026-10-31T04:30:16.918Z level=INFO msg="user moved" user=reyane-5822 from=asia to=america
+time=2026-10-31T04:30:17.877Z level=INFO msg="user moved" user=tsuwazoe.5473 from=america to=europe
+time=2026-10-31T04:30:18.836Z level=INFO msg="america 3 日目: 45 人"
+time=2026-10-31T04:30:21.784Z level=INFO msg="asia 4 日目: 379 人"
+time=2026-10-31T04:30:22.351Z level=INFO msg="user moved" user=tsuwazoe.5473 from=europe to=asia
+time=2026-10-31T04:30:24.812Z level=INFO msg="europe 4 日目: 122 人"
+time=2026-10-31T04:30:25.828Z level=INFO msg="user moved" user=nomo7140 from=asia to=europe
+time=2026-10-31T04:30:26.833Z level=INFO msg="user moved" user=maxshiya7417 from=asia to=america
+time=2026-10-31T04:30:27.287Z level=INFO msg="user moved" user=mubenmi-6998 from=asia to=america
+time=2026-10-31T04:30:27.783Z level=INFO msg="america 4 日目: 124 人"
+time=2026-10-31T04:30:28.097Z level=INFO msg="user moved" user=tsumine.7017 from=asia to=europe
+time=2026-10-31T04:30:30.433Z level=INFO msg="user moved" user=seru5967 from=europe to=asia
+time=2026-10-31T04:30:30.925Z level=INFO msg="asia 5 日目: 915 人"
+time=2026-10-31T04:30:32.094Z level=INFO msg="user moved" user=sunuro-8730 from=europe to=america
+time=2026-10-31T04:30:33.845Z level=INFO msg="europe 5 日目: 269 人"
+time=2026-10-31T04:30:37.175Z level=INFO msg="america 5 日目: 275 人"
+time=2026-10-31T04:30:45.893Z level=INFO msg="europe 最終日（グランプリ）: 268 人"
+time=2026-10-31T04:30:46.230Z level=INFO msg="asia 最終日（グランプリ）: 914 人"
+time=2026-10-31T04:30:46.725Z level=INFO msg="america 最終日（グランプリ）: 274 人"
+time=2026-10-31T04:30:54.820Z level=INFO msg="グランプリ: アジア 587 人, ヨーロッパ 213 人, アメリカ 232 人"
+{
+  "pass": true,
+  "score": 146736,
+  "messages": [
+    "tsukomo_12657: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "muretor10210: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "ruivyse-12770: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "yushitor12163: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "hehi.11169: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "kono-11883: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "haivyya12228: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "minomar.12871: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "andan_12083: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "hoto.12808: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "ivyko_11761: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "anre11350: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "safu.5590: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "davi_pereira_3221: ログインできません: POST /api/auth/login: 通信に失敗しました: Post \"http://57.183.58.128:8080/api/auth/login\": EOF"
+  ]
+}
+ ���������(���������2�ޕ������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

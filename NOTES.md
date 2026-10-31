@@ -212,3 +212,4 @@ END: 2026-10-31 18:00 JST
 | 12063 | - | **FAIL 0** | PGSSLMODE=allow + MEMORIES_MEM=1。初期検証で PUT /api/me/profile-image が 500 (unexpected EOF、直前に同じ利用者の invalid_image 400)。11877 でも負荷中に同じ 500 が 1 件 → 既存の間欠バグとして調査中 |
 | 12395 | - | **FAIL 0** | 12063 と同じ構成の再走。同じ profile-image 500 で FAIL → 再現。PGSSL=prefer + MEMORIES_MEM=0 で切り分け |
 | 12488 | - | **FAIL 0** | PGSSL=prefer + MEMORIES_MEM=0 でも同じ FAIL → 原因は asia1 のディスク満杯 (imgcache 33G、nginx の body 一時ファイルが書けず 500)。全台の imgcache を消去、ディスク上限 6GB を実装 |
+| 12846 | - | **146736** | ディスク上限 + 既定 + MEMORIES_MEM=1 + admin 専用プール。asia5 915 / eu 269 / am 275。GP 587 / 213 / 232。通知 503 あり → MEMORIES_MEM 既定 on |

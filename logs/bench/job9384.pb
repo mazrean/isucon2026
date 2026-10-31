@@ -1,0 +1,48 @@
+
+��I��� *�Ǖ��؃�2�ȕ�診f:�Ǖ�аͰB�ȕ���dH���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T03:43:57.784Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:44:01.033Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:44:03.784Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:44:06.874Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T03:44:08.369Z level=INFO msg="user moved" user=marno5220 from=asia to=america
+time=2026-10-31T03:44:09.829Z level=INFO msg="europe 2 日目: 17 人"
+time=2026-10-31T03:44:09.852Z level=INFO msg="user moved" user=marno5220 from=america to=europe
+time=2026-10-31T03:44:12.787Z level=INFO msg="america 2 日目: 16 人"
+time=2026-10-31T03:44:13.017Z level=INFO msg="user moved" user=memar5408 from=europe to=asia
+time=2026-10-31T03:44:16.068Z level=INFO msg="asia 3 日目: 151 人"
+time=2026-10-31T03:44:18.842Z level=INFO msg="europe 3 日目: 49 人"
+time=2026-10-31T03:44:19.155Z level=INFO msg="user moved" user=memar5408 from=asia to=america
+time=2026-10-31T03:44:19.574Z level=INFO msg="user moved" user=ulrunu5643 from=asia to=europe
+time=2026-10-31T03:44:22.030Z level=INFO msg="america 3 日目: 46 人"
+time=2026-10-31T03:44:22.408Z level=INFO msg="user moved" user=benta.6259 from=asia to=america
+time=2026-10-31T03:44:23.263Z level=INFO msg="user moved" user=marno5220 from=europe to=asia
+time=2026-10-31T03:44:24.798Z level=INFO msg="asia 4 日目: 402 人"
+time=2026-10-31T03:44:28.923Z level=INFO msg="user moved" user=vinhehi.6814 from=asia to=europe
+time=2026-10-31T03:44:28.985Z level=INFO msg="europe 4 日目: 133 人"
+time=2026-10-31T03:44:29.021Z level=INFO msg="user moved" user=maxku_7016 from=asia to=america
+time=2026-10-31T03:44:29.643Z level=INFO msg="user moved" user=marno5220 from=asia to=america
+time=2026-10-31T03:44:30.372Z level=INFO msg="user moved" user=miivy.6446 from=america to=europe
+time=2026-10-31T03:44:31.230Z level=INFO msg="america 4 日目: 98 人"
+time=2026-10-31T03:44:32.259Z level=INFO msg="user moved" user=elsol.6777 from=asia to=america
+time=2026-10-31T03:44:32.571Z level=INFO msg="user moved" user=tsuelnu.8065 from=asia to=europe
+time=2026-10-31T03:44:33.940Z level=INFO msg="user moved" user=michiyo8269 from=asia to=europe
+time=2026-10-31T03:44:34.466Z level=INFO msg="asia 5 日目: 881 人"
+time=2026-10-31T03:44:35.697Z level=INFO msg="user moved" user=roorivy-8549 from=europe to=america
+time=2026-10-31T03:44:42.004Z level=INFO msg="europe 5 日目: 141 人"
+time=2026-10-31T03:44:42.174Z level=INFO msg="america 5 日目: 100 人"
+time=2026-10-31T03:44:42.703Z level=INFO msg="user moved" user=memar5408 from=america to=europe
+time=2026-10-31T03:44:43.266Z level=INFO msg="user moved" user=miivy.6446 from=europe to=asia
+time=2026-10-31T03:44:49.588Z level=INFO msg="america 最終日（グランプリ）: 99 人"
+time=2026-10-31T03:44:51.003Z level=INFO msg="europe 最終日（グランプリ）: 141 人"
+time=2026-10-31T03:44:54.520Z level=INFO msg="asia 最終日（グランプリ）: 881 人"
+time=2026-10-31T03:44:57.807Z level=INFO msg="グランプリ: アジア 200 人, ヨーロッパ 130 人, アメリカ 94 人"
+{
+  "pass": true,
+  "score": 113234,
+  "messages": [
+    "moben10196: 新しいユーザーを登録できません: POST /api/auth/register: 応答がタイムアウトしました"
+  ]
+}
+ ���������(���������2�ȕ���d��
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

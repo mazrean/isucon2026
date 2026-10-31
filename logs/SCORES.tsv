@@ -31,3 +31,4 @@
 12:34	99291db	job=8506 state=4 pass=true スコア=110123 種別エラー数=map[]	push パイプライン化 + 送信時刻 lease (mem-pipeline) + LOCALIMG
 12:37	68526a9	job=8713 state=4 pass=true スコア=113783 種別エラー数=map[]	watermark (MEM_WM=1): eu/am の書き込みは peer ack を待たず、読みが wm を待つ
 12:40	32fb316	job=8957 state=4 pass=true スコア=111710 種別エラー数=map[]	既定 (WM + LOCALIMG + MEMORIES_PAR) + JC=1 (Rust JPEG)
+12:45	4d57d94	job=9384 state=4 pass=true スコア=113234 種別エラー数=map[]	既定 + 画像の有効性をメモリで判定 (IMGV_MEM)、STORE/LOGREPL は off で取り込み

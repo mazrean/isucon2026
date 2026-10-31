@@ -200,3 +200,4 @@ END: 2026-10-31 18:00 JST
   journalctl -u pg-logrepl-watchdog -f
   ```
 - 注意: 物理スタンバイが同名 (asia1 等) の application_name / スロットで残っていると誤判定する (物理スタンバイは撤去済みの前提)。
+| 9384 | - | 113234 | IMGV_MEM (画像の有効性をメモリで)。asia5 881 / eu 141 / am 100。GP asia 200 (窓の遅れ、修正前) / eu 130 / am 94。register timeout 1 |

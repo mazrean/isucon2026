@@ -31,7 +31,7 @@ type jpegRemote struct {
 
 var (
 	jpegRemotes      = parseJPEGRemotes(os.Getenv("ISUREAL_JPEG_REMOTES"))
-	jpegLocalSlots   = make(chan struct{}, 1) // asia1's own CPU is the scarce one
+	jpegLocalSlots   = make(chan struct{}, envIntOrDefault("ISUREAL_JPEG_LOCAL_SLOTS", 1)) // asia1's own CPU is the scarce one
 	jpegRemoteClient = &http.Client{
 		Transport: &http.Transport{MaxIdleConnsPerHost: 64, IdleConnTimeout: 300 * time.Second},
 	}

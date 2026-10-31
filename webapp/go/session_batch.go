@@ -35,7 +35,9 @@ var loginBatchOn = os.Getenv("ISUREAL_LOGIN_BATCH") == "1"
 
 var errLoginInvalid = errors.New("login batch: invalid credentials")
 
-var loginBatchUserSQL = `SELECT ` + strings.Join(userColumns, ", ") + ` FROM users WHERE username = $1 FOR NO KEY UPDATE`
+func loginBatchUserSQL() string {
+	return lockUserRowSQL(`SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE username = $1`, userAdvSession)
+}
 
 const loginBatchSessionSQL = `
 WITH u AS (
@@ -112,7 +114,7 @@ func loginBatch(ctx context.Context, db *sqlx.DB, username, secretKey string) (U
 		inserted  bool
 	)
 	err := runTxBatch(ctx, db, func(b *pgx.Batch) {
-		b.Queue(loginBatchUserSQL, username)
+		b.Queue(loginBatchUserSQL(), username)
 		b.Queue(loginBatchSessionSQL, username, secretHash, sessionID, tokenHash)
 	}, func(br pgx.BatchResults) error {
 		err := br.QueryRow().Scan(&user.ID, &user.Username, &user.SecretKeyHash, &user.DisplayName, &user.Bio,
@@ -159,7 +161,7 @@ func loginBatch(ctx context.Context, db *sqlx.DB, username, secretKey string) (U
 // logoutBatch: InvalidateLoginSession と同じ tx (ユーザー行が無ければエラー、無効化が 0 行でも成功)。
 func logoutBatch(ctx context.Context, db *sqlx.DB, userID, tokenHash string) error {
 	return runTxBatch(ctx, db, func(b *pgx.Batch) {
-		b.Queue(`SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID)
+		b.Queue(lockUserRowSQL(`SELECT id FROM users WHERE id = $1`, userAdvSession), userID)
 		b.Queue(`UPDATE login_sessions SET active = false, invalidated_at = clock_timestamp(), reason = 'logout'
 WHERE user_id = $1 AND active = true AND token_hash = $2`, userID, tokenHash)
 	}, func(br pgx.BatchResults) error {

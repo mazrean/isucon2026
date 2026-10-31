@@ -88,7 +88,8 @@ func createFriendRequestBatch(ctx context.Context, db *sqlx.DB, actor, recipient
 		pc := dc.(*stdlib.Conn).Conn()
 		b := &pgx.Batch{}
 		b.Queue("BEGIN")
-		b.Queue(relationshipLockSQL, actor, recipient)
+		lockSQL, lockArgs := relationshipLock(actor, recipient)
+		b.Queue(lockSQL, lockArgs...)
 		b.Queue(friendRequestBatchSQL, actor, recipient, uuid.NewString(), uuid.NewString(), min(actor, recipient), max(actor, recipient))
 		b.Queue("COMMIT")
 		br := pc.SendBatch(ctx, b)
@@ -177,7 +178,8 @@ func transitionFriendRequestBatch(ctx context.Context, db *sqlx.DB, request Frie
 		pc := dc.(*stdlib.Conn).Conn()
 		batch := &pgx.Batch{}
 		batch.Queue("BEGIN")
-		batch.Queue(relationshipLockSQL, a, b)
+		lockSQL, lockArgs := relationshipLock(a, b)
+		batch.Queue(lockSQL, lockArgs...)
 		batch.Queue(friendTransitionBatchSQL, request.ID, status, uuid.NewString(), min(a, b), max(a, b), a, b)
 		batch.Queue("COMMIT")
 		br := pc.SendBatch(ctx, batch)

@@ -69,7 +69,7 @@ func getUser(ctx context.Context, db sqlx.QueryerContext, userID string) (User, 
 // 行が無ければロック側と同じく sql.ErrNoRows、active でなければ getUser と同じく sql.ErrNoRows。
 func getUserForUpdate(ctx context.Context, tx sqlx.QueryerContext, userID string) (User, error) {
 	var user User
-	err := sqlx.GetContext(ctx, tx, &user, `SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID)
+	err := sqlx.GetContext(ctx, tx, &user, lockUserRowSQL(`SELECT `+strings.Join(userColumns, ", ")+` FROM users WHERE id = $1`, userAdvPost), userID)
 	if err != nil {
 		return user, err
 	}

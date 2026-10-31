@@ -160,7 +160,11 @@ func (p *memPump) loop() {
 		g := p.started
 		p.pmu.Unlock()
 
-		p.cycle()
+		if !p.cycle() {
+			// nothing was applied or published: keep barrier waiters blocked and retry
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
 
 		p.pmu.Lock()
 		p.done = g
@@ -177,14 +181,17 @@ func (p *memPump) ticker() {
 	}
 }
 
-func (p *memPump) cycle() {
+// cycle reports whether every change committed before it started is now applied
+// locally and handed to the peers; barrier waiters are released only then.
+func (p *memPump) cycle() bool {
 	p.cycleMu.Lock()
 	defer p.cycleMu.Unlock()
 	if !p.m.ready.Load() || p.loadedGen != p.wantGen.Load() {
 		if err := p.reload(); err != nil {
 			slog.Error("mem: reload failed", "error", err)
+			return false
 		}
-		return
+		return true
 	}
 	// a failed poll leaves p.snap unchanged, so retrying is safe; only reload
 	// (seconds, blocks every write) when polling keeps failing.
@@ -192,14 +199,15 @@ func (p *memPump) cycle() {
 		p.pollFailures++
 		if p.pollFailures < 3 {
 			slog.Warn("mem: poll failed; retrying", "error", err, "failures", p.pollFailures)
-			return
+			return false
 		}
 		slog.Error("mem: poll failed; reloading", "error", err)
 		p.pollFailures = 0
 		p.invalidate()
-		return
+		return false
 	}
 	p.pollFailures = 0
+	return true
 }
 
 type memPollRow struct {

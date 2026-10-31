@@ -416,3 +416,4 @@ END: 2026-10-31 18:00 JST
   - 走行中、asia2 は push に遅れていた (push delay 0.7→2.3→6.4s)。だからゲートが閉じて (origin_not_usable=9497)、eu はほぼ全部を自分の PG 経路 (asia2 の PG を WAN で読む) で処理した。eu の DB プール (25 本) の接続待ちで詰まった、と見る (確度 60%)。
   - 根本は、asia2 の 2 vCPU に全期間メモリ・push の適用・PG を同居させていること。
 - (17:28) 最後の走行は job34177 (198,146、pass)。以後ベンチは積まない。final-check OK (pprof off、access log off)。このあと E2E (データを書くが点には関わらない)。
+- (17:37) 最終版 (3478086) の再起動試験: 4 台同時、30〜43s で復帰、final-check OK。DATA の差は posts の行の並び順だけ (件数と最新時刻は同じ、問い合わせに ORDER BY が無い)。ブラウザ E2E (初期実装との差分): PASS、fails=0 warns=0 (out/20261031T083710)。17:28 の 1 回目は、lock を持ったまま e2e-check を呼んで自分で待ち合わせて止まっていた (LOCK_HELD=1 が要る)。最後の走行は job34177 (198,146) のまま。

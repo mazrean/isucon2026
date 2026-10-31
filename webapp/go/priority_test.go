@@ -63,6 +63,44 @@ func TestFwdPriorityLimitsLocalOnlyWhileForwarding(t *testing.T) {
 	wg.Wait()
 }
 
+// ISUREAL_FWD_PRIORITY_POST_SLOTS: 投稿が自分の枠を埋めても、他のローカル書き込みは共有の枠で待たずに入る。
+func TestFwdPriorityPostSlotsSeparate(t *testing.T) {
+	old := fwdPriorityPostSlots
+	fwdPriorityPostSlots = 2
+	t.Cleanup(func() { fwdPriorityPostSlots = old })
+	p := newFwdPriority("asia", 2, time.Second, time.Hour)
+	p.lastFwd.Store(time.Now().UnixNano())
+	release := make(chan struct{})
+	var posts, others atomic.Int64
+	h := p.middleware(func(*echo.Context) bool { return false })(func(c *echo.Context) error {
+		if c.Request().URL.Path == "/api/posts" {
+			posts.Add(1)
+			<-release
+			return nil
+		}
+		others.Add(1)
+		return nil
+	})
+	e := echo.New()
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Go(func() { _ = h(e.NewContext(httptest.NewRequest(http.MethodPost, "/api/posts", nil), httptest.NewRecorder())) })
+	}
+	time.Sleep(50 * time.Millisecond)
+	if posts.Load() != 2 {
+		t.Fatalf("posts in flight = %d, want 2 (own pool)", posts.Load())
+	}
+	start := time.Now()
+	for range 2 {
+		_ = h(e.NewContext(httptest.NewRequest(http.MethodPost, "/api/auth/login", nil), httptest.NewRecorder()))
+	}
+	if el := time.Since(start); others.Load() != 2 || el > 100*time.Millisecond {
+		t.Fatalf("login waited behind posts: n=%d el=%v", others.Load(), el)
+	}
+	close(release)
+	wg.Wait()
+}
+
 func TestFwdPriorityTarget(t *testing.T) {
 	cases := []struct {
 		method, path string

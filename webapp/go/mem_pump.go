@@ -267,16 +267,20 @@ func (p *memPump) poll() error {
 	defer cancel()
 	// watermark: クエリを送る直前の時刻 (スナップショット取得より前)。mem_watermark.go 参照。
 	x := memNow().UnixNano()
+	fs := time.Now()
 	changes, cur, err := fetchChanges(ctx, p.db, p.snap)
 	if err != nil {
 		return err
 	}
+	fetchDur := time.Since(fs)
 	if memWMEarly && p.peers != nil {
-		return p.pollEarly(changes, cur, x)
+		return p.pollEarly(changes, cur, x, fetchDur)
 	}
+	as := time.Now()
 	if err := p.m.applyBatch(changes); err != nil {
 		return err
 	}
+	memPushStats.recordPoll(fetchDur, time.Since(as))
 	p.snap = cur
 	if p.peers != nil && len(changes) > 0 {
 		if memWMHB {
@@ -292,7 +296,7 @@ func (p *memPump) poll() error {
 }
 
 // pollEarly (ISUREAL_MEM_WM_EARLY): peer への配信 (と wm) を asia1 のメモリ反映より先に行う。cycleMu 保持中。
-func (p *memPump) pollEarly(changes []memChange, cur string, x int64) error {
+func (p *memPump) pollEarly(changes []memChange, cur string, x int64, fetchDur time.Duration) error {
 	if len(changes) > 0 {
 		p.peers.publishWM(changes, x)
 	}
@@ -301,6 +305,8 @@ func (p *memPump) pollEarly(changes []memChange, cur string, x int64) error {
 	}
 	// 配信済みなので、失敗しても同じ変更を取り直して再送しない (peer で二重適用になる)。
 	p.snap = cur
+	as := time.Now()
+	defer func() { memPushStats.recordPoll(fetchDur, time.Since(as)) }()
 	if err := p.m.applyBatch(changes); err != nil {
 		slog.Error("mem: apply failed after early publish; reloading", "error", err)
 		p.invalidate()

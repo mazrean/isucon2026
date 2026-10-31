@@ -33,6 +33,7 @@ const memBufferBatches = 8192
 type memBatch struct {
 	Seq     int64       `json:"q"`
 	Changes []memChange `json:"c"`
+	at      time.Time   // publish 時刻 (pump 内のみ。MEM_PUSH_STATS の queue)
 }
 
 type memPushRequest struct {
@@ -152,6 +153,9 @@ func (ps *memPeers) publishWM(changes []memChange, wm int64) {
 		ps.wm = wm // 新しい ps.seq に対して有効: x より前に応答したコミットはこのバッチ以前に含まれる
 	}
 	b := memBatch{Seq: ps.seq, Changes: changes}
+	if memPushStatsOn {
+		b.at = time.Now()
+	}
 	ps.buf = append(ps.buf, b)
 	if len(ps.buf) > memBufferBatches {
 		ps.buf = append([]memBatch(nil), ps.buf[len(ps.buf)-memBufferBatches/2:]...)
@@ -174,6 +178,9 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 		last = batches[len(batches)-1].Seq
 	}
 	now := time.Now()
+	if memPushStatsOn && len(batches) > 0 && !batches[0].at.IsZero() {
+		memPushStats.recordQueue(now.Sub(batches[0].at))
+	}
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
 	if last == ps.seq {
 		req.WM = ps.wm // ps.wm は ps.seq に対して有効

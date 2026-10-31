@@ -79,6 +79,8 @@ ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop
 [[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1000MiB:50   # MEM_FULL: full-history load measured RSS 1.5GB (GOGC 100) vs peak 1.04GB / steady 0.91GB (900MiB:50) locally
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 ASIA_READ_SPLIT=${ASIA_READ_SPLIT:-0}   # 1 (asia1 nginx only; ignored with FRONT=1) = GET feeds / post detail / comments / RealMojis are weighted between asia1's app and the asia2 app (asia2 has NO mem model: PG path next to PostgreSQL, RYW via ISUREAL_STORE_AWAIT_PG=1). ASIA_READ_SPLIT_PCT (50) = asia2's share in %; asia2 down -> max_fails 3 / 5s, retried on asia1 (etc/app/isureal.conf app_asia_split)
+# guard: asia2 answers split reads from PG unless MEM_FULL makes it a peer; PG must be current at 2xx
+if [ "$ASIA_READ_SPLIT" = 1 ] && [ -n "$STORE_WAL" ] && [ "${MEM_FULL:-0}" != 1 ]; then echo "WARN: ASIA_READ_SPLIT=1 needs AWAIT_PG=1; STORE_WAL disabled" >&2; STORE_WAL=; fi
 ASIA_READ_SPLIT_PCT=${ASIA_READ_SPLIT_PCT:-50}
 ars_w2=$ASIA_READ_SPLIT_PCT; (( ars_w2 >= 1 && ars_w2 <= 99 )) || { echo "ASIA_READ_SPLIT_PCT must be 1..99" >&2; exit 2; }; ars_w1=$((100 - ars_w2))
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }

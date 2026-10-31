@@ -34,7 +34,7 @@ func (o *imageObject) size() int64 {
 
 const (
 	imageMemCacheBudgetDefMB = 300
-	imageMemCacheShards = 32
+	imageMemCacheShards      = 32
 )
 
 type imageLRUShard struct {

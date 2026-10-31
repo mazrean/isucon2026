@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -82,6 +83,35 @@ func TestExportRebuildMatchesDB(t *testing.T) {
 		t.Fatal("no export was rebuilt")
 	}
 	t.Logf("%d users, %d rebuilt", len(users), rebuilds)
+}
+
+// ISUREAL_EXPORT_CACHE_MB: exports evict only exports, Memories only Memories.
+func TestRespCacheSeparateExportBudget(t *testing.T) {
+	defer func(a, b int) { memRespCacheMaxBytes, memRespExportMaxBytes = a, b }(memRespCacheMaxBytes, memRespExportMaxBytes)
+	memRespCacheMaxBytes, memRespExportMaxBytes = 1000, 3000
+	var c memRespCache
+	mk := func(i int) memRespKey {
+		return memoriesRespKey("v"+strconv.Itoa(i), time.Unix(0, 0), time.Unix(1, 0), nil, "")
+	}
+	ex := func(i int) memRespKey { return memRespKey{kind: memRespExport, user: "e" + strconv.Itoa(i)} }
+	for i := 0; i < 9; i++ {
+		c.put(mk(i), c.begin(), make([]byte, 100), []string{"t"})
+	}
+	for i := 0; i < 20; i++ {
+		c.put(ex(i), c.begin(), make([]byte, 500), []string{"t"})
+	}
+	for i := 0; i < 9; i++ {
+		if c.get(mk(i)) == nil {
+			t.Fatalf("memories entry %d evicted by exports", i)
+		}
+	}
+	if c.exBytes > 3000 || c.bytes-c.exBytes != 900 {
+		t.Fatalf("budget: ex=%d mem=%d", c.exBytes, c.bytes-c.exBytes)
+	}
+	c.invalidate("t")
+	if c.bytes != 0 || c.exBytes != 0 {
+		t.Fatalf("accounting after invalidate: %d %d", c.bytes, c.exBytes)
+	}
 }
 
 // Without a DB: a stale-bucket entry is not served as-is, its skeleton is

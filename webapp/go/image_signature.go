@@ -15,6 +15,7 @@ const imageURLLifetime = 24 * time.Hour
 
 // imageURLNow is the clock of the signed-URL exp bucket (tests move it).
 var imageURLNow = time.Now
+
 const imageSignatureIterations = 1000
 
 // signed URLs are reused while they stay valid for at least this long, so the

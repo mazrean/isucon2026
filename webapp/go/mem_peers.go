@@ -65,7 +65,7 @@ type memPushResponse struct {
 
 var memHTTPClient = &http.Client{
 	Transport: &http.Transport{
-		MaxIdleConnsPerHost: 16,
+		MaxIdleConnsPerHost: memIdleConns(),
 		IdleConnTimeout:     5 * time.Minute,
 		DialContext:         (&net.Dialer{Timeout: 2 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
 	},
@@ -351,11 +351,22 @@ func memHTTPPost(addr, path string, body any, timeout time.Duration) ([]byte, er
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://"+addr+path, bytes.NewReader(data))
+	wire, gz := memMaybeGzip(path, data)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://"+addr+path, bytes.NewReader(wire))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if gz {
+		req.Header.Set("Content-Encoding", "gzip")
+	}
+	if memPushStatsOn && path == "/internal/mem/push" {
+		if pr, ok := body.(memPushRequest); ok {
+			defer func() {
+				memPushStats.recordSend(len(data), len(wire), &pr, time.Duration(time.Now().UnixNano()-pr.SentAt))
+			}()
+		}
+	}
 	req.Header.Set(forwardedSecretHeader, forwardSecret)
 	resp, err := memHTTPClient.Do(req)
 	if err != nil {
@@ -682,7 +693,25 @@ func (r *memReceiver) waitResynced(g uint64, timeout time.Duration) {
 	r.rsMu.Unlock()
 }
 
-func (r *memReceiver) push(req memPushRequest) bool {
+// pushTimed: push に段階ごとの計測を付ける (ISUREAL_MEM_PUSH_STATS)。
+func (r *memReceiver) pushTimed(req memPushRequest, recv time.Time) bool {
+	if !memPushStatsOn {
+		return r.push(req)
+	}
+	var st memPushTiming
+	ok := r.pushT(req, &st)
+	memPushStats.recordRecv(req.SentAt, recv, st.locked, time.Now(), st.pulls)
+	return ok
+}
+
+type memPushTiming struct {
+	locked time.Time // r.mu 取得 + 並び替え待ちの完了
+	pulls  int
+}
+
+func (r *memReceiver) push(req memPushRequest) bool { return r.pushT(req, nil) }
+
+func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 	r.mu.Lock()
 	if !r.m.ready.Load() || req.Epoch != r.epoch {
 		r.mu.Unlock()
@@ -714,11 +743,17 @@ func (r *memReceiver) push(req memPushRequest) bool {
 	}
 	defer r.mu.Unlock()
 	defer r.seqCond.Broadcast()
+	if st != nil {
+		st.locked = time.Now()
+	}
 	for _, b := range req.Batches {
 		if b.Seq <= r.seq {
 			continue
 		}
 		if b.Seq > r.seq+1 {
+			if st != nil {
+				st.pulls++
+			}
 			missing, err := r.pull(req.Epoch, r.seq+1, b.Seq-1)
 			if err == nil {
 				for _, mb := range missing {
@@ -744,6 +779,9 @@ func (r *memReceiver) push(req memPushRequest) bool {
 		r.seq = b.Seq
 	}
 	if req.Seq > r.seq {
+		if st != nil {
+			st.pulls++
+		}
 		missing, err := r.pull(req.Epoch, r.seq+1, req.Seq)
 		if err == nil {
 			for _, mb := range missing {
@@ -792,13 +830,19 @@ func registerMemPeerRoutes(e *echo.Echo, r *memReceiver) {
 		if !memAuthOK(c) {
 			return c.NoContent(http.StatusForbidden)
 		}
+		recv := time.Now()
 		var req memPushRequest
-		if err := json.NewDecoder(c.Request().Body).Decode(&req); err != nil {
+		body, closeBody, err := memRequestBody(c.Request())
+		if err == nil {
+			err = json.NewDecoder(body).Decode(&req)
+			closeBody()
+		}
+		if err != nil {
 			r.m.ready.Store(false)
 			go r.invalidate()
 			return c.NoContent(http.StatusBadRequest)
 		}
-		ok := r.push(req)
+		ok := r.pushTimed(req, recv)
 		if ok {
 			r.wmAfterPush(req)
 		}

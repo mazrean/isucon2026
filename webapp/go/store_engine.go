@@ -8,6 +8,7 @@ import (
 	"hash/fnv"
 	"log/slog"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"sync"
@@ -82,6 +83,42 @@ var storeImageLanes = func() int {
 	return 4
 }()
 
+// ISUREAL_STORE_TABLE_LANES (既定 1): 画像以外の文をテーブルごとのレーン (= 並列の tx) に分ける。
+// 書き戻しの文はどれも単一テーブル・副問い合わせ無し、tx は session_replication_role=replica (FK/トリガー無効)
+// なので、PG の最終状態に効くのは同じテーブル内の順序だけ (テーブル内はレーンが順に流す)。
+// 1 本の直列 tx だと asia の login/セッションの洪水の後ろに eu/am から転送された友達申請などが並び、
+// PG 側も 1 コアしか使えない (job15806: eu/am の転送書き込み p90 が既定の 2 倍)。
+var storeTableLanes = os.Getenv("ISUREAL_STORE_TABLE_LANES") != "0"
+
+var storeTables = []string{"users", "login_sessions", "posts", "comments", "realmojis", "friend_requests", "friendships", "follows", "block_relations", "posting_windows"}
+
+var storeTableRe = regexp.MustCompile(`^\s*(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(\w+)`)
+
+// storeTableLane: 文のテーブルのレーン (画像レーンの後ろ)。不明なら 0。
+func storeTableLane(sql string) int {
+	if !storeTableLanes {
+		return 0
+	}
+	m := storeTableRe.FindStringSubmatch(sql)
+	if m == nil {
+		return 0
+	}
+	for i, t := range storeTables {
+		if t == m[1] {
+			return 1 + storeImageLanes + i
+		}
+	}
+	return 0
+}
+
+func storeLaneCount() int {
+	n := 1 + storeImageLanes
+	if storeTableLanes {
+		n += len(storeTables)
+	}
+	return n
+}
+
 var storeCurrent *storeEngine // テスト用
 
 func setupStore(h *HandlerContext) {
@@ -93,9 +130,9 @@ func setupStore(h *HandlerContext) {
 		slog.Error("store: open db failed; store disabled", "error", err)
 		return
 	}
-	configurePool(db, 2+storeImageLanes)
+	configurePool(db, 1+storeLaneCount())
 	e := &storeEngine{p: h.memPump, m: h.memPump.m, db: db}
-	for i := 0; i <= storeImageLanes; i++ {
+	for i := 0; i < storeLaneCount(); i++ {
 		l := &storeLane{}
 		l.cond = sync.NewCond(&l.mu)
 		e.lanes = append(e.lanes, l)
@@ -106,7 +143,7 @@ func setupStore(h *HandlerContext) {
 	h.Store = e
 	h.memPump.preReload = e.syncPG
 	storeCurrent = e
-	slog.Info("store: enabled", "await_pg", storeAwaitPG, "image_lanes", storeImageLanes)
+	slog.Info("store: enabled", "await_pg", storeAwaitPG, "image_lanes", storeImageLanes, "table_lanes", storeTableLanes)
 }
 
 type storeTx struct {
@@ -161,7 +198,7 @@ func (t *storeTx) emit(tbl, op string, row any) {
 }
 
 func (t *storeTx) exec(sql string, args ...any) {
-	t.ops = append(t.ops, storeOp{SQL: sql, Args: args})
+	t.ops = append(t.ops, storeOp{Lane: storeTableLane(sql), SQL: sql, Args: args})
 }
 
 // execImage は image_objects の文 (画像 ID のレーンへ)。
@@ -317,7 +354,7 @@ func (e *storeEngine) enqueue(ops []storeOp) storeSeqs {
 				mine = append(mine, op)
 			}
 		}
-		if i != 0 && len(mine) == 0 {
+		if len(mine) == 0 && (i != 0 || storeTableLanes) {
 			continue
 		}
 		l.mu.Lock()

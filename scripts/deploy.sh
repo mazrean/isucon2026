@@ -75,6 +75,9 @@ VM=${VM:-0}   # 1 = asia1+asia2 get /etc/sysctl.d/98-isucon-vm.conf (watermark_b
 NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -> tx-N (isucon-netq.service, scripts/os-knobs.sh); 0 = unit removed, xps 0, irqbalance on
 ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
+ASIA_READ_SPLIT=${ASIA_READ_SPLIT:-0}   # 1 (asia1 nginx only; ignored with FRONT=1) = GET feeds / post detail / comments / RealMojis are weighted between asia1's app and the asia2 app (asia2 has NO mem model: PG path next to PostgreSQL, RYW via ISUREAL_STORE_AWAIT_PG=1). ASIA_READ_SPLIT_PCT (50) = asia2's share in %; asia2 down -> max_fails 3 / 5s, retried on asia1 (etc/app/isureal.conf app_asia_split)
+ASIA_READ_SPLIT_PCT=${ASIA_READ_SPLIT_PCT:-50}
+ars_w2=$ASIA_READ_SPLIT_PCT; (( ars_w2 >= 1 && ars_w2 <= 99 )) || { echo "ASIA_READ_SPLIT_PCT must be 1..99" >&2; exit 2; }; ars_w1=$((100 - ars_w2))
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
   (
@@ -85,8 +88,9 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/systemd/isureal-go.service.d/30-front.conf "$h:/tmp/30-front.conf"
     jc_scp "$h"
     r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-127.0.0.1}; [[ $f == 1 ]] || pvt=""; mt=$ht; [[ $h == asia1 ]] && mt=${MEMORIES_TARGET-$ht}
+    rs=0; [[ $h == asia1 ]] && rs=$ASIA_READ_SPLIT
     ls=$LOCAL_SESSION; { [[ $h == asia1 || $f != 1 || $MEM != 1 || $MEM_WM != 1 || $LOGREPL == 1 || $STORE == 1 ]]; } && ls=0
-    sed -e "s/__MEMORIES_TARGET__/$mt/" -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
+    sed -e "s/__MEMORIES_TARGET__/$mt/" -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" -e "s/__ASIA_READ_SPLIT__/$rs/" -e "s/__ASIA_SPLIT_W1__/$ars_w1/" -e "s/__ASIA_SPLIT_W2__/$ars_w2/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf

@@ -75,7 +75,14 @@ func (p *postCap) middleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(c)
 		}
 		asiaPostCapStats.gated.Add(1)
+		var t0 time.Time
+		if opsTraceOn {
+			t0 = time.Now()
+		}
 		release := p.acquire(req.Context())
+		if opsTraceOn {
+			opsAdd(req.Context(), opsSlot, time.Since(t0))
+		}
 		defer release()
 		return next(c)
 	}

@@ -458,6 +458,10 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
 	if seqs == nil {
 		return
 	}
+	var t0 time.Time
+	if opsTraceOn {
+		t0 = time.Now()
+	}
 	if storeAwaitPG || len(seqs) > len(e.lanes) {
 		e.waitFlushed(seqs)
 	} else {
@@ -470,8 +474,16 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
 		}
 		e.waitFlushed(img)
 	}
+	if opsTraceOn {
+		t1 := time.Now()
+		opsAdd(c.Request().Context(), opsPersist, t1.Sub(t0))
+		t0 = t1
+	}
 	if e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		e.p.peers.waitAcked()
+		if opsTraceOn {
+			opsAdd(c.Request().Context(), opsRepl, time.Since(t0))
+		}
 	}
 }
 

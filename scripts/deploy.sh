@@ -75,6 +75,7 @@ IMG_HOTPART=${IMG_HOTPART:-1}   # 1 = new image IDs get a d0d0d0 tag; tagged IDs
 PGFPW=${PGFPW:-0}   # 1 = install etc/pg/primary-fpw-off.conf (full_page_writes=off; torn-page corruption risk on a crash) ; 0 = remove it
 VM=${VM:-0}   # 1 = asia1+asia2 get /etc/sysctl.d/98-isucon-vm.conf (watermark_boost 0, min_free 128MB, scale 125, compaction_proactiveness 0, dirty_bg 64MB/dirty 512MB) (scripts/os-knobs.sh); 0 = file removed + kernel defaults back
 NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -> tx-N (isucon-netq.service, scripts/os-knobs.sh); 0 = unit removed, xps 0, irqbalance on
+# OPS_TRACE=1 (default 0): asia1 logs "ops-trace" every 10s (anonymous HMAC correlation IDs; login->past-month Memories p50/p90, actions after posting, per-region slot/persist/replication wait p50; webapp/go/ops_trace.go)
 MEM_FULL=${MEM_FULL:-0}   # 1 (needs MEM=1) = asia2 app becomes a full-history mem peer of asia1 (ISUREAL_MEM_FULL, webapp/go/mem_full.go): cold-forwarded GETs (COLD_ORIGIN) wait for the seq and answer from memory; asia1 pushes to it too
 ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
 [[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1000MiB:50   # MEM_FULL: full-history load measured RSS 1.5GB (GOGC 100) vs peak 1.04GB / steady 0.91GB (900MiB:50) locally
@@ -206,6 +207,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_GP_ASIA '"${JPEG_GP_ASIA-}"'; else setenv ISUREAL_JPEG_GP_ASIA ""; fi   # "L/R" (e.g. 6/6): during the asia GP, JPEG checks stay in asia: asia1 local L slots (tried first) + asia2 R slots, no eu/am; "" = off
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080'"$([[ $MEM_FULL == 1 ]] && echo ,192.168.4.10:8080)"'; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_OPS_TRACE '"${OPS_TRACE:-0}"'; else setenv ISUREAL_OPS_TRACE 0; fi
       if [ "'"$h"'" = asia1 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then sudo install -d -o isucon -g isucon '"$STORE_WAL"'; setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 0; elif [ "'"$h"'" != asia2 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 1; else setenv ISUREAL_STORE_WAL ""; setenv ISUREAL_STORE_AWAIT_PG 1; fi
       # ^ europe1/america1: ISUREAL_STORE_WAL is only the read-barrier flag there (ISUREAL_STORE=0: no WAL file, no replay); without it their PG reads (DB fallbacks, session checks) do not wait for the asia1 write-behind
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-}"'; else setenv ISUREAL_IMG_PEERS ""; fi

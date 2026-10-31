@@ -95,6 +95,9 @@ func NewServer(config *Config) *echo.Echo {
 		handlerContext.ImgRead = imgReadDB
 	}
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
+	if opsTraceOn {
+		e.Use(opsTraceMiddleware(handlerContext)) // ops_trace.go (観測だけ)
+	}
 	e.Use(IPBanMiddleware(handlerContext))
 	e.Use(FwdPriorityMiddleware(handlerContext))
 	if storeEnabled && memEnabled && storeWALDir != "" {

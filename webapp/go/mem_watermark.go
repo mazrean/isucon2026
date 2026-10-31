@@ -125,8 +125,13 @@ func envDurationMS(key string, def time.Duration) time.Duration {
 type memWM struct {
 	wm     atomic.Int64 // 適用済み watermark (unix ns)。0 = 未知
 	pumpWM atomic.Bool  // 同期元の pump が wm モード (= ack を待たずに返している) か
-	mu     sync.Mutex
-	ch     chan struct{} // wm が進むたびに close して作り直す (Broadcast)
+	// ISUREAL_MEM_SYNC_VISIBLE: 同期元の pump が、この peer の ack を待ってから書き込みを返す。
+	pumpSync atomic.Bool
+	// 最後に知った pump の seq まで適用済み (push / wm 通知で seq が先行していると false)。
+	caughtUp atomic.Bool
+	knownSeq int64 // 知っている pump の最新 seq (r.mu 保持中に更新)
+	mu       sync.Mutex
+	ch       chan struct{} // wm が進むたびに close して作り直す (Broadcast)
 }
 
 func (w *memWM) notify() <-chan struct{} {
@@ -177,7 +182,12 @@ func (m *memStore) wmOK(ctx context.Context) bool {
 	t, ok := ctx.Value(memWMTargetKey{}).(int64)
 	// pumpWM が false = 同期元の pump は ack を待っている (従来方式で正しい)。
 	// 判定は読む時点で行う (入口で false でも、処理中に wm モードの dump へ入れ替わりうる)。
-	return !ok || !m.w.pumpWM.Load() || m.w.wm.Load() >= t
+	if !ok || !m.w.pumpWM.Load() || m.w.wm.Load() >= t {
+		return true
+	}
+	// ISUREAL_MEM_SYNC_VISIBLE: 入口で住人と判定した読みは、pump が ack 待ち (同期) で、追いついているなら wm を待たない。
+	skip, _ := ctx.Value(memSyncSkipKey{}).(bool)
+	return skip && m.syncReadOK()
 }
 
 func (m *memStore) onCtx(ctx context.Context) bool { return m.on() && m.wmOK(ctx) }
@@ -202,8 +212,15 @@ func memReadWait(m *memStore) echo.MiddlewareFunc {
 			// 目標は常に付ける (ガードが読む時点の pumpWM で判断する)。待つのは pump が wm モードのときだけ。
 			start := memNow()
 			target := start.Add(memWMEps - memWMSlack).UnixNano()
-			c.SetRequest(req.WithContext(context.WithValue(req.Context(), memWMTargetKey{}, target)))
-			if m.w.pumpWM.Load() {
+			ctx := context.WithValue(req.Context(), memWMTargetKey{}, target)
+			skip := memSyncVisible && m.syncResident(req, memLocalRegion)
+			if skip {
+				ctx = context.WithValue(ctx, memSyncSkipKey{}, true)
+			}
+			c.SetRequest(req.WithContext(ctx))
+			if skip {
+				memSyncStats.skipped.Add(1)
+			} else if m.w.pumpWM.Load() {
 				memWMStats.record(m.waitWM(target, start))
 			}
 			return next(c)
@@ -282,7 +299,8 @@ func (s *memWMStatsT) loop() {
 			continue
 		}
 		p50, p90, p99 := memPercentiles(waits)
-		slog.Info("mem: wm wait", "n", len(waits), "p50", p50, "p90", p90, "p99", p99, "fallback", fb, "notOn", no)
+		slog.Info("mem: wm wait", "n", len(waits), "p50", p50, "p90", p90, "p99", p99, "fallback", fb, "notOn", no,
+			"syncSkipped", memSyncStats.skipped.Swap(0))
 	}
 }
 
@@ -375,6 +393,7 @@ func (r *memReceiver) wmMsg(msg memWMMsg) {
 		r.m.w.advance(msg.WM)
 		return
 	}
+	r.m.w.syncSeen(msg.Seq, r.seq) // pump の seq が先行している: 追いつくまで待たない読みをやめる
 	r.wmPending = append(r.wmPending, msg)
 	if len(r.wmPending) > 64 {
 		r.wmPending = append([]memWMMsg(nil), r.wmPending[len(r.wmPending)-32:]...)
@@ -406,4 +425,12 @@ func (r *memReceiver) wmAfterPush(req memPushRequest) {
 		}
 	}
 	r.wmPending = rest
+}
+
+// syncSeen (r.mu 保持中): pump の seq を知った / 適用済み seq が変わった。caughtUp = 適用済み >= 知っている最新。
+func (w *memWM) syncSeen(pumpSeq, applied int64) {
+	if pumpSeq > w.knownSeq {
+		w.knownSeq = pumpSeq
+	}
+	w.caughtUp.Store(applied >= w.knownSeq)
 }

@@ -1,0 +1,12 @@
+[Unit]
+Description=ISUCON per-destination egress pacing / route cwnd (scripts/pace.sh)
+After=network-online.target isucon-route-tune.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/isucon-pace.sh /etc/default/isucon-pace
+
+[Install]
+WantedBy=multi-user.target

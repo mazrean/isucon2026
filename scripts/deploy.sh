@@ -2,6 +2,7 @@
 # usage: scripts/deploy.sh [hosts...]   (default: asia1 europe1 america1)
 # Builds webapp/go locally and deploys binary + nginx conf to app hosts, restarts services.
 # Host state owned here: /home/isucon/webapp/go/isureal, /etc/nginx/nginx.conf, /etc/nginx/sites-available/isureal.conf
+# (+ via scripts/pace.sh on asia1/europe1/america1 every run: root qdisc, per-/24 routes, isucon-pace.service)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p /tmp/isucon
@@ -42,6 +43,8 @@ STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requ
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 FWD_PRIORITY=${FWD_PRIORITY:-0}   # 1 = asia1 runs forwarded (eu/am) writes first; local writes go through a semaphore (webapp/go/priority.go)
 FRONT=${FRONT:-0}   # 1 = Go listens on :80 itself (webapp/go/frontproxy.go) and nginx is stopped+disabled
+PACE=${PACE:-0}   # 1 = asia1 shapes egress to europe/america /24s at PACE_RATE (130mbit) with small-packet priority (scripts/pace.sh); 0 = qdisc removed
+CWND=${CWND:-0}   # 1 = per-region /24 routes with initcwnd 64 initrwnd 64 + tcp_slow_start_after_idle=0 on all app hosts; 0 = removed
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
@@ -123,4 +126,6 @@ else
   "${SSH[@]}" asia2 'systemctl is-enabled isureal-go >/dev/null 2>&1 && { sudo systemctl disable --now isureal-go; echo "asia2: app disabled"; } || true' </dev/null &
 fi
 wait
+# always runs on all 3 app hosts so PACE=0/CWND=0 reverts everywhere, even on a single-host deploy
+LOCK_HELD=1 PACE=$PACE CWND=$CWND scripts/pace.sh asia1 europe1 america1
 rm -rf "$OUT"

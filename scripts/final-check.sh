@@ -52,7 +52,7 @@ sw=$(envget ISUREAL_STORE_WAL); sa=$(envget ISUREAL_STORE_AWAIT_PG)
 echo "  ISUREAL_STORE=$(envget ISUREAL_STORE) ISUREAL_STORE_WAL=${sw:-<unset>} ISUREAL_STORE_AWAIT_PG=${sa:-<unset>}"
 if [ -n "$sw" ] || [ "$sa" = 0 ]; then
   [ "$walok" = 1 ] || ng "store WAL / AWAIT_PG=0 on but not adopted (rerun with STORE_WAL_OK=1 if adopted)"
-  if [ -n "$sw" ]; then
+  if [ -n "$sw" ] && [ "$(envget ISUREAL_STORE)" = 1 ]; then
     if [ -d "$sw" ]; then echo "  wal dir: $(ls -la "$sw" | tail -n +2 | tr '\n' ' ')"; else ng "ISUREAL_STORE_WAL dir $sw missing"; fi
     rec=$(sudo -n journalctl -u isureal-go -b --no-pager -o cat 2>/dev/null | grep -E 'store wal: (recovered|open failed|truncate failed|create table failed)' | tail -3)
     echo "$rec" | sed 's/^/  log: /'

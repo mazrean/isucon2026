@@ -172,7 +172,8 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
-      if [ "'"$h"'" = asia1 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then sudo install -d -o isucon -g isucon '"$STORE_WAL"'; setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 0; else setenv ISUREAL_STORE_WAL ""; setenv ISUREAL_STORE_AWAIT_PG 1; fi
+      if [ "'"$h"'" = asia1 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then sudo install -d -o isucon -g isucon '"$STORE_WAL"'; setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 0; elif [ "'"$h"'" != asia2 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 1; else setenv ISUREAL_STORE_WAL ""; setenv ISUREAL_STORE_AWAIT_PG 1; fi
+      # ^ europe1/america1: ISUREAL_STORE_WAL is only the read-barrier flag there (ISUREAL_STORE=0: no WAL file, no replay); without it their PG reads (DB fallbacks, session checks) do not wait for the asia1 write-behind
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PUSH_FILTER '"$IMG_PUSH_FILTER"'; else setenv ISUREAL_IMG_PUSH_FILTER 0; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY_LOCAL_SLOTS '"${FWD_LOCAL_SLOTS:-128}"'; fi

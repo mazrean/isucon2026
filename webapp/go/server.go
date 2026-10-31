@@ -16,6 +16,9 @@ type HandlerContext struct {
 	Config *Config
 	IPBans *IPBanList
 	BG     *sqlx.DB // small pool for background pollers
+	// Admin: 管理者の窓の開閉と管理者セッションの確認だけが使う小さなプール (primary)。
+	// GP の投稿ラッシュで DB (60 本) が埋まると、窓の POST が接続待ちの列に並んで 3〜5 秒遅れていた。
+	Admin *sqlx.DB
 
 	Notifications *notificationHub
 
@@ -64,6 +67,9 @@ func NewServer(config *Config) *echo.Echo {
 	bgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
 	configurePool(bgDB, 4)
 	handlerContext.BG = bgDB
+	adminDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+	configurePool(adminDB, 4)
+	handlerContext.Admin = adminDB
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
 	e.Use(FwdPriorityMiddleware(handlerContext))

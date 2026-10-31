@@ -5,7 +5,7 @@
 # (RTT 100 -> 130-285ms, Send-Q 1-6MB, bufferbloat). Shaping just under the link rate moves the queue
 # into our own qdisc, where fq_codel keeps it short and small packets / API responses go first.
 #   PACE=1  (hosts in PACE_HOSTS, default asia1): root HTB, each shaped /24 ceil PACE_RATE (130mbit),
-#           small/sport-8080 packets prio 0, push/bulk prio 1, leaves fq_codel; rest unshaped.
+#           packets < 1024B (ACKs, small responses) prio 0, rest prio 1 (no sport-8080 rule: /internal/mem/dump, batches pulls leave asia1 from :8080), leaves fq_codel; rest unshaped.
 #           Root HTB replaces mq (one qdisc lock for both ena queues) -> asia1 only by default.
 #   CWND=1  (all hosts given, both directions): own /24 routes to the other regions' subnets with
 #           initcwnd 64 initrwnd 64, plus tcp_slow_start_after_idle=0. A 361KB body at 100ms RTT
@@ -30,6 +30,7 @@ CWND=${CWND:-0}
 PACE_HOSTS=${PACE_HOSTS:-asia1}
 PACE_RATE=${PACE_RATE:-130mbit}
 PACE_SMALL_RATE=${PACE_SMALL_RATE:-20mbit}
+PACE_BULK_RATE=${PACE_BULK_RATE:-110mbit}   # small + bulk = PACE_RATE so prio 0 really wins when borrowing
 PACE_DEFAULT_RATE=${PACE_DEFAULT_RATE:-10gbit}
 PACE_BBR=${PACE_BBR:-0}
 PACE_LOWAT=${PACE_LOWAT:-0}
@@ -53,7 +54,7 @@ for h in "${HOSTS[@]}"; do
   (
     q=0; [[ $PACE == 1 && " $PACE_HOSTS " == *" $h "* ]] && q=1
     if [[ $q == 1 || $CWND == 1 || $PACE_BBR == 1 || $PACE_LOWAT == 1 ]]; then
-      conf="QDISC=$q RATE=$PACE_RATE SMALL_RATE=$PACE_SMALL_RATE DEFAULT_RATE=$PACE_DEFAULT_RATE
+      conf="QDISC=$q RATE=$PACE_RATE SMALL_RATE=$PACE_SMALL_RATE BULK_RATE=$PACE_BULK_RATE DEFAULT_RATE=$PACE_DEFAULT_RATE
 SHAPE_DSTS=\"$(shape_dsts "$h")\" ROUTE_DSTS=\"$(route_dsts "$h")\" CWND=$CWND BBR=$PACE_BBR LOWAT=$PACE_LOWAT"
       scp -q etc/os/isucon-pace.sh etc/systemd/isucon-pace.service "$h:/tmp/"
       printf '%s\n' "$conf" | "${SSH[@]}" "$h" 'set -e; cat > /tmp/isucon-pace.conf

@@ -132,6 +132,7 @@ func (h *notificationHub) run() {
 func (h *notificationHub) poll() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	ctx = storePGReadCtx(ctx) // ISUREAL_STORE_WAL: poll 開始までの書き込みが PG に入ってから読む
 	db := h.reader()
 
 	var active []struct {

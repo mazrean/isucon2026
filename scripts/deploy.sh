@@ -183,6 +183,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-2}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_GP_ASIA '"${JPEG_GP_ASIA-}"'; else setenv ISUREAL_JPEG_GP_ASIA ""; fi   # "L/R" (e.g. 6/6): during the asia GP, JPEG checks stay in asia: asia1 local L slots (tried first) + asia2 R slots, no eu/am; "" = off
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080'"$([[ $MEM_FULL == 1 ]] && echo ,192.168.4.10:8080)"'; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
       if [ "'"$h"'" = asia1 ] && [ "'"$STORE"'" = 1 ] && [ -n "'"$STORE_WAL"'" ]; then sudo install -d -o isucon -g isucon '"$STORE_WAL"'; setenv ISUREAL_STORE_WAL '"$STORE_WAL"'; setenv ISUREAL_STORE_AWAIT_PG 0; else setenv ISUREAL_STORE_WAL ""; setenv ISUREAL_STORE_AWAIT_PG 1; fi

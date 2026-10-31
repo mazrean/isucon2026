@@ -71,6 +71,28 @@ async fn ban_loop(app: Arc<App>) {
 }
 
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("--bench-sig") {
+        let jobs: Vec<_> = (0..800u32)
+            .map(|i| ([i as u8; 32], format!("{:08x}-aaaa-bbbb-cccc-0123456789ab", i), 1793501400i64))
+            .collect();
+        let t = std::time::Instant::now();
+        let s = sig::signatures(&jobs);
+        let x8 = t.elapsed();
+        let t = std::time::Instant::now();
+        for j in &jobs[..200] {
+            std::hint::black_box(sig::signature_scalar(&j.0, &j.1, j.2));
+        }
+        let sc = t.elapsed() * 4;
+        println!(
+            "rust 800 sigs: x8 {:?} ({:.1}us/sig)  scalar {:?} ({:.1}us/sig) n={}",
+            x8,
+            x8.as_secs_f64() * 1e6 / 800.0,
+            sc,
+            sc.as_secs_f64() * 1e6 / 800.0,
+            s.len()
+        );
+        return;
+    }
     let threads: usize = env_or("ISUREAL_RS_THREADS", "2").parse().unwrap_or(2);
     let rt = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(threads)
@@ -120,7 +142,7 @@ async fn run() {
         ),
         bans: RwLock::new(None),
         client,
-        export_cache: api::ExportCache::new(env_or("ISUREAL_RS_EXPORT_CACHE_MB", "256").parse::<usize>().unwrap_or(256) << 20),
+        export_cache: api::ExportCache::new(env_or("ISUREAL_RS_EXPORT_CACHE_MB", "128").parse::<usize>().unwrap_or(256) << 20),
     });
     tokio::spawn(ban_loop(app.clone()));
 

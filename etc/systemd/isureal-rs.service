@@ -1,0 +1,22 @@
+[Unit]
+Description=isureal Rust read endpoints (memories/export); proxies everything else to isureal-go
+After=network.target isureal-go.service
+
+[Service]
+User=isucon
+WorkingDirectory=/home/isucon/webapp/rust
+# env.sh may or may not use `export`; source it with bash instead of EnvironmentFile.
+ExecStart=/bin/bash -c 'set -a; [ -f /home/isucon/env.sh ] && . /home/isucon/env.sh; set +a; exec /home/isucon/webapp/rust/isureal-rs'
+Environment=ISUREAL_RS_LISTEN=127.0.0.1:8081
+Environment=ISUREAL_RS_UPSTREAM=127.0.0.1:8080
+Environment=ISUREAL_RS_DB_MAX=12
+Environment=ISUREAL_RS_THREADS=2
+Environment=ISUREAL_RS_EXPORT_CACHE_MB=128
+Environment=ISUREAL_RS_IMAGE_MEM_MB=64
+Restart=always
+RestartSec=1
+TimeoutStopSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

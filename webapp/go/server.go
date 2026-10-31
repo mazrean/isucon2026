@@ -81,8 +81,11 @@ func NewServer(config *Config) *echo.Echo {
 		imgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
 		configurePool(imgDB, n)
 		handlerContext.Img = imgDB
-		fwdPriorityLocalExempt = func(req *http.Request) bool {
-			return req.Method == http.MethodPost && req.URL.Path == "/api/posts"
+		// ASIA_LOCALIMG=1 では投稿が h.Img を使わず上限が無くなるので、枠から外さない。
+		if !asiaLocalImgOn {
+			fwdPriorityLocalExempt = func(req *http.Request) bool {
+				return req.Method == http.MethodPost && req.URL.Path == "/api/posts"
+			}
 		}
 	}
 	if n := envIntOrDefault("ISUREAL_DB_IMG_READ_OPEN", 16); n > 0 && handlerContext.Img != nil {

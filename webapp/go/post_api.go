@@ -118,6 +118,11 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 			imageInserted, imgOutside = true, true
 		}
+		// ISUREAL_ASIA_LOCALIMG: 画像の fsync も tx の外で先に済ませる (接続・users の行ロック・窓のロックを握ったまま
+		// ディスクを待たない)。コミットしなければ上の defer が asiaLocalImgDrop する。失敗したら従来どおり tx 内で INSERT。
+		if asiaLocalImgOn && localImgFromCtx(ctx) == nil {
+			asiaKept = asiaLocalImgKeep(ctx, imageID, userID, imageData)
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err
@@ -170,7 +175,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 			return NewAPIError(http.StatusConflict, "post_slot_unavailable")
 		}
 		external := externalImage(c, userID)
-		if !external && !imageInserted {
+		if !external && !imageInserted && !asiaKept {
 			asiaKept = asiaLocalImgKeep(ctx, imageID, userID, imageData)
 		}
 		if !external && !imageInserted && !asiaKept {

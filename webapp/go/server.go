@@ -65,6 +65,7 @@ func NewServer(config *Config) *echo.Echo {
 	handlerContext.BG = bgDB
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
+	e.Use(FwdPriorityMiddleware(handlerContext))
 	setupMem(handlerContext, e)
 	registerLocalImg(e, handlerContext)
 

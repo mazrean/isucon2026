@@ -121,7 +121,14 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		if coldOrigin != "" {
 			e.Use(coldMiddleware(true)) // cold_origin.go
 		}
-		registerMemPeerRoutes(e, newMemReceiver(m))
+		if memFull {
+			memFullDB = h.DB
+		}
+		rcv := newMemReceiver(m)
+		if memFull {
+			e.Use(memColdWaitMiddleware(rcv))
+		}
+		registerMemPeerRoutes(e, rcv)
 	}
 }
 
@@ -467,6 +474,7 @@ func loadMemFromDB(ctx context.Context, db *sqlx.DB) (*memData, string, error) {
 			minDate = &v
 		}
 	}
+	minDate = memFullMinDate(d, minDate)
 	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow

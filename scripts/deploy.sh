@@ -26,6 +26,9 @@ for h in "${HOSTS[@]}"; do
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf
       sudo install -m 644 /tmp/isureal.conf /etc/nginx/sites-available/isureal.conf
       grep -q "^ISUREAL_FWD_SECRET=" /home/isucon/env.sh && sed -i "s|^ISUREAL_FWD_SECRET=.*|ISUREAL_FWD_SECRET='"$SECRET"'|" /home/isucon/env.sh || echo "ISUREAL_FWD_SECRET='"$SECRET"'" >> /home/isucon/env.sh
+      setenv() { grep -q "^$1=" /home/isucon/env.sh && sed -i "s|^$1=.*|$1=$2|" /home/isucon/env.sh || echo "$1=$2" >> /home/isucon/env.sh; }
+      setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-127.0.0.1}"'
+      setenv ISUREAL_NODE_NAME '"$h"'
       sudo nginx -t -q
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
       sudo systemctl restart isureal-go

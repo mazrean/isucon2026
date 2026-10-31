@@ -114,9 +114,12 @@ func TestMemDiff(t *testing.T) {
 	sc.URL = "http://" + sc.Listener.Addr().String()
 
 	pb := &mdClient{t: t, base: sb.URL}
+	time.Sleep(time.Second)
+	initStart := time.Now()
 	if code, body := pb.json("POST", "/api/initialize", map[string]any{}); code != 200 {
 		t.Fatalf("initialize: %d %s", code, body)
 	}
+	t.Logf("initialize took %v (peer ready=%v)", time.Since(initStart), memCurrentPeerStore.on())
 	admin := &mdClient{t: t, base: sb.URL}
 	_, body := admin.json("POST", "/api/admin/auth/login", map[string]string{"username": "admin", "password": "password1234"})
 	var al struct {
@@ -270,6 +273,38 @@ func TestMemDiff(t *testing.T) {
 			it := f.Items[len(f.Items)/2]
 			compare(step, u, fmt.Sprintf("/api/feeds/public?beforePostedAt=%s&beforeId=%s", it.PostedAt.Format(time.RFC3339Nano), it.ID))
 		}
+		for _, kind := range []string{"friends", "following", "followers", "incoming-requests"} {
+			_, rb := u.b.do("GET", "/api/relationships/"+kind, nil, "")
+			var rl struct {
+				Items []struct {
+					RelationID string    `json:"relationId"`
+					UpdatedAt  time.Time `json:"updatedAt"`
+				} `json:"items"`
+			}
+			_ = json.Unmarshal(rb, &rl)
+			if len(rl.Items) >= 2 {
+				compare(step, u, fmt.Sprintf("/api/relationships/%s?beforeUpdatedAt=%s&beforeId=%s", kind, rl.Items[0].UpdatedAt.Format(time.RFC3339Nano), rl.Items[0].RelationID))
+			}
+		}
+		for _, id := range postIDs[max(0, len(postIDs)-8):] {
+			_, cb := u.b.do("GET", "/api/posts/"+id+"/comments", nil, "")
+			var cl struct {
+				Items []struct {
+					ID        string    `json:"id"`
+					CreatedAt time.Time `json:"createdAt"`
+				} `json:"items"`
+			}
+			_ = json.Unmarshal(cb, &cl)
+			if len(cl.Items) >= 2 {
+				compare(step, u, fmt.Sprintf("/api/posts/%s/comments?afterCreatedAt=%s&afterId=%s", id, cl.Items[0].CreatedAt.Format(time.RFC3339Nano), cl.Items[0].ID))
+			}
+			_, xb := u.b.do("GET", "/api/posts/"+id+"/realmojis", nil, "")
+			_ = json.Unmarshal(xb, &cl)
+			if len(cl.Items) >= 2 {
+				compare(step, u, fmt.Sprintf("/api/posts/%s/realmojis?beforeCreatedAt=%s&beforeId=%s", id, cl.Items[0].CreatedAt.Format(time.RFC3339Nano), cl.Items[0].ID))
+			}
+		}
+		compare(step, u, "/api/users?q=md&beforeUsername="+users[3].name+"&beforeId="+users[3].id)
 		_, b = u.b.do("GET", "/api/feeds/friends-of-friends", nil, "")
 		_ = json.Unmarshal(b, &f)
 		if len(f.Items) > 2 && f.Items[1].Score != nil {
@@ -305,9 +340,19 @@ func TestMemDiff(t *testing.T) {
 			memCurrentPump.barrier()
 			check(step)
 		}
-		switch op := rng.Intn(24); op {
+		switch op := rng.Intn(27); op {
 		case 0, 1:
-			code, b := u.b.multipart("/api/posts", map[string]string{"caption": fmt.Sprintf("c%d", step), "visibility": vis[rng.Intn(3)], "location_kind": "none"}, mdJPEG(16, 16, step))
+			fields := map[string]string{"caption": fmt.Sprintf("c%d", step), "visibility": vis[rng.Intn(3)], "location_kind": "none"}
+			switch rng.Intn(3) {
+			case 1:
+				fields["location_kind"] = "exact"
+				fields["latitude"] = fmt.Sprintf("%.6f", rng.Float64()*170-85)
+				fields["longitude"] = fmt.Sprintf("%.7f", rng.Float64()*350-175)
+			case 2:
+				fields["location_kind"] = "approximate"
+				fields["locality"] = "渋谷区"
+			}
+			code, b := u.b.multipart("/api/posts", fields, mdJPEG(16, 16, step))
 			if code == 201 {
 				postIDs = append(postIDs, extract(b, "id"))
 			}
@@ -379,6 +424,21 @@ func TestMemDiff(t *testing.T) {
 			code, b := u.b.multipart("/api/posts/"+recent(postIDs)+"/realmojis", map[string]string{"reactionType": "smile"}, mdJPEG(8, 8, step))
 			if code == 201 {
 				realmojiIDs = append(realmojiIDs, extract(b, "id"))
+			}
+		case 24:
+			if rng.Intn(2) == 0 {
+				u.b.do("PUT", "/api/me/profile-image", bytes.NewReader(mdJPEG(32, 32, step)), "image/jpeg")
+			} else {
+				u.b.json("DELETE", "/api/me/profile-image", nil)
+			}
+		case 25:
+			act := []string{"reject", "cancel"}[rng.Intn(2)]
+			for _, x := range users {
+				x.b.json("POST", "/api/friend-requests/"+pickID(requestIDs)+"/"+act, nil)
+			}
+		case 26:
+			if step%200 == 0 && u != users[0] {
+				u.b.json("POST", "/api/me/account-deletion", nil)
 			}
 		case 22, 23:
 			code, b := u.b.json("POST", "/api/friend-requests", map[string]string{"recipientId": other.id})

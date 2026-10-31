@@ -38,7 +38,7 @@ func beginRelationshipTx(ctx context.Context, db *sqlx.DB, actor, target string)
 	// 2 行を 1 往復でロックする。ロックは Sort の上の LockRows で行が出る順 (= id のバイト順) に取られるので、
 	// 従来の「min → max の順に 1 行ずつ」と同じ順序になる (COLLATE "C" = Go の min/max と同じ比較)。
 	var lockedIDs []string
-	if err := tx.SelectContext(ctx, &lockedIDs, `SELECT id FROM users WHERE id IN ($1, $2) AND status='active' ORDER BY id COLLATE "C" FOR NO KEY UPDATE`, actor, target); err != nil {
+	if err := tx.SelectContext(ctx, &lockedIDs, relationshipLockSQL, actor, target); err != nil {
 		tx.Rollback()
 		return nil, err
 	}

@@ -257,6 +257,7 @@ type memChange struct {
 	Tbl string          `db:"tbl" json:"t"`
 	Op  string          `db:"op" json:"o"`
 	Row json.RawMessage `db:"row" json:"r"`
+	Xid string          `db:"-" json:"x,omitempty"` // 書いた tx (ISUREAL_MEM_APPLY_CHUNK のときだけ pump が付ける)
 }
 
 func memLocal(t time.Time) time.Time { return t.In(time.Local) }

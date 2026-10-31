@@ -31,6 +31,12 @@ import (
 // lease が戻るのはその seq 以上まで適用した push を受けてから。
 var memSyncVisible = memWatermark && os.Getenv("ISUREAL_MEM_SYNC_VISIBLE") == "1"
 
+// ISUREAL_MEM_SYNC_SPLIT=1 (既定 0, SYNC_VISIBLE=1 が前提): STORE の login のうち、旧セッションの無効化を伴わない
+// ものは peer の ack を待たない (新しいトークンを使えるのは本人だけで、他の閲覧者に見えてはいけないものは増えない)。
+// eu/am はメモリに無いトークンを住人と判定しない → wm を待つ (wm が届けばメモリに入っている。届かなければ DB)。
+// すぐ 401 にはならない。旧セッションの無効化 (replaced)、logout、退会、地域の移動は従来どおり ack を待つ。
+var memSyncSplit = memSyncVisible && os.Getenv("ISUREAL_MEM_SYNC_SPLIT") == "1"
+
 // memLocalRegion: この peer の地域 (setup で設定)。
 var memLocalRegion string
 

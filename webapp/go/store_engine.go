@@ -184,6 +184,8 @@ type storeTx struct {
 	changes []memChange
 	ops     []storeOp
 	after   []func() // コミット後 (ロック外・バリア待ちの前) に実行
+	// ISUREAL_MEM_SYNC_SPLIT: この書き込みは peer の ack を待たずに返してよい (本人しか使えない新しいトークンだけ)
+	noAck bool
 }
 
 func storeNow() time.Time { return time.Now().Truncate(time.Microsecond).In(time.Local) }
@@ -380,6 +382,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 	e.ensureIndex(m.d)
 	errs := make([]error, len(batch))
 	work := make([]bool, len(batch))
+	noAck := make([]bool, len(batch))
 	var changes []memChange
 	var ops []storeOp
 	partial := false
@@ -402,6 +405,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 		}
 		if len(t.changes) > 0 || len(t.ops) > 0 {
 			work[i] = true
+			noAck[i] = t.noAck
 			changes = append(changes, t.changes...)
 			ops = append(ops, t.ops...)
 		}
@@ -444,6 +448,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 			if work[i] {
 				res.seqs = seqs
 				res.ack = ack
+				res.ack.skip = noAck[i]
 			}
 			r.done <- res
 		}
@@ -529,9 +534,11 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs, ack memAckTarg
 	if opsTraceOn {
 		t0 = time.Now()
 	}
+	// SYNC_SPLIT: 新しいトークンだけの書き込みは、PG は待つが peer の ack は待たない (mem_sync_visible.go)
+	needAck := e.p.peers != nil && !localOnlyWrite(c.Request()) && !(memSyncSplit && ack.skip)
 	var acked chan struct{}
 	var ackDur time.Duration // ACK_OWN の並行の待ち: 開始から自分の ack までの時間 (close の前に書く)
-	if memAckOwn && ack.ok && e.p.peers != nil && !localOnlyWrite(c.Request()) {
+	if memAckOwn && ack.ok && needAck {
 		// 自分の (epoch, seq) の ack を PG の待ちと並行に待つ
 		acked = make(chan struct{})
 		ackStart := t0 // t0 は下で書き換えるので写す
@@ -565,7 +572,7 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs, ack memAckTarg
 		if opsTraceOn {
 			opsAdd(c.Request().Context(), opsRepl, ackDur)
 		}
-	} else if e.p.peers != nil && !localOnlyWrite(c.Request()) {
+	} else if needAck {
 		e.p.peers.waitAcked()
 		if opsTraceOn {
 			opsAdd(c.Request().Context(), opsRepl, time.Since(t0))

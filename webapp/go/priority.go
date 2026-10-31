@@ -44,6 +44,22 @@ type fwdPriority struct {
 	localDur []time.Duration // ローカル書き込みの処理時間 (待ちを含む)
 	timeouts int64
 	bypass   int64 // 転送が無いため待たずに通した件数
+	// timeoutBy: 枠待ちの上限で枠なしに通した数を「要求の地域/種類 (post|other)」ごとに (statsLoop が 10 秒ごとに出す)
+	timeoutBy map[string]int64
+	parked    atomic.Int64 // ISUREAL_FWD_PRIORITY_YIELD で枠を返して待ち中の要求
+	regionOf  func(*echo.Context) string
+}
+
+func (p *fwdPriority) timeoutKey(c *echo.Context) string {
+	r := p.region
+	if p.regionOf != nil {
+		r = p.regionOf(c)
+	}
+	kind := "other"
+	if c.Request().Method == http.MethodPost && c.Request().URL.Path == "/api/posts" {
+		kind = "post"
+	}
+	return r + "/" + kind
 }
 
 func newFwdPriority(region string, slots int, maxWait, idle time.Duration) *fwdPriority {
@@ -68,6 +84,7 @@ func FwdPriorityMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 		return func(next echo.HandlerFunc) echo.HandlerFunc { return next }
 	}
 	p := newFwdPriority(h.Config.Region, fwdPriorityLocalSlots, fwdPriorityMaxWait, fwdPriorityIdle)
+	p.regionOf = func(c *echo.Context) string { return requestRegion(h, c) }
 	go p.statsLoop()
 	slog.Info("fwd-priority: on", "local_slots", fwdPriorityLocalSlots, "max_wait", fwdPriorityMaxWait, "idle", fwdPriorityIdle)
 	if gpFairOn && gpFairPostExempt {
@@ -133,11 +150,22 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 			if !acquired {
 				p.mu.Lock()
 				p.timeouts++
+				if p.timeoutBy == nil {
+					p.timeoutBy = map[string]int64{}
+				}
+				p.timeoutBy[p.timeoutKey(c)]++
 				p.mu.Unlock()
 			}
 			p.record(&p.localWt, wait)
+			var hold *fwdSlotHold
+			if acquired && fwdPriorityYieldMax > 0 {
+				hold = &fwdSlotHold{slots: slots, parked: &p.parked, max: fwdPriorityYieldMax}
+				c.SetRequest(c.Request().WithContext(withFwdSlotHold(c.Request().Context(), hold)))
+			}
 			err := next(c)
-			if acquired {
+			if hold != nil {
+				hold.finish()
+			} else if acquired {
 				<-slots
 			}
 			p.record(&p.localDur, time.Since(start))
@@ -159,8 +187,8 @@ func (p *fwdPriority) statsLoop() {
 	defer t.Stop()
 	for range t.C {
 		p.mu.Lock()
-		fd, lw, ld, to, bp := p.fwdDur, p.localWt, p.localDur, p.timeouts, p.bypass
-		p.fwdDur, p.localWt, p.localDur, p.timeouts, p.bypass = nil, nil, nil, 0, 0
+		fd, lw, ld, to, bp, tb := p.fwdDur, p.localWt, p.localDur, p.timeouts, p.bypass, p.timeoutBy
+		p.fwdDur, p.localWt, p.localDur, p.timeouts, p.bypass, p.timeoutBy = nil, nil, nil, 0, 0, nil
 		p.mu.Unlock()
 		if len(fd) == 0 && len(ld) == 0 {
 			continue
@@ -170,6 +198,7 @@ func (p *fwdPriority) statsLoop() {
 		l50, l90, _ := memDurPercentiles(ld)
 		slog.Info("fwd-priority", "fwd_n", len(fd), "fwd_p50", f50, "fwd_p90", f90,
 			"local_n", len(ld), "local_waited_n", len(lw), "wait_p50", w50, "wait_p90", w90, "wait_max", wmax,
-			"local_p50", l50, "local_p90", l90, "wait_timeouts", to, "bypass", bp)
+			"local_p50", l50, "local_p90", l90, "wait_timeouts", to, "bypass", bp,
+			"timeouts_by", tb, "yielded", fwdYieldStats.yielded.Swap(0), "parked", p.parked.Load())
 	}
 }

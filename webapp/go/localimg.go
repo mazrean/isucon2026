@@ -717,6 +717,7 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 	}
 	if !asiaLocalImgPerFileSync {
 		// 201 only after the sync that covers both files (and their dir entries)
+		fwdSlotYield(ctx)
 		syncStart := time.Now()
 		err := asiaSyncer.wait(dataPath, metaPath)
 		postTimingAdd("localimg_sync", time.Since(syncStart))

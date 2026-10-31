@@ -60,7 +60,8 @@ type storeEngine struct {
 	// 画像の INSERT/DELETE は同じ ID なら同じレーンなので順序が保たれる。大きい画像が小さい書き込みを待たせない。
 	lanes []*storeLane
 
-	reqs chan *storeReq
+	reqs   chan *storeReq
+	reqsHi chan *storeReq // ISUREAL_STORE_PRIO (nil = off)
 
 	userSess map[string]map[string]struct{} // user id -> 有効セッションの token hash (memData.sessions の索引)
 
@@ -160,6 +161,9 @@ func setupStore(h *HandlerContext) {
 		go e.flusher(l)
 	}
 	e.reqs = make(chan *storeReq, 8192)
+	if storePrioOn {
+		e.reqsHi = make(chan *storeReq, 8192)
+	}
 	go e.applier()
 	h.Store = e
 	h.memPump.preReload = e.syncPG
@@ -282,13 +286,26 @@ const storeMaxBatch = 512
 // (書き込みごとに memData.mu を排他で取ると、重い読みと交互に待ち合って両方遅くなる)。
 // fn はエラーを返すなら変更を emit する前に返すこと。errStoreFallback なら元の DB 経路へ。
 func (e *storeEngine) write(fn func(t *storeTx) error) (storeSeqs, error) {
+	return e.writePrio(fn, false)
+}
+
+// writePrio: hi なら ISUREAL_STORE_PRIO の優先列 (reqsHi) に並べる (off なら write と同じ)。
+func (e *storeEngine) writePrio(fn func(t *storeTx) error, hi bool) (storeSeqs, error) {
 	r := &storeReq{fn: fn, done: make(chan storeRes, 1)}
-	e.reqs <- r
+	if hi && e.reqsHi != nil {
+		e.reqsHi <- r
+	} else {
+		e.reqs <- r
+	}
 	res := <-r.done
 	return res.seqs, res.err
 }
 
 func (e *storeEngine) applier() {
+	if e.reqsHi != nil {
+		e.applierPrio()
+		return
+	}
 	for {
 		batch := []*storeReq{<-e.reqs}
 	drain:
@@ -302,6 +319,47 @@ func (e *storeEngine) applier() {
 		}
 		e.applyBatch(batch)
 	}
+}
+
+// applierPrio: 優先列 (reqsHi) を先に取り出し、空いた分だけ通常列 (投稿) を足して 1 回の applyBatch にする。
+func (e *storeEngine) applierPrio() {
+	for {
+		e.applyBatch(e.nextPrioBatch())
+	}
+}
+
+func (e *storeEngine) nextPrioBatch() []*storeReq {
+	var batch []*storeReq
+	select {
+	case r := <-e.reqsHi:
+		batch = append(batch, r)
+	default:
+		select {
+		case r := <-e.reqsHi:
+			batch = append(batch, r)
+		case r := <-e.reqs:
+			batch = append(batch, r)
+		}
+	}
+hi:
+	for len(batch) < storeMaxBatch {
+		select {
+		case r := <-e.reqsHi:
+			batch = append(batch, r)
+		default:
+			break hi
+		}
+	}
+lo:
+	for len(batch) < storeMaxBatch {
+		select {
+		case r := <-e.reqs:
+			batch = append(batch, r)
+		default:
+			break lo
+		}
+	}
+	return batch
 }
 
 func (e *storeEngine) applyBatch(batch []*storeReq) {
@@ -458,6 +516,7 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
 	if seqs == nil {
 		return
 	}
+	fwdSlotYield(c.Request().Context())
 	if storeAwaitPG || len(seqs) > len(e.lanes) {
 		e.waitFlushed(seqs)
 	} else {

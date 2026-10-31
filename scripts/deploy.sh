@@ -53,6 +53,7 @@ ASIA_LOCALIMG=${ASIA_LOCALIMG:-1}   # 1 = asia1 keeps the bytes of images it com
 LOCAL_SESSION=${LOCAL_SESSION:-0}   # 1 = europe1/america1 commit login/logout in-region (webapp/go/local_session.go); needs MEM=1 MEM_WM=1 LOGREPL=0 STORE=0
 STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
+# ASIA_LOCALIMG_FAST (all hosts, default 0): 1 = eu/am/asia2 pull asia1-tagged images from asia1 before PG (skips the replica + cross-region primary miss, ~1 RTT); asia1 answers pulls from its memory LRU first (webapp/go/localimg.go)
 IMG_PUSH_FILTER=${IMG_PUSH_FILTER:-0}   # 1 = asia1 pushes post/RealMoji images only to regions with a likely viewer (author's friends; public = all); others pull from PG
 FWD_PRIORITY=${FWD_PRIORITY:-1}   # 1 = asia1 runs forwarded (eu/am) writes first; local writes go through a semaphore (webapp/go/priority.go)
 IMG_DEDUP=${IMG_DEDUP:-0}   # 1 = image bytes cross asia->eu/am once: push asks the peer first (/have), viewers wait for an in-flight push, initialize purges eu/am image caches, 10s slog "imgcache" (webapp/go/imgdedup.go; set on asia1 = sender and europe1/america1 = receivers)
@@ -110,6 +111,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_POST_SLOT_EXEMPT '"${POST_SLOT_EXEMPT:-0}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMAGE_CACHE_DIR '"${ASIA1_IMG_DISK:--}"'; else setenv ISUREAL_IMAGE_CACHE_DIR /home/isucon/imgcache; fi
       setenv ISUREAL_ASIA_LOCALIMG_SYNC '"${ASIA_LOCALIMG_SYNC:-}"'
+      setenv ISUREAL_ASIA_LOCALIMG_FAST '"${ASIA_LOCALIMG_FAST:-0}"'
       setenv ISUREAL_IMGV_PEER_INDEX '"${IMGV_PEER_INDEX:-1}"'
       setenv ISUREAL_IMG_SENDFILE '"${IMG_SENDFILE:-1}"'
       setenv ISUREAL_PREVALIDATE '"$pv"'

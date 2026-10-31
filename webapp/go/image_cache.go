@@ -278,6 +278,22 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 	// singleflight の待機者がいるので、呼び出し元のキャンセルに巻き込まれないようにする。
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 	defer cancel()
+	pulled, pullErr := false, error(nil)
+	if asiaLocalImgFast && !asiaLocalImgOn && isAsiaLocalID(id) {
+		// ISUREAL_ASIA_LOCALIMG_FAST: an asia1-tagged ID is (normally) never in
+		// PostgreSQL, so go to asia1 first instead of replica -> primary (a
+		// cross-region round trip) -> asia1. A 404 or an error (asia1 fell back
+		// to an INSERT, or is unreachable) still tries the DB below.
+		pulled = true
+		obj, perr := localImgPull(ctx, id)
+		if obj != nil {
+			imgStats.pullMiss.Add(1)
+			imgStats.pullB.Add(int64(len(obj.Data)))
+			s.put(id, obj)
+			return obj, nil
+		}
+		pullErr = perr
+	}
 	var row struct {
 		Owner     string `db:"owner_user_id"`
 		MediaType string `db:"media_type"`
@@ -299,6 +315,9 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 		err = primary.GetContext(ctx, &row, q, id)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
+		if pulled {
+			return nil, pullErr // unreachable origin = 5xx, never 403
+		}
 		// ISUREAL_LOCALIMG: the bytes may still be only at the origin region.
 		obj, perr := localImgPull(ctx, id)
 		if obj != nil {

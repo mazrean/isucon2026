@@ -625,7 +625,17 @@ func registerLocalImgRoutes(e *echo.Echo) {
 		}
 		var obj *imageObject
 		if id := c.Param("id"); isAsiaLocalID(id) {
-			obj, _ = asiaStore.read(id)
+			if asiaLocalImgFast {
+				// ISUREAL_ASIA_LOCALIMG_FAST: the commit put the bytes in the
+				// memory LRU (replicateImage); disk only after eviction.
+				if o, ok := images.mem.get(id); ok && o.Owner != "" {
+					obj = o
+				} else if obj, _ = asiaStore.read(id); obj != nil {
+					images.mem.add(id, obj)
+				}
+			} else {
+				obj, _ = asiaStore.read(id)
+			}
 		} else {
 			obj, _ = localStore.read(id)
 		}
@@ -664,6 +674,10 @@ var (
 	asiaLocalImgAddr = envOrDefault("ISUREAL_ASIA_LOCALIMG_ORIGIN", "192.168.1.10:8080")
 	asiaStore        = &localImgStore{dir: envOrDefault("ISUREAL_ASIA_LOCALIMG_DIR", "/home/isucon/asialocalimg"), queue: make(chan localImgJob, 1)}
 	asiaLocalImgN    atomic.Int64
+	// ISUREAL_ASIA_LOCALIMG_FAST=1: readers (eu/am/asia2) pull asia1-tagged
+	// IDs from asia1 before asking PostgreSQL; asia1 answers pulls from its
+	// memory LRU before the disk. Set on every host.
+	asiaLocalImgFast = os.Getenv("ISUREAL_ASIA_LOCALIMG_FAST") == "1"
 )
 
 func isAsiaLocalID(id string) bool { return len(id) == 36 && strings.HasSuffix(id, asiaLocalImgTag) }

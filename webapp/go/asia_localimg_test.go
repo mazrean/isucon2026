@@ -113,3 +113,52 @@ func TestAsiaLocalImgKeepServePull(t *testing.T) {
 		t.Fatal("keep after purge")
 	}
 }
+
+// ISUREAL_ASIA_LOCALIMG_FAST: a reader resolves an asia1-tagged ID from asia1
+// without touching PostgreSQL (nil DBs would panic), asia1 answers pulls from
+// its memory LRU, and the served bytes equal the upload.
+func TestAsiaLocalImgFastPull(t *testing.T) {
+	setupAsiaLocalImgTest(t)
+	oldFast := asiaLocalImgFast
+	asiaLocalImgFast = true
+	t.Cleanup(func() { asiaLocalImgFast = oldFast })
+	good := testJPEG(t, 64, 48)
+	id := newAsiaLocalImageID()
+	if !asiaLocalImgKeep(t.Context(), id, "owner-f", good) {
+		t.Fatal("not kept")
+	}
+	asia := echo.New()
+	registerLocalImgRoutes(asia)
+	srv := httptest.NewServer(asia)
+	t.Cleanup(srv.Close)
+
+	// asia1 side: disk read once, then memory (even after the files are gone)
+	asiaLocalImgOn = false
+	asiaLocalImgAddr = strings.TrimPrefix(srv.URL, "http://")
+	if p, err := localImgPull(t.Context(), id); err != nil || p == nil || !bytes.Equal(p.Data, good) || p.Owner != "owner-f" {
+		t.Fatalf("pull %v %v", p, err)
+	}
+	if _, ok := images.mem.get(id); !ok {
+		t.Fatal("asia1 did not keep the pulled image in memory")
+	}
+	asiaLocalImgDrop(id)
+	if p, _ := localImgPull(t.Context(), id); p == nil || !bytes.Equal(p.Data, good) {
+		t.Fatal("memory not used")
+	}
+
+	// reader side: a fresh store and no DB
+	reader := newImageStore("-")
+	id2 := newAsiaLocalImageID()
+	asiaLocalImgOn = true
+	if !asiaLocalImgKeep(t.Context(), id2, "owner-g", good) {
+		t.Fatal("not kept")
+	}
+	asiaLocalImgOn = false
+	obj, err := reader.get(t.Context(), nil, nil, id2)
+	if err != nil || obj == nil || obj.Owner != "owner-g" || obj.MediaType != "image/jpeg" || !bytes.Equal(obj.Data, good) {
+		t.Fatalf("fast get %v %v", obj, err)
+	}
+	if o, ok := reader.mem.get(id2); !ok || !bytes.Equal(o.Data, good) {
+		t.Fatal("not cached on the reader")
+	}
+}

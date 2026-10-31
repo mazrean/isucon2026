@@ -1,0 +1,34 @@
+time=2026-10-31T02:33:37.400Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:33:40.555Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:33:42.576Z level=INFO msg="user moved" user=leosolchi_5053 from=asia to=america
+time=2026-10-31T02:33:43.486Z level=INFO msg="america 1 日目: 7 人"
+time=2026-10-31T02:33:46.602Z level=INFO msg="asia 2 日目: 49 人"
+time=2026-10-31T02:33:49.566Z level=INFO msg="europe 2 日目: 17 人"
+time=2026-10-31T02:33:52.718Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T02:33:55.654Z level=INFO msg="asia 3 日目: 134 人"
+time=2026-10-31T02:33:58.558Z level=INFO msg="europe 3 日目: 41 人"
+time=2026-10-31T02:34:01.832Z level=INFO msg="america 3 日目: 36 人"
+time=2026-10-31T02:34:02.251Z level=INFO msg="user moved" user=neor-5542 from=america to=europe
+time=2026-10-31T02:34:04.507Z level=INFO msg="asia 4 日目: 319 人"
+time=2026-10-31T02:34:06.224Z level=INFO msg="user moved" user=neor-5542 from=europe to=america
+time=2026-10-31T02:34:08.734Z level=INFO msg="europe 4 日目: 59 人"
+time=2026-10-31T02:34:10.911Z level=INFO msg="america 4 日目: 36 人"
+time=2026-10-31T02:34:12.739Z level=INFO msg="user moved" user=niis.7024 from=asia to=america
+time=2026-10-31T02:34:13.888Z level=INFO msg="user moved" user=kaku.6518 from=asia to=europe
+time=2026-10-31T02:34:14.663Z level=INFO msg="user moved" user=bensuyo.7652 from=asia to=europe
+time=2026-10-31T02:34:15.021Z level=INFO msg="user moved" user=rokeul-7191 from=asia to=europe
+time=2026-10-31T02:34:16.296Z level=INFO msg="asia 5 日目: 362 人"
+time=2026-10-31T02:34:16.692Z level=INFO msg="europe 5 日目: 62 人"
+time=2026-10-31T02:34:24.065Z level=INFO msg="america 5 日目: 41 人"
+time=2026-10-31T02:34:28.829Z level=INFO msg="america 最終日（グランプリ）: 40 人"
+time=2026-10-31T02:34:28.829Z level=INFO msg="europe 最終日（グランプリ）: 62 人"
+time=2026-10-31T02:34:29.543Z level=INFO msg="asia 最終日（グランプリ）: 362 人"
+time=2026-10-31T02:34:37.265Z level=INFO msg="グランプリ: アジア 8 人, ヨーロッパ 4 人, アメリカ 0 人"
+{
+  "pass": true,
+  "score": 48422,
+  "messages": []
+}
+
+reason= 実行終了
+job=4395 state=4 pass=true スコア=48422 種別エラー数=map[]

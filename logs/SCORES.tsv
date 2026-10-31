@@ -8,3 +8,4 @@
 11:21	d793c49	job=3469 state=4 pass=true スコア=38047 種別エラー数=map[]	再現 MEM=1 + GP プローブ
 11:25	c94ae6a	job=3724 state=4 pass=true スコア=38515 種別エラー数=map[]	JPEG 検証を asia2 へオフロード
 11:29	67093d9	job=3997 state=4 pass=true スコア=41584 種別エラー数=map[]	bg プール + poll 再試行 + RYW 修正
+11:35	cefef63	job=4395 state=4 pass=true スコア=48422 種別エラー数=map[]	JPEG オフロード 3 台 + 画素バッファ無し + ホスト別プール

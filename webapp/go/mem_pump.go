@@ -125,7 +125,11 @@ func ensureMemSchema(db *sqlx.DB) error {
 }
 
 // barrier は、呼び出し後に開始したサイクルの完了を待つ。
-func (p *memPump) barrier() {
+func (p *memPump) barrier() { p.barrierScope(true) }
+
+// barrierScope(false) は自ホストのメモリへの反映だけを待つ (peer の ack は待たない)。
+// 後続の全体バリアは現在の連番までの ack を待つので、取りこぼしは起きない。
+func (p *memPump) barrierScope(peers bool) {
 	p.pmu.Lock()
 	want := p.started + 1
 	if p.requested < want {
@@ -139,7 +143,7 @@ func (p *memPump) barrier() {
 		p.cond.Wait()
 	}
 	p.pmu.Unlock()
-	if p.peers != nil {
+	if peers && p.peers != nil {
 		p.peers.waitAcked()
 	}
 }
@@ -457,7 +461,7 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			clientErr := (bw.code >= 400 && bw.code < 500) ||
 				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
 			if !clientErr {
-				p.barrier()
+				p.barrierScope(!localOnlyWrite(req))
 			}
 			if bw.code != 0 {
 				orig.WriteHeader(bw.code)
@@ -466,4 +470,19 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			return err
 		}
 	}
+}
+
+// localOnlyWrite: login/logout of a user of this host's own region (not forwarded
+// by a peer). Only this host reads that user's sessions: other regions reject the
+// session (RegionMiddleware), and moving region is itself a write whose full
+// barrier first waits for every earlier change, these sessions included.
+func localOnlyWrite(req *http.Request) bool {
+	if req.Header.Get(forwardedRegionHeader) != "" {
+		return false
+	}
+	switch req.URL.Path {
+	case "/api/auth/login", "/api/auth/logout":
+		return true
+	}
+	return false
 }

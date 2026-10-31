@@ -55,6 +55,7 @@ LOCAL_SESSION=${LOCAL_SESSION:-0}   # 1 = europe1/america1 commit login/logout i
 STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 # ASIA_LOCALIMG_FAST (all hosts, default 0): 1 = eu/am/asia2 pull asia1-tagged images from asia1 before PG (skips the replica + cross-region primary miss, ~1 RTT); asia1 answers pulls from its memory LRU first (webapp/go/localimg.go)
+IMG_FRIEND_PUSH=${IMG_FRIEND_PUSH:-0}   # 1 = asia1 pre-pushes each committed image to eu/am apps where the owner has friends, only while asia1 tx < IMG_FRIEND_PUSH_MAX_MBPS (300) and outside GP (IMG_FRIEND_PUSH_GP=1 = also in GP); IMG_FRIEND_PUSH_ALL=1 = also the other regions at low priority; 10s slog "imgfriendpush" (webapp/go/img_friend_push.go; set on all app hosts)
 IMG_PUSH_FILTER=${IMG_PUSH_FILTER:-0}   # 1 = asia1 pushes post/RealMoji images only to regions with a likely viewer (author's friends; public = all); others pull from PG
 FWD_PRIORITY=${FWD_PRIORITY:-1}   # 1 = asia1 runs forwarded (eu/am) writes first; local writes go through a semaphore (webapp/go/priority.go)
 IMG_DEDUP=${IMG_DEDUP:-0}   # 1 = image bytes cross asia->eu/am once: push asks the peer first (/have), viewers wait for an in-flight push, initialize purges eu/am image caches, 10s slog "imgcache" (webapp/go/imgdedup.go; set on asia1 = sender and europe1/america1 = receivers)
@@ -130,6 +131,10 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_LOCAL_SESSION '"$ls"'
       setenv ISUREAL_MEMORIES_PAR '"$MEMORIES_PAR"'
       setenv ISUREAL_IMG_DEDUP '"$IMG_DEDUP"'
+      setenv ISUREAL_IMG_FRIEND_PUSH '"$IMG_FRIEND_PUSH"'
+      setenv ISUREAL_IMG_FRIEND_PUSH_GP '"${IMG_FRIEND_PUSH_GP:-0}"'
+      setenv ISUREAL_IMG_FRIEND_PUSH_ALL '"${IMG_FRIEND_PUSH_ALL:-0}"'
+      setenv ISUREAL_IMG_FRIEND_PUSH_MAX_MBPS '"${IMG_FRIEND_PUSH_MAX_MBPS:-300}"'
       setenv ISUREAL_MEMORIES_MEM '"$MEMORIES_MEM"'
       setenv ISUREAL_MEMORIES_CACHE '"$MEMORIES_CACHE"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-192.168.4.10:8080}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN_PEERS-}"'; fi

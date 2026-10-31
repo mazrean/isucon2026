@@ -159,7 +159,7 @@ func TestLocalImgEndToEnd(t *testing.T) {
 		// a reader in another region pulls the same bytes from the origin
 		localImgRegion = ""
 		localImgOrigins = map[string]string{"europe": strings.TrimPrefix(euSrv.URL, "http://")}
-		p := localImgPull(t.Context(), id)
+		p, _ := localImgPull(t.Context(), id)
 		if p == nil || p.Owner != "owner-1" || !bytes.Equal(p.Data, good) {
 			t.Fatalf("%s: pull %v", rc.name, p)
 		}
@@ -197,7 +197,7 @@ func TestLocalImgEndToEnd(t *testing.T) {
 		t.Fatalf("after purge: %d files", n)
 	}
 	localImgRegion = ""
-	if p := localImgPull(t.Context(), newLocalImageID("europe")); p != nil {
+	if p, err := localImgPull(t.Context(), newLocalImageID("europe")); p != nil || err != nil {
 		t.Fatal("pull after purge")
 	}
 }

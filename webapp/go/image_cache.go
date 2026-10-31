@@ -254,11 +254,12 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		// ISUREAL_LOCALIMG: the bytes may still be only at the origin region.
-		if obj := localImgPull(ctx, id); obj != nil {
+		obj, perr := localImgPull(ctx, id)
+		if obj != nil {
 			s.put(id, obj)
 			return obj, nil
 		}
-		return nil, nil
+		return nil, perr
 	}
 	if err != nil {
 		return nil, err

@@ -192,7 +192,8 @@ func (s *localImgStore) flushOne(db *sqlx.DB, j localImgJob) (bool, error) {
 	if obj == nil {
 		return true, nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// short, so purge (initialize) never waits long behind an INSERT
+	ctx, cancel := context.WithTimeout(context.Background(), 2500*time.Millisecond)
 	defer cancel()
 	_, err := db.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4) ON CONFLICT DO NOTHING`, j.id, obj.Owner, obj.Data, createdAt)
 	if err != nil {
@@ -453,30 +454,34 @@ func localImgOwn(id string) *imageObject {
 	return obj
 }
 
-func localImgPull(ctx context.Context, id string) *imageObject {
+// localImgPull: (nil, nil) = the origin does not have it; (nil, err) = the
+// origin could not be reached (the caller answers 5xx, never 403).
+func localImgPull(ctx context.Context, id string) (*imageObject, error) {
 	if !localImgOn {
-		return nil
+		return nil, nil
 	}
 	origin := localImgOriginOf(id)
 	addr := localImgOrigins[origin]
 	if origin == "" || origin == localImgRegion || addr == "" {
-		return nil
+		return nil, nil
 	}
+	var lastErr error
 	for attempt := 0; attempt < 4; attempt++ {
 		obj, found, err := localImgPullOnce(ctx, addr, id)
 		if err == nil {
 			if found {
 				localImgStats.pulled.Add(1)
 			}
-			return obj
+			return obj, nil
 		}
+		lastErr = err
 		localImgStats.pullErr.Add(1)
 		if ctx.Err() != nil {
-			return nil
+			return nil, ctx.Err()
 		}
 		time.Sleep(time.Duration(250*(attempt+1)) * time.Millisecond)
 	}
-	return nil
+	return nil, lastErr
 }
 
 func localImgPullOnce(ctx context.Context, addr, id string) (*imageObject, bool, error) {
@@ -520,8 +525,8 @@ func localImgPurgePeers(ctx context.Context) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for attempt := 0; attempt < 3; attempt++ {
-				cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			for attempt := 0; attempt < 2; attempt++ {
+				cctx, cancel := context.WithTimeout(ctx, 4*time.Second)
 				req, _ := http.NewRequestWithContext(cctx, http.MethodPost, "http://"+addr+"/internal/localimg-purge", nil)
 				req.Header.Set(forwardedSecretHeader, forwardSecret)
 				res, err := localImgClient.Do(req)

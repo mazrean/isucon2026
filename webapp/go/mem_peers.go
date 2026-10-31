@@ -56,12 +56,16 @@ const (
 	memHeartbeatEvery = 250 * time.Millisecond
 	memClockSkew      = 200 * time.Millisecond
 	memMaxInflight    = 4
-	memReorderWait    = 50 * time.Millisecond
 )
 
 type memPushResponse struct {
 	OK bool `json:"ok"`
 }
+
+// memReorderWait: 先行する push の到着を待つ上限。超えると欠番を pull する (r.mu を保持したまま asia1 へ 1 RTT)。
+// ISUREAL_MEM_REORDER_WAIT_MS で延ばせる (既定 50ms)。待ちは cond.Wait で r.mu を手放すので他の push / wm は進む。
+// 適用順は変わらず pull も残るので、正しさは同じ (変わるのは遅れの形だけ)。
+var memReorderWait = envDurationMS("ISUREAL_MEM_REORDER_WAIT_MS", 50*time.Millisecond)
 
 var memHTTPClient = &http.Client{
 	Transport: &http.Transport{

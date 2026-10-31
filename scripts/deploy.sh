@@ -84,6 +84,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_WM_SLACK_MS '"${MEM_WM_SLACK_MS:-0}"'
       setenv ISUREAL_MEM_PUSH_STATS '"$MEM_PUSH_STATS"'
       setenv ISUREAL_MEM_PUSH_GZIP '"$MEM_PUSH_GZIP"'
+      setenv ISUREAL_MEM_REORDER_WAIT_MS '"${MEM_REORDER_WAIT_MS:-50}"'
       setenv ISUREAL_MEM_LOGREPL '"$LOGREPL"'
       setenv ISUREAL_LOCAL_ONLY_WRITE '"${LOCAL_ONLY_WRITE:-1}"'
       setenv ISUREAL_SIGN_SIMD_MIN '"${SIGN_SIMD_MIN:-}"'

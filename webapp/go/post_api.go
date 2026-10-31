@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
-	"image/jpeg"
+	"example.com/isureal-company/isureal/internal/jpegcheck"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -76,11 +76,11 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		img, err := jpeg.Decode(bytes.NewReader(imageData))
+		imgW, imgH, err := jpegcheck.Check(bytes.NewReader(imageData))
 		if err != nil {
 			return NewAPIError(http.StatusBadRequest, "invalid_post")
 		}
-		if img.Bounds().Dx() > 4096 || img.Bounds().Dy() > 4096 {
+		if imgW > 4096 || imgH > 4096 {
 			return NewAPIError(http.StatusBadRequest, "invalid_post")
 		}
 

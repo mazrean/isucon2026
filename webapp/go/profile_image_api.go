@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
-	"image/jpeg"
+	"example.com/isureal-company/isureal/internal/jpegcheck"
 	"io"
 	"net/http"
 
@@ -21,12 +21,12 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		img, err := jpeg.Decode(bytes.NewReader(data))
+		imgW, imgH, err := jpegcheck.Check(bytes.NewReader(data))
 		if err != nil {
 			c.Set("abuse", "invalid_image")
 			return NewAPIError(http.StatusBadRequest, "invalid_profile_image")
 		}
-		if img.Bounds().Dx() > 512 || img.Bounds().Dy() > 512 {
+		if imgW > 512 || imgH > 512 {
 			return NewAPIError(http.StatusBadRequest, "invalid_profile_image")
 		}
 

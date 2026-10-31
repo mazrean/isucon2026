@@ -43,3 +43,4 @@
 13:19	a2022c8	job=11877 state=4 pass=true スコア=141122 種別エラー数=map[]	既定 + asia ローカル枠 128
 13:20	114477d	job=12063 state=4 pass=false スコア=0 種別エラー数=map[]	既定 (枠 128) + PGSSLMODE=allow + MEMORIES_MEM=1 (eu/am の Memories をメモリから)
 13:24	62716d1	job=12395 state=4 pass=false スコア=0 種別エラー数=map[]	再走: 既定 (枠 128、PGSSLMODE=allow) + MEMORIES_MEM=1 + admin 専用プール
+13:25	d7978a1	job=12488 state=4 pass=false スコア=0 種別エラー数=map[]	切り分け: PGSSL=prefer + MEMORIES_MEM=0 (他は既定)

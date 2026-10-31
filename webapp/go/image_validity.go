@@ -110,7 +110,7 @@ func checkImageValidity(ctx context.Context, h *HandlerContext, imageID, owner s
 		return v, nil
 	}
 
-	reader := imageReader(h)
+	reader := h.Reader()
 	v, err := queryImageValidity(ctx, reader, imageID, owner)
 	if err != nil {
 		return v, err

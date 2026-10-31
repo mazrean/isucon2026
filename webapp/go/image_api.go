@@ -40,7 +40,7 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		// 画像の中身 (owner / media_type / data) は ID ごとに不変なのでキャッシュから引く。
-		obj, err := images.get(ctx, imageReader(h), h.DB, input.ImageID)
+		obj, err := images.get(ctx, h.Reader(), h.DB, input.ImageID)
 		if err != nil {
 			return err
 		}

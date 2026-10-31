@@ -12,6 +12,11 @@ func deleteAccountHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.deleteAccount(c, userID); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err

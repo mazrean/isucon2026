@@ -81,6 +81,11 @@ func registerHandler(h *HandlerContext) echo.HandlerFunc {
 		if !usernamePattern.MatchString(input.Username) || !validUserText(input.DisplayName, 1, 100) || !validRegion(input.Region) {
 			return NewAPIError(http.StatusBadRequest, "invalid_registration")
 		}
+		if h.Store != nil {
+			if ok, err := h.Store.register(c, input); ok {
+				return err
+			}
+		}
 		secretKey := uuid.NewString()
 		hash := sha256.Sum256([]byte(secretKey))
 		ctx := c.Request().Context()
@@ -216,6 +221,11 @@ func updateMeHandler(h *HandlerContext) echo.HandlerFunc {
 			(input.Bio != nil && !validUserText(*input.Bio, 0, 500)) ||
 			(input.Region != nil && !validRegion(*input.Region)) {
 			return NewAPIError(http.StatusBadRequest, "invalid_profile")
+		}
+		if h.Store != nil {
+			if ok, err := h.Store.updateMe(c, session.UserID, input); ok {
+				return err
+			}
 		}
 		ctx := c.Request().Context()
 		tx, err := h.DB.BeginTxx(ctx, nil)

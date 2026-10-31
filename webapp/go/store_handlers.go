@@ -5,7 +5,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"runtime"
 	"sort"
+	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +18,11 @@ import (
 // 各 store ハンドラは (handled, err) を返す。handled=false なら呼び出し側は元の DB 経路で処理する
 // (その前に syncPG 済み)。fn は応答を書く関数を返し、それはバリア (PG 書き戻し + peer ack) の後に呼ばれる。
 func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, error)) (bool, error) {
+	name := "?"
+	if pc, _, _, ok := runtime.Caller(1); ok {
+		name = runtime.FuncForPC(pc).Name()
+		name = name[strings.LastIndexByte(name, '.')+1:]
+	}
 	var respond func() error
 	seq, err := e.write(func(t *storeTx) error {
 		var err error
@@ -22,9 +30,11 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 		return err
 	})
 	if err == errStoreFallback {
+		e.count(name, 1)
 		e.syncPG()
 		return false, nil
 	}
+	e.count(name, 0)
 	e.commitWait(c, seq)
 	if err != nil {
 		return true, err
@@ -394,4 +404,20 @@ func (e *storeEngine) openPostingWindow(c *echo.Context, region string, localDat
 		resp := openPostingWindowResponse{ID: id, Region: region, LocalDate: ld, StartsAt: startsAt, OnTimeDeadline: deadline}
 		return func() error { return c.JSON(http.StatusCreated, resp) }, nil
 	})
+}
+
+// 統計 (handled / fallback)
+func (e *storeEngine) count(name string, i int) {
+	v, _ := e.stats.LoadOrStore(name, new([2]atomic.Int64))
+	v.(*[2]atomic.Int64)[i].Add(1)
+}
+
+func (e *storeEngine) statsString() string {
+	var b strings.Builder
+	e.stats.Range(func(k, v any) bool {
+		x := v.(*[2]atomic.Int64)
+		fmt.Fprintf(&b, "%s=%d/%d ", k, x[0].Load(), x[1].Load())
+		return true
+	})
+	return b.String()
 }

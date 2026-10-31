@@ -285,6 +285,11 @@ func updatePostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.updatePost(c, userID, input); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err
@@ -348,6 +353,11 @@ func deletePostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.deletePost(c, userID, input.PostID); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err

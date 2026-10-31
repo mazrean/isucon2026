@@ -47,6 +47,8 @@ type storeEngine struct {
 	realmojis map[string]string // realmoji id -> post id
 	requests  map[string]*memReq
 
+	stats sync.Map // name -> *[2]atomic.Int64
+
 	wbMu       sync.Mutex
 	wbCond     *sync.Cond
 	queue      []storeOp

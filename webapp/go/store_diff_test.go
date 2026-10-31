@@ -15,4 +15,5 @@ func TestStoreDiff(t *testing.T) {
 	if storeCurrent == nil {
 		t.Fatal("store was not enabled")
 	}
+	t.Logf("store handled/fallback: %s", storeCurrent.statsString())
 }

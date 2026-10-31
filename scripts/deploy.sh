@@ -76,6 +76,8 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM '"$MEM"'
       setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
       setenv ISUREAL_MEM_LOGREPL '"$LOGREPL"'
+      setenv ISUREAL_LOCAL_ONLY_WRITE '"${LOCAL_ONLY_WRITE:-1}"'
+      setenv ISUREAL_SIGN_SIMD_MIN '"${SIGN_SIMD_MIN:-}"'
       setenv ISUREAL_PREVALIDATE '"$pv"'
       setenv ISUREAL_PREVALIDATE_TARGET '"$pvt"'
       setenv ISUREAL_LOCALIMG '"$LOCALIMG"'

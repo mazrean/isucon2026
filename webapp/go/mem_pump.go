@@ -511,7 +511,7 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 // session (RegionMiddleware), and moving region is itself a write whose full
 // barrier first waits for every earlier change, these sessions included.
 func localOnlyWrite(req *http.Request) bool {
-	if req.Header.Get(forwardedRegionHeader) != "" {
+	if !localOnlyWriteOn || req.Header.Get(forwardedRegionHeader) != "" {
 		return false
 	}
 	switch req.URL.Path {
@@ -520,3 +520,6 @@ func localOnlyWrite(req *http.Request) bool {
 	}
 	return false
 }
+
+// ISUREAL_LOCAL_ONLY_WRITE=0 makes local login/logout wait for every peer too (safety switch).
+var localOnlyWriteOn = os.Getenv("ISUREAL_LOCAL_ONLY_WRITE") != "0"

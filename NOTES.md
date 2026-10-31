@@ -213,3 +213,16 @@ END: 2026-10-31 18:00 JST
 | 12395 | - | **FAIL 0** | 12063 と同じ構成の再走。同じ profile-image 500 で FAIL → 再現。PGSSL=prefer + MEMORIES_MEM=0 で切り分け |
 | 12488 | - | **FAIL 0** | PGSSL=prefer + MEMORIES_MEM=0 でも同じ FAIL → 原因は asia1 のディスク満杯 (imgcache 33G、nginx の body 一時ファイルが書けず 500)。全台の imgcache を消去、ディスク上限 6GB を実装 |
 | 12846 | - | **146736** | ディスク上限 + 既定 + MEMORIES_MEM=1 + admin 専用プール。asia5 915 / eu 269 / am 275。GP 587 / 213 / 232。通知 503 あり → MEMORIES_MEM 既定 on |
+
+## 理論限界との差の洗い出し (13:35、job12846 146,736 時点)
+式: 点 ≈ Σ人日 × 1人日の点 + GP + 検証役。上限の目安は人数 2.9 倍/日 (前日 p90 < 0.1s)、1人日 約 60 点、検証役 4〜5 万。
+| # | 差 | 今 | 目標 | 打ち手 (担当/状態) |
+|---|----|----|------|------|
+| 1 | asia の書き込みのスループット (d4 p90 0.74、d5 の友達申請・login・投稿の 8〜9 割が 1 秒超) | asia 4→5 日目 2.4 倍 | 2.9 倍 | STORE=1 の A/B (走行中)、書き込み 1 本の処理時間の実測と削減 (担当)、SIGN_SIMD_MIN (HMAC 13%)、ASIA_LOCALIMG (asia1→asia2 の送信 39%) |
+| 2 | asia2 の CPU 100% (PG + JPEG 委譲 + asia の Memories/export) | 100% | <70% | ASIA_LOCALIMG (bytea を PG から外す)、JPEG 委譲を eu/am へ (push 停止で回線が空いた)、asia の重い読みを eu/am へ (検証役の担当) |
+| 3 | 検証役 (応答が速いと同時数が約 10 倍) | 約 2 万 | 4〜5 万 | 過去月 Memories / export / 画像を負荷中も 0.1s 以下 (担当) |
+| 4 | GP の取れ高 | asia 64% / eu 79% / am 84% | 95% | #1 と同じ。窓の POST は KEY SHARE + admin プールで解決済み |
+| 5 | エラー (通知 503、タイムアウト) | 503 が毎回数件 | 0 | 通知 503 の調査 (担当) |
+| 6 | eu/am の login (4 日目に 41% が 1 秒超) | 転送 | 地域内 | LOCAL_SESSION (1fdaef9、未マージ) |
+| 7 | TB との差の説明 | 7〜13 万が不明 | 帳簿で説明 | 帳簿・検証役の天井・未発見の点源 (担当 3 本) |
+| 8 | 最終版の安全 | localOnlyWrite あり | 切替スイッチ | LOCAL_ONLY_WRITE=0 の A/B、ディスク上限、全台 df、再起動試験、2 回 pass |

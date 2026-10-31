@@ -48,9 +48,12 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 			return NewAPIError(http.StatusForbidden, "image_forbidden")
 		}
 		// owner の状態と削除状態は毎回 (1 秒以内の鮮度で) 確認する。
-		validity, err := checkImageValidity(ctx, h, input.ImageID, obj.Owner)
-		if err != nil {
-			return err
+		validity, ok := memImageValid(h, input.ImageID, obj.Owner)
+		if !ok {
+			validity, err = checkImageValidity(ctx, h, input.ImageID, obj.Owner)
+			if err != nil {
+				return err
+			}
 		}
 		if !validity.found {
 			return NewAPIError(http.StatusForbidden, "image_forbidden")

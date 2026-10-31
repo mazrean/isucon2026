@@ -37,3 +37,4 @@
 13:00	aeb2bd5	job=10496 state=4 pass=true スコア=111122 種別エラー数=map[]	JPEG 中間 (ローカル 2 枠 Rust + asia2 2 + eu/am 各 1・300ms) + 画像 push の絞り込み (IMG_PUSH_FILTER)
 13:03	3f16959	job=10890 state=4 pass=false スコア=0 種別エラー数=map[]	LOGREPL=1 (論理レプリカでメモリ反映、asia2 watchdog) + 既定
 13:07	8d2fcbc	job=11091 state=4 pass=true スコア=104839 種別エラー数=map[]	既定 + FOR KEY SHARE (GP の窓) + asia1 CPU 削減 3 本
+13:10	aeac274	job=11272 state=4 pass=true スコア=112194 種別エラー数=map[]	画像の push 停止 (IMG_PEERS 空、閲覧時に取り寄せ) + KEY SHARE。lease 修正後の初の push off

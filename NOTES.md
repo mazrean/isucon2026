@@ -205,3 +205,4 @@ END: 2026-10-31 18:00 JST
 | 10322 | - | 104859 | STORE=1 + 窓の修正 + JPEG asia2 のみ + JC=1。asia4 436→5 日目 525 (1.2 倍に鈍化) / eu 144 / am 112。GP 464/135/97。write-behind の取りこぼし 0。不採用 |
 | 10890 | - | **FAIL 0** | LOGREPL=1 (公式)。「再ログイン前のセッションが無効になっていません」。原因: logrepl のバリアが login を除外していた (login は古いセッションを無効化する)。修正済み。revert 確認済み (スロット 0、sync names 空、watchdog 両方 disabled) |
 | 11091 | - | 104839 | FOR KEY SHARE + asia1 CPU 3 本。asia5 967 (最多) / eu 122 / am 100。GP asia 467 / eu 65 / am 55 (eu/am 崩れ)。通知 503 ×7、client cancel |
+| 11272 | - | 112194 | 画像 push 停止 (IMG_PEERS 空) + KEY SHARE。asia5 953 / eu 185 / am 115。GP asia 551 (58%) / eu 32 / am 62。eu/am の窓 POST 3.2/5.2s が新しい律速。画像 500 (deadline) ×2 |

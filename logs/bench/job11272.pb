@@ -1,0 +1,41 @@
+
+��X��� *�ӕ�胎]2�ԕ�ȱ�:�ӕ����vB�ԕ�ط��H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T04:09:00.704Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T04:09:03.707Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T04:09:06.702Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T04:09:09.758Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T04:09:10.217Z level=INFO msg="user moved" user=maka.5158 from=asia to=america
+time=2026-10-31T04:09:12.837Z level=INFO msg="europe 2 日目: 19 人"
+time=2026-10-31T04:09:15.715Z level=INFO msg="america 2 日目: 17 人"
+time=2026-10-31T04:09:18.927Z level=INFO msg="asia 3 日目: 151 人"
+time=2026-10-31T04:09:21.790Z level=INFO msg="europe 3 日目: 51 人"
+time=2026-10-31T04:09:21.935Z level=INFO msg="user moved" user=solmo.5757 from=asia to=europe
+time=2026-10-31T04:09:22.670Z level=INFO msg="user moved" user=mikiha_5945 from=asia to=europe
+time=2026-10-31T04:09:23.302Z level=INFO msg="user moved" user=yotorke6216 from=asia to=america
+time=2026-10-31T04:09:24.533Z level=INFO msg="user moved" user=yotorke6216 from=america to=asia
+time=2026-10-31T04:09:24.751Z level=INFO msg="america 3 日目: 45 人"
+time=2026-10-31T04:09:27.709Z level=INFO msg="asia 4 日目: 401 人"
+time=2026-10-31T04:09:31.907Z level=INFO msg="user moved" user=rimitsu.6116 from=asia to=europe
+time=2026-10-31T04:09:32.200Z level=INFO msg="europe 4 日目: 139 人"
+time=2026-10-31T04:09:34.078Z level=INFO msg="user moved" user=maka.5158 from=america to=europe
+time=2026-10-31T04:09:35.198Z level=INFO msg="america 4 日目: 114 人"
+time=2026-10-31T04:09:37.615Z level=INFO msg="asia 5 日目: 953 人"
+time=2026-10-31T04:09:40.978Z level=INFO msg="user moved" user=solmo.5757 from=europe to=america
+time=2026-10-31T04:09:46.182Z level=INFO msg="europe 5 日目: 185 人"
+time=2026-10-31T04:09:48.180Z level=INFO msg="america 5 日目: 115 人"
+time=2026-10-31T04:09:51.953Z level=INFO msg="asia 最終日（グランプリ）: 953 人"
+time=2026-10-31T04:09:54.888Z level=INFO msg="america 最終日（グランプリ）: 115 人"
+time=2026-10-31T04:09:56.886Z level=INFO msg="europe 最終日（グランプリ）: 184 人"
+time=2026-10-31T04:10:00.724Z level=INFO msg="グランプリ: アジア 551 人, ヨーロッパ 32 人, アメリカ 62 人"
+{
+  "pass": true,
+  "score": 112194,
+  "messages": [
+    "yuxin_wu_1227: 履歴を読めません: GET /api/images/de71f18e-4e6c-4b15-a010-07445e6121c6?exp=1793505600\u0026sig=kEYKgo53elDCH_oLgNkZilViYB-rMSPUIv4LYZH_DM4: ステータスコード 500 が返りました（期待値 200、context deadline exceeded）",
+    "hajun_jeong_2669: 履歴を読めません: GET /api/images/66d09449-ff25-43b4-b6ba-4087bda70144?exp=1793505600\u0026sig=nYCrqZG7XgbkFrzZ70j_Sv4GGTMwMMIxOG_ZVui5hFk: ステータスコード 500 が返りました（期待値 200、context deadline exceeded）",
+    "toke.12151: 友達申請を送れません: POST /api/friend-requests: 応答がタイムアウトしました"
+  ]
+}
+ ���������(���������2�ԕ�ط����
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

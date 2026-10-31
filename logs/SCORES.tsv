@@ -115,3 +115,4 @@
 17:15	ecbf2c1	job=32937 state=4 pass=false スコア=0 種別エラー数=map[]	A の既定 + MEM_FULL v4 (d8b8d15: cold の上限と落とし) COLD_ORIGIN=asia2、MEMORIES_CACHE_ORIGIN は既定 (asia2) のまま、EXPORT_MEM=1
 17:19	d18c02d	job=33229 state=4 pass=true スコア=192745 種別エラー数=map[]	最終候補: A 系の既定のみ (3383bf6 = final-A-candidate c893462 と同じコード)
 17:23	7ca0813	job=33705 state=4 pass=true スコア=197299 種別エラー数=map[]	最終 1 本目: 再起動の後、デプロイなし (3383bf6 のコード)
+17:28	b21e729	job=34177 state=4 pass=true スコア=198146 種別エラー数=map[]	最終の候補: 3478086 (A 系 + nginx access log off + pprof off)

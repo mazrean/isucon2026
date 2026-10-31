@@ -261,6 +261,7 @@ END: 2026-10-31 18:00 JST
 | 32937 | - | 0 FAIL | A の既定 + MEM_FULL v4 (d8b8d15) + EXPORT_MEM=1、CACHE_ORIGIN=asia2 のまま。走行後の Memories 2026-10 がまたタイムアウト。4 回続けて同じ型。MEM_FULL はここで打ち切り |
 | 33229 | - | 192745 | 最終候補: A 系の既定のみ (3383bf6 = c893462 のコード)。pass、エラー種別 0。d5 1204/424/273、GP 630/137/244。最終の版に決定 |
 | 33705 | - | 197299 | 最終 1 本目: 再起動の後、デプロイなし (3383bf6)。pass、エラー種別 0。d5 1142/330/325、GP 773/199/167。197k 以上なので、これを最後の走行として止める |
+| 34177 | - | 198146 | 最終: 3478086 (A 系 + nginx access log off + pprof off)。pass、エラー種別 0。d5 1206/382/310、GP 660/155/250。197,299 以上なので、これを最後の走行として止める |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -414,3 +415,4 @@ END: 2026-10-31 18:00 JST
   - eu の cold の転送は 103ms で速い。asia2 のメモリ応答も速い。
   - 走行中、asia2 は push に遅れていた (push delay 0.7→2.3→6.4s)。だからゲートが閉じて (origin_not_usable=9497)、eu はほぼ全部を自分の PG 経路 (asia2 の PG を WAN で読む) で処理した。eu の DB プール (25 本) の接続待ちで詰まった、と見る (確度 60%)。
   - 根本は、asia2 の 2 vCPU に全期間メモリ・push の適用・PG を同居させていること。
+- (17:28) 最後の走行は job34177 (198,146、pass)。以後ベンチは積まない。final-check OK (pprof off、access log off)。このあと E2E (データを書くが点には関わらない)。

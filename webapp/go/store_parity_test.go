@@ -145,7 +145,11 @@ func TestStoreWriteParity(t *testing.T) {
 
 	type idPair [2]string
 	var posts, comments, realmojis, requests []idPair
-	rng := rand.New(rand.NewSource(3))
+	seed := int64(3)
+	if v := os.Getenv("STORE_SEED"); v != "" {
+		fmt.Sscan(v, &seed)
+	}
+	rng := rand.New(rand.NewSource(seed))
 	pick := func() *pUser { return users[rng.Intn(len(users))] }
 	pickID := func(list []idPair, recent bool) idPair {
 		if len(list) == 0 {
@@ -195,10 +199,25 @@ func TestStoreWriteParity(t *testing.T) {
 		ok := same(step, what, codes[0], codes[1], bodies[0], bodies[1])
 		return ok && codes[0] < 300, bodies
 	}
+	// 全員が「今日」投稿した状態を作る (閲覧・コメント・RealMoji の許可側を比較するため)
+	everyonePosts := func(step int) {
+		for _, x := range users {
+			if rng.Intn(5) == 0 {
+				continue // 一部は投稿しない (未投稿の閲覧拒否側も残す)
+			}
+			f := map[string]string{"caption": "d", "visibility": vis[rng.Intn(3)], "location_kind": "none"}
+			img := mdJPEG(16, 16, step)
+			if ok, b := do(step, "daily post", x, func(k int) req { return req{path: "/api/posts", multipart: f, img: img} }); ok {
+				posts = append(posts, idPair{extract(b[0], "id"), extract(b[1], "id")})
+			}
+		}
+	}
+	everyonePosts(0)
 	for step := 1; step <= 1500; step++ {
 		u, o := pick(), pick()
 		if step%250 == 0 {
 			openAll(step)
+			everyonePosts(step)
 		}
 		switch op := rng.Intn(27); op {
 		case 0, 1:

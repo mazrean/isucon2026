@@ -76,12 +76,17 @@ func (e *storeEngine) login(c *echo.Context, input loginRequest) (bool, error) {
 		if u.Status != "active" || u.SecretKeyHash != hex.EncodeToString(hash[:]) {
 			return nil, NewAPIError(http.StatusUnauthorized, "invalid_credentials")
 		}
+		// 文は再実行しても同じ結果になるよう対象を ID で指定する (書き戻しの再送対策)
+		var old []string
 		for th, s := range d.sessions {
 			if s.UserID == u.ID {
 				t.emit("login_sessions", "U", sessionRow(th, s, false))
+				old = append(old, th)
 			}
 		}
-		t.exec(`UPDATE login_sessions SET active = false, invalidated_at = $2, reason = 'replaced' WHERE user_id = $1 AND active = true`, u.ID, t.now)
+		if len(old) > 0 {
+			t.exec(`UPDATE login_sessions SET active = false, invalidated_at = $2, reason = 'replaced' WHERE user_id = $1 AND active = true AND token_hash = ANY($3)`, u.ID, t.now, old)
+		}
 		token := uuid.NewString()
 		sum := sha256.Sum256([]byte(token))
 		tokenHash := hex.EncodeToString(sum[:])
@@ -245,12 +250,16 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 				old = append(old, x)
 			}
 		}
+		var oldIDs []string
 		for _, x := range old {
 			r := realmojiRow(x)
 			r.ReplacedAt = timePtr(t.now)
 			t.emit("realmojis", "U", r)
+			oldIDs = append(oldIDs, x.ID)
 		}
-		t.exec(`UPDATE realmojis SET replaced_at=$3 WHERE post_id=$1 AND reactor_id=$2 AND replaced_at IS NULL AND deleted_at IS NULL`, p.ID, actor, t.now)
+		if len(oldIDs) > 0 {
+			t.exec(`UPDATE realmojis SET replaced_at=$3 WHERE post_id=$1 AND reactor_id=$2 AND replaced_at IS NULL AND deleted_at IS NULL AND id = ANY($4)`, p.ID, actor, t.now, oldIDs)
+		}
 		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, actor)
 		if !external {
@@ -423,8 +432,8 @@ func (e *storeEngine) openPostingWindow(c *echo.Context, region string, localDat
 				ID: w.ID, Region: w.Region, LocalDate: w.LocalDate.Format(time.DateOnly), StartsAt: w.StartsAt,
 				OnTimeDeadline: w.OnTimeDeadline, EndedAt: timePtr(startsAt),
 			})
+			t.exec(`UPDATE posting_windows SET ended_at = $2 WHERE id = $1 AND ended_at IS NULL`, w.ID, startsAt)
 		}
-		t.exec(`UPDATE posting_windows SET ended_at = $2 WHERE region = $1 AND ended_at IS NULL`, region, startsAt)
 		id := uuid.NewString()
 		deadline := startsAt.Add(time.Duration(seconds) * time.Second)
 		ld := localDate.Format(time.DateOnly)

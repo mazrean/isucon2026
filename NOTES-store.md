@@ -19,7 +19,9 @@
   待ち時間は max(PG 書き戻し 数 ms, peer ack)。store が処理したリクエストでは memWriteBarrier の pump バリアは呼ばない。
 - PG 書き戻し: 単一 goroutine、溜まった文を 1 トランザクション・1 pgx batch (1 往復) で送る。
   `SET LOCAL session_replication_role = replica` でトリガー (mem_changelog) と FK を止める → pump が二重適用しない。
-  失敗時は 3 回再試行、その後 1 文ずつ実行して失敗文はログを出して捨てる (メモリとずれるのでログ監視: `store: write-behind`).
+  接続系の失敗は成功するまで再試行 (その間 書き込み応答は止まる = PG なしでは応答しない、元実装と同じ)。
+  文そのものの失敗 (PgError) のときだけ 1 文ずつ実行し、失敗文はログを出して捨てる (`store: write-behind op dropped` を監視)。
+  文は再送しても結果が変わらないよう対象を ID で指定 (セッション無効化・RealMoji 置換・投稿期間の終了)。
 - 元実装の制約はすべて store の排他の中で再現: ユーザー名一意、ログイン時の既存セッション無効化、投稿 (開いている期間・
   同一 local_date の有効 0/削除 <2・starts_at 以降)、削除 2 回まで、realmoji の (post, reactor) 有効 1 件、
   コメント/RealMoji の可視性、友達申請 (ブロック・既存友達・逆向き保留=承認・ペア一意)、フォロー (認定のみ)、
@@ -42,17 +44,22 @@
 pump の 200ms poll (フォールバック書き込み分のみ)、initialize。
 
 ## env / ロールバック
-- 有効化: asia1 の isureal-go に `ISUREAL_STORE=1` (ISUREAL_MEM=1 + pump 役のときだけ効く。peer は無視)。
+- このブランチは main (ef34e90) をマージ済み (deploy.sh / initialize.go / mem_pump.go / server.go の衝突を解消)。
+- 有効化: `STORE=1 scripts/deploy.sh` (asia1 に `ISUREAL_STORE=1`、他ホストは 0。ISUREAL_MEM=1 + pump 役のときだけ効く)。
   `ISUREAL_STORE_AWAIT_PG` は未設定のまま。
-- ロールバック: `ISUREAL_STORE` を外して asia1 を再起動。PG は常に最新なので状態移行は不要。
+- ロールバック: `STORE` なしで deploy し直す (= asia1 の ISUREAL_STORE=0 で再起動)。PG は常に最新なので状態移行は不要。
 
 ## 検証 (ローカル PG 15433、他エージェントと DB を共有しないよう専用 DB isureal_store / isureal_orig を作成)
 `ISUREAL_DB_NAME=isureal_store ISUREAL_DB_HOST=127.0.0.1 ISUREAL_DB_PORT=15433 ISUREAL_LOG_LEVEL=error go test -tags memdiff -run <Test> -v .`
 - TestStoreDiff: 書き込みは store、GET を DB 経路 (=書き戻し結果) / asia1 メモリ / peer で比較。1500 ステップ、mismatches=0。
   store 処理/フォールバック: transitionFriendRequest 1627/273, createComment 155/23, 他はほぼ全件 store。
-- TestStoreWriteParity: 元実装 (別 DB isureal_orig) と同じ書き込み列で各書き込みのステータス・エラー本文を比較。1500 ステップ、mismatches=0。
+- TestStoreWriteParity: 元実装 (別 DB isureal_orig) と同じ書き込み列で各書き込みのステータス・エラー本文を比較。
+  1500 ステップ × seed 3/11、期間ごとに大半のユーザーが投稿 (許可側も比較)、成功 コメント 76/107・RealMoji 69/74・投稿 117/116、mismatches=0。
 - TestStoreCrash: 子プロセスで起動 → 書き込み → 書き込み中に kill -9 → 再起動 ×2。応答済みコメント 1239 件・投稿すべて残存、
   再起動前後のスナップショット差分 0、initialize で初期状態に戻る。
 - TestStoreReloadRace: 並行書き込み中に invalidate (reload) を 10 回 → メモリと PG の差分 0。
-- TestStoreBench (ローカル、RTT≒0 なので差は過小評価、peer なし): 64 並列の混合書き込み
+- 未検証: LOCALIMG/PREVALIDATE で peer から転送された書き込み (externalImage=true) の store 経路は main のロジックを写しただけで、
+  store のテストでは通っていない (ハーネスに転送リクエストが無い)。
+- deleted_at / starts_at などの時刻の出どころが asia2 の clock_timestamp() から asia1 の時計に変わった (NTP 誤差 ms)。
+- TestStoreBench (main マージ前に計測。エンジンは同じ。ローカル RTT≒0 なので差は過小評価、peer なし): 64 並列の混合書き込み
   STORE=0 p50 17.7ms / p99 74〜82ms / 2.9k rps → STORE=1 p50 8.5ms / p99 15ms / 7.4k rps。

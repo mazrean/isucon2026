@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v5"
@@ -255,19 +256,38 @@ func (e *storeEngine) flusher() {
 	}
 }
 
+// flushOps: 接続系の失敗 (PG に届かない) は成功するまで再試行する (その間 書き込みの応答は止まる = 元実装と同じく
+// PG なしでは応答しない)。文そのものの失敗 (PgError) だけ 1 文ずつに分け、失敗した文はログを出して捨てる。
 func (e *storeEngine) flushOps(ops []storeOp) {
-	for attempt := 0; attempt < 3; attempt++ {
+	backoff := 50 * time.Millisecond
+	for attempt := 0; ; attempt++ {
 		err := e.runBatch(ops)
 		if err == nil {
 			return
 		}
-		slog.Error("store: write-behind batch failed", "error", err, "ops", len(ops), "attempt", attempt)
-		time.Sleep(time.Duration(attempt+1) * 20 * time.Millisecond)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			slog.Error("store: write-behind batch rejected; retrying op by op", "error", err, "ops", len(ops))
+			break
+		}
+		slog.Error("store: write-behind batch failed; retrying", "error", err, "ops", len(ops), "attempt", attempt)
+		time.Sleep(backoff)
+		backoff = min(backoff*2, time.Second)
 	}
-	// 1 文ずつ (失敗した文は捨てる)
 	for _, op := range ops {
-		if err := e.runBatch([]storeOp{op}); err != nil {
-			slog.Error("store: write-behind op dropped", "error", err, "sql", op.SQL)
+		backoff := 50 * time.Millisecond
+		for {
+			err := e.runBatch([]storeOp{op})
+			if err == nil {
+				break
+			}
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				slog.Error("store: write-behind op dropped", "error", err, "sql", op.SQL)
+				break
+			}
+			time.Sleep(backoff)
+			backoff = min(backoff*2, time.Second)
 		}
 	}
 }

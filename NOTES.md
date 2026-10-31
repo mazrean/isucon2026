@@ -223,6 +223,7 @@ END: 2026-10-31 18:00 JST
 | 21553 | - | 155995 | bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + IMG_FRIEND_PUSH=1 + _REV=1 (APPLY_CHUNK なし)。asia 1040 / eu 365 / am 327、GP 367/332/321 (1020、asia 35%)。APPLY_CHUNK は無罪 (分析: fallback eu 349→196, am 159→2)。WM_EARLY は asia の GP を揺らす (78%→35%)。最終候補は WM_EARLY なしへ |
 | 21833 | - | **170531** | **新最高**。bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし。asia 1013 / eu 323 / am 331、GP 674/263/265 (1202、過去最多)。先置き: asia1 sent 1549 / 553MB、eu/am から各 1300〜1600 件。これを既定にする |
 | 22111 | - | 161903 | bare (新既定: APPLY_CHUNK=200 + IMG_FRIEND_PUSH 一式) の再現 1 本目。asia 1077 / eu 333 / am 325、GP 503/165/306 (974、eu 50%)。pass。揺れの範囲 (21833 は 170,531) |
+| 22736 | - | 163382 | bare (新既定 + STOP_AFTER_GP=1) の再現 2 本目。asia 1035 / eu 328 / am 335、GP 433/281/237 (951)。pass。新既定 3 本: 170.5 / 161.9 / 163.4 (平均 165.3k) |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

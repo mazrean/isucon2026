@@ -77,3 +77,4 @@
 15:17	7d55bc7	job=21553 state=4 pass=true スコア=155995 種別エラー数=map[]	bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + IMG_FRIEND_PUSH=1 + _REV=1、APPLY_CHUNK なし、PUSH_STATS off
 15:20	328da3c	job=21833 state=4 pass=true スコア=170531 種別エラー数=map[]	bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし (最終候補)
 15:23	f9639fb	job=22111 state=4 pass=true スコア=161903 種別エラー数=map[]	bare (新既定: APPLY_CHUNK=200 + IMG_FRIEND_PUSH 一式) の再現 1 本目
+15:30	0163b32	job=22736 state=4 pass=true スコア=163382 種別エラー数=map[]	bare (新既定 + IMG_FRIEND_PUSH_STOP_AFTER_GP=1) の再現 2 本目

@@ -159,7 +159,8 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		})
 		resp := newPostResponse(d.posts[postID].full(), u.User)
 		if !external {
-			t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", imageData) })
+			regions := d.pushRegionsForPost(userID, input.Visibility, "")
+			t.after = append(t.after, func() { replicateImageTo(imageID, userID, "image/jpeg", imageData, regions) })
 		}
 		return func() error {
 			return c.JSON(http.StatusCreated, resp)
@@ -270,7 +271,8 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 		t.emit("realmojis", "I", memRealMojiRow{ID: id, PostID: p.ID, ReactorID: actor, ImageID: imageID, ReactionType: input.ReactionType, CreatedAt: t.now})
 		resp := newRealMojiResponse(RealMoji{ID: id, PostID: p.ID, ReactorID: actor, ImageID: imageID, ReactionType: input.ReactionType, CreatedAt: t.now}, au.User)
 		if !external {
-			t.after = append(t.after, func() { replicateImage(imageID, actor, "image/jpeg", data) })
+			regions := t.d.pushRegionsForPost(p.AuthorID, p.Visibility, actor)
+			t.after = append(t.after, func() { replicateImageTo(imageID, actor, "image/jpeg", data, regions) })
 		}
 		return func() error {
 			return c.JSON(http.StatusCreated, resp)

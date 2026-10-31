@@ -78,22 +78,39 @@ func newImgReplicator(peersEnv, secret string) *imgReplicator {
 	for range imgReplWorkers {
 		go r.worker()
 	}
+	go imgPushStatsLogger()
 	return r
 }
 
 // replicateImage は、画像 INSERT の commit 後に呼ぶ。自ホストのキャッシュへ格納し、
 // ピアへの送信をキューに積んで即座に戻る。
 func replicateImage(id, owner, mediaType string, data []byte) {
-	obj := &imageObject{Owner: owner, MediaType: mediaType, Data: data}
-	images.put(id, obj)
-	imageReplicator.enqueue(id, obj)
+	replicateImageTo(id, owner, mediaType, data, nil)
 }
 
-func (r *imgReplicator) enqueue(id string, obj *imageObject) {
+// replicateImageTo は、regions に含まれる地域のピアだけへ push する (nil は全ピア)。
+// 地域が分からないピアには常に push する。
+func replicateImageTo(id, owner, mediaType string, data []byte, regions map[string]bool) {
+	obj := &imageObject{Owner: owner, MediaType: mediaType, Data: data}
+	images.put(id, obj)
+	imageReplicator.enqueue(id, obj, regions)
+}
+
+func (r *imgReplicator) enqueue(id string, obj *imageObject, regions map[string]bool) {
 	if len(r.peers) == 0 || !safeImageID(id) {
 		return
 	}
+	n := int64(len(obj.Data))
 	for _, p := range r.peers {
+		if regions != nil {
+			if pr := imgPeerRegion(p); pr != "" && !regions[pr] {
+				imgPushStats.skipped.Add(1)
+				imgPushStats.skippedBytes.Add(n)
+				continue
+			}
+		}
+		imgPushStats.pushed.Add(1)
+		imgPushStats.pushedBytes.Add(n)
 		r.submit(imgReplJob{peer: p, id: id, obj: obj})
 	}
 }

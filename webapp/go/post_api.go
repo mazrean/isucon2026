@@ -173,7 +173,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 			return err
 		}
 		if !external {
-			replicateImage(imageID, userID, "image/jpeg", imageData)
+			replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
 		}
 		return c.JSON(http.StatusCreated, newPostResponse(post, user))
 	}

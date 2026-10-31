@@ -176,3 +176,4 @@ END: 2026-10-31 18:00 JST
 - 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
 - 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。
 | 7851 | - | **111842** | LOCALIMG=1 (eu/am の画像を自地域に fsync 保存、asia1 はメタデータのみ、PG へ非同期 flush)。asia 742 / eu 175 / am 95、GP 545/161/84。flush_err 0。409 post_slot_unavailable が 1 件 (要観察) |
+| 8010 | - | 84958 | FRONT=1 (asia1 nginx 撤去、LOCALIMG=0)。93068 の構成より低い → 不採用 (既定 FRONT=0)。旧 lease のため「見えるべき」4 件 |

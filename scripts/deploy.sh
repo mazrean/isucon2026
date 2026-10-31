@@ -73,6 +73,7 @@ IMG_HOTPART=${IMG_HOTPART:-1}   # 1 = new image IDs get a d0d0d0 tag; tagged IDs
 PGFPW=${PGFPW:-0}   # 1 = install etc/pg/primary-fpw-off.conf (full_page_writes=off; torn-page corruption risk on a crash) ; 0 = remove it
 VM=${VM:-0}   # 1 = asia1+asia2 get /etc/sysctl.d/98-isucon-vm.conf (watermark_boost 0, min_free 128MB, scale 125, compaction_proactiveness 0, dirty_bg 64MB/dirty 512MB) (scripts/os-knobs.sh); 0 = file removed + kernel defaults back
 NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -> tx-N (isucon-netq.service, scripts/os-knobs.sh); 0 = unit removed, xps 0, irqbalance on
+MEM_FULL=${MEM_FULL:-0}   # 1 (needs MEM=1) = asia2 app becomes a full-history mem peer of asia1 (ISUREAL_MEM_FULL, webapp/go/mem_full.go): cold-forwarded GETs (COLD_ORIGIN) wait for the seq and answer from memory; asia1 pushes to it too
 ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
@@ -171,7 +172,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-2}"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
-      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080'"$([[ $MEM_FULL == 1 ]] && echo ,192.168.4.10:8080)"'; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PUSH_FILTER '"$IMG_PUSH_FILTER"'; else setenv ISUREAL_IMG_PUSH_FILTER 0; fi
@@ -228,6 +229,8 @@ if true; then
     grep -q "^ISUREAL_HEAVY_LIMIT=" /home/isucon/env.sh && sed -i "s|^ISUREAL_HEAVY_LIMIT=.*|ISUREAL_HEAVY_LIMIT='"$HEAVY_LIMIT"'|" /home/isucon/env.sh || echo "ISUREAL_HEAVY_LIMIT='"$HEAVY_LIMIT"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_LOCALIMG=" /home/isucon/env.sh && sed -i "s|^ISUREAL_LOCALIMG=.*|ISUREAL_LOCALIMG='"$LOCALIMG"'|" /home/isucon/env.sh || echo "ISUREAL_LOCALIMG='"$LOCALIMG"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_ASIA_LOCALIMG=" /home/isucon/env.sh && sed -i "s|^ISUREAL_ASIA_LOCALIMG=.*|ISUREAL_ASIA_LOCALIMG=0|" /home/isucon/env.sh || echo "ISUREAL_ASIA_LOCALIMG=0" >> /home/isucon/env.sh
+    menv() { grep -q "^$1=" /home/isucon/env.sh && sed -i "s|^$1=.*|$1=$2|" /home/isucon/env.sh || echo "$1=$2" >> /home/isucon/env.sh; }
+    if [ "'"$MEM_FULL"'" = 1 ]; then menv ISUREAL_MEM 1; menv ISUREAL_MEM_ROLE peer; menv ISUREAL_MEM_PUMP 192.168.1.10:8080; menv ISUREAL_MEM_FULL 1; menv ISUREAL_MEMORIES_MEM 1; else sed -i -e "/^ISUREAL_MEM=/d" -e "/^ISUREAL_MEM_ROLE=/d" -e "/^ISUREAL_MEM_PUMP=/d" -e "/^ISUREAL_MEM_FULL=/d" -e "/^ISUREAL_MEMORIES_MEM=/d" /home/isucon/env.sh; fi
     grep -q "^ISUREAL_PREVALIDATE=" /home/isucon/env.sh && sed -i "s|^ISUREAL_PREVALIDATE=.*|ISUREAL_PREVALIDATE='"$PREVALIDATE"'|" /home/isucon/env.sh || echo "ISUREAL_PREVALIDATE='"$PREVALIDATE"'" >> /home/isucon/env.sh
     sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf
     sudo install -D -m 644 /tmp/40-oom.conf /etc/systemd/system/isureal-go.service.d/40-oom.conf

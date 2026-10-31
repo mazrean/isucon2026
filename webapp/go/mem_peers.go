@@ -50,6 +50,9 @@ type memPushRequest struct {
 	PT int64 `json:"pt,omitempty"`
 	PS int64 `json:"ps,omitempty"`
 	PA int64 `json:"pa,omitempty"`
+	// SS (STORE の PG 読みの待ちが有効なときだけ): ps.mu の下で読んだ storeCurrentSeq。Seq までのバッチに
+	// store の seq SS までの変更がすべて含まれる (store は publish の後で seq を進める)。MEM_FULL の冷たい読み (mem_full.go) が使う。
+	SS int64 `json:"ss,omitempty"`
 }
 
 // peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
@@ -187,6 +190,9 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 	}
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
 	req.PT, req.PS, req.PA = storePGSample()
+	if last == ps.seq && storePGActiveAsia() {
+		req.SS = storeCurrentSeqFn()
+	}
 	if last == ps.seq {
 		req.WM = ps.wm // ps.wm は ps.seq に対して有効
 	}
@@ -602,6 +608,9 @@ type memReceiver struct {
 	seqCond *sync.Cond
 	// まだバッチが届いていない seq の watermark (mu 下)
 	wmPending []memWMMsg
+	// MEM_FULL の冷たい読みの待ち (mem_full.go): 適用済みの pump の seq (-1 = 未同期) と store の seq
+	appliedPump, appliedStore atomic.Int64
+	coldNotify               memNotify
 }
 
 func newMemReceiver(m *memStore) *memReceiver {
@@ -619,6 +628,8 @@ func (r *memReceiver) invalidate() uint64 {
 	r.epoch = ""
 	r.wmPending = nil
 	r.m.w.set(0)
+	r.appliedPump.Store(-1)
+	r.appliedStore.Store(0)
 	r.gen++
 	g := r.gen
 	r.mu.Unlock()
@@ -662,7 +673,7 @@ func (r *memReceiver) resyncLoop() {
 
 func (r *memReceiver) resyncOnce(g uint64) error {
 	start := time.Now()
-	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark], 40*time.Second)
+	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark || memFull], 40*time.Second)
 	if err != nil {
 		return err
 	}
@@ -680,6 +691,11 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	if err != nil {
 		return err
 	}
+	if memFull {
+		if err := memLoadCold(d); err != nil {
+			return err
+		}
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.gen != g {
@@ -689,6 +705,7 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.d = d
 	r.m.mu.Unlock()
 	r.epoch, r.seq = dump.Epoch, dump.Seq
+	r.setApplied()
 	r.wmPending = nil
 	r.m.w.pumpWM.Store(memWatermark && dump.WMMode)
 	r.m.w.set(dump.WM)
@@ -795,6 +812,7 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 			return false
 		}
 		r.seq = b.Seq
+		r.setApplied()
 	}
 	if req.Seq > r.seq {
 		if st != nil {
@@ -809,6 +827,10 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 			go r.invalidate()
 			return false
 		}
+	}
+	if req.SS > 0 && r.seq >= req.Seq && req.SS > r.appliedStore.Load() {
+		r.appliedStore.Store(req.SS)
+		r.coldNotify.wake()
 	}
 	if !req.Probe {
 		r.m.extendLeaseFrom(req.SentAt)
@@ -875,6 +897,7 @@ func (r *memReceiver) fillGap(epoch string, to int64) error {
 			return err
 		}
 		r.seq = mb.Seq
+		r.setApplied()
 		r.seqCond.Broadcast()
 	}
 	if r.seq < to {

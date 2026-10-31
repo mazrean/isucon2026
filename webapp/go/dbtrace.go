@@ -30,6 +30,9 @@ type dbTracer struct {
 
 type dbTraceKey struct{}
 
+// dbTraceObserve: テスト用 (nil 以外なら tracer 付きのプールの全文で呼ぶ)。
+var dbTraceObserve func(ctx context.Context, sql string)
+
 type dbTraceStart struct {
 	at  time.Time
 	sql string
@@ -71,6 +74,9 @@ func (t *dbTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.Tr
 	}
 	if storeWALOn && t.pool != "store" {
 		pgBarrierWait(ctx) // ISUREAL_STORE_WAL: 到着時刻までの書き込みが PG に入るまで待つ (store_pgbarrier.go)
+	}
+	if dbTraceObserve != nil {
+		dbTraceObserve(ctx, data.SQL)
 	}
 	if !dbTraceOn {
 		return ctx

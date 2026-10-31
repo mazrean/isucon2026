@@ -48,46 +48,38 @@ func openPostingWindowHandler(h *HandlerContext) echo.HandlerFunc {
 		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(2, hashtext($1))`, region); err != nil {
 			return err
 		}
-		var conflict bool
-		if err := tx.GetContext(ctx, &conflict, `SELECT EXISTS(SELECT 1 FROM posting_windows WHERE region = $1 AND local_date >= $2)`, region, localDate); err != nil {
+		var check struct {
+			Conflict bool      `db:"conflict"`
+			Now      time.Time `db:"now"`
+		}
+		if err := tx.GetContext(ctx, &check, `SELECT EXISTS(SELECT 1 FROM posting_windows WHERE region = $1 AND local_date >= $2) AS conflict, clock_timestamp() AS now`, region, localDate); err != nil {
 			return err
 		}
-		if conflict {
+		if check.Conflict {
 			return NewAPIError(http.StatusConflict, "posting_window_conflict")
 		}
-		var startsAt time.Time
-		if err := tx.GetContext(ctx, &startsAt, `SELECT clock_timestamp()`); err != nil {
-			return err
-		}
+		startsAt := check.Now
 		if _, err := tx.ExecContext(ctx, `UPDATE posting_windows SET ended_at = $2 WHERE region = $1 AND ended_at IS NULL`, region, startsAt); err != nil {
 			return err
 		}
 		windowID := uuid.NewString()
+		onTimeDeadline := startsAt.Add(time.Duration(seconds) * time.Second)
 		if _, err := tx.ExecContext(ctx, `
    INSERT INTO posting_windows (id, region, local_date, starts_at, on_time_deadline)
    VALUES ($1, $2, $3, $4, $5)
-  `, windowID, region, localDate, startsAt, startsAt.Add(time.Duration(seconds)*time.Second)); err != nil {
+  `, windowID, region, localDate, startsAt, onTimeDeadline); err != nil {
 			if isUniqueViolation(err) {
 				return NewAPIError(http.StatusConflict, "posting_window_conflict")
 			}
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `
-   INSERT INTO notifications (id, user_id, posting_window_id, created_at)
-   SELECT gen_random_uuid()::text, id, $2, $3 FROM users WHERE region = $1 AND status = 'active'
-  `, region, windowID, startsAt); err != nil {
-			return err
-		}
-		window, err := getPostingWindow(ctx, tx, windowID)
-		if err != nil {
-			return err
-		}
+		// 通知は notifications 行を作らず、notification_hub.go で (期間, 利用者) から導出する。
 		if err := tx.Commit(); err != nil {
 			return err
 		}
 		return c.JSON(http.StatusCreated, openPostingWindowResponse{
-			ID: window.ID, Region: window.Region, LocalDate: window.LocalDate.Format(time.DateOnly),
-			StartsAt: window.StartsAt, OnTimeDeadline: window.OnTimeDeadline,
+			ID: windowID, Region: region, LocalDate: localDate.Format(time.DateOnly),
+			StartsAt: startsAt, OnTimeDeadline: onTimeDeadline,
 		})
 	}
 }

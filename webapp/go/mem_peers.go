@@ -314,6 +314,9 @@ func (ps *memPeers) invalidateAll(ctx context.Context, wait bool) {
 			defer wg.Done()
 			if _, err := memHTTPPost(addr, "/internal/mem/invalidate?wait="+strconv.FormatBool(wait), struct{}{}, timeout); err != nil {
 				slog.Warn("mem: invalidate peer failed", "peer", addr, "error", err)
+				// the peer may still be serving the old state: wait until its lease
+				// (bounded by our last send + memLease) has surely run out
+				time.Sleep(memLease + 300*time.Millisecond)
 				return
 			}
 			ps.markInvalidated(addr)

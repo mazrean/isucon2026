@@ -100,7 +100,7 @@ END: 2026-10-31 18:00 JST
 - 起動時: watchdog の ExecStartPre が PG 起動前に sync を空にし、起動後は全員 in_sync=false から始める → asia2 が先に上がっても書き込みはブロックされない。
 - ログ: `sudo journalctl -u pg-sync-watchdog`。
 
-## PG レプリカ中止 (10:58)
+## PG レプリカ中止 (10:45)
 - スタンバイの再生が gp3 3000 IOPS 上限に張り付き (lag 1.6GB, ベンチ中に増加)、アプリホストの性能を巻き添えにした (16875→9225)。
 - 対応: 3 台の postgresql を stop+disable、asia2 のスロット全削除、pg-sync-watchdog disable。READ_HOST は primary (192.168.4.10)。
 - 代替: GET も asia1 へ転送 (画像/SSE はローカル) → インメモリ読みモデル (行データ付きイベント, replica 非依存) へ。

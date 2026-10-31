@@ -199,6 +199,7 @@ END: 2026-10-31 18:00 JST
 | 14564 | - | 131600 | 409612f (画像の読みを別プール、投稿は枠外) + MEM_WM_HB=1 + JPEG 委譲から asia2 を外す。asia 18/48/135/350/428、eu 173 / am 249、GP 268/170/235。投稿タイムアウト 3。eu d2-d3 も悪化 → WM_HB と JPEG の振り分けは既定に戻す |
 | 14901 | - | 135075 | ASIA_LOCALIMG=1 (グループコミット + fsync を tx の前) + 409612f。asia 18/48/137/383/652 (d4→d5 1.70)、eu 287 / am 287、GP 336/214/261。ASIA_LOCALIMG は既定 off のまま。友達申請の地域 (直近 30 分): eu 発の 80% が asia 宛て → eu/am の地域内確定 (REGION_STORE) は効かない |
 | 15134 | - | 145177 | 13426 の構成 (HEAVY_TARGET=127.0.0.1) + 往復削減 + 409612f + ea1ffec。エラー 0 件。asia 18/52/146/250/324 (d3→d4 1.71、d4→d5 1.30)、eu 229 / am 349 (am 過去最高)、GP asia 206。409612f (投稿を枠外) 入りの回は asia d4→d5 がどれも崩れる → 枠外しを ISUREAL_POST_SLOT_EXEMPT=1 の後ろへ |
+| 15345 | - | 144584 | 15134 の構成 (ea1ffec 入り) + JC=1 + JPEG_LOCAL_SLOTS=2。エラー 0。eu 281 / am 294、GP eu 280 (100%)・am 290 (99%) = eu/am の GP はほぼ満点。asia は ea1ffec で d3→d4 1.95・d4→d5 1.31 に崩れたまま、GP 136 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

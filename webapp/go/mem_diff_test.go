@@ -239,7 +239,7 @@ func TestMemDiff(t *testing.T) {
 		if ca != cb || na != nb {
 			mismatches++
 			key := strings.SplitN(path, "?", 2)[0]
-			if len(key) > 20 && strings.HasPrefix(key, "/api/posts/") {
+			if len(key) >= len("/api/posts/")+36 && strings.HasPrefix(key, "/api/posts/") {
 				key = "/api/posts/X" + key[len("/api/posts/")+36:]
 			}
 			if len(key) > 20 && strings.HasPrefix(key, "/api/users/") {
@@ -492,9 +492,11 @@ func TestMemDiff(t *testing.T) {
 		}
 	}
 	check(1501)
-	memCurrentFarm.mu.Lock()
-	t.Logf("sigfarm items=%d queued=%d prefetchDone=%d", len(memCurrentFarm.lastExp), len(memCurrentFarm.high)+len(memCurrentFarm.low), len(memCurrentFarm.prefDone))
-	memCurrentFarm.mu.Unlock()
+	if memCurrentFarm != nil {
+		memCurrentFarm.mu.Lock()
+		t.Logf("sigfarm items=%d queued=%d prefetchDone=%d", len(memCurrentFarm.lastExp), len(memCurrentFarm.high)+len(memCurrentFarm.low), len(memCurrentFarm.prefDone))
+		memCurrentFarm.mu.Unlock()
+	}
 	signatureCacheMu.RLock()
 	t.Logf("signatureCache=%d", len(signatureCache))
 	signatureCacheMu.RUnlock()

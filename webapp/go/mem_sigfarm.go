@@ -17,7 +17,7 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-// 署名ファーム (分散モードの peer のみ, ISUREAL_MEM_SIGFARM=0 で無効):
+// 署名ファーム (分散モードの peer のみ, ISUREAL_MEM_SIGFARM=1 で有効、既定 off):
 // peer は changelog で見える画像 (投稿 / RealMoji / プロフ画像) と、ログイン中ユーザーの Memories に出る画像について、
 // 現在と次の exp 境界の署名を計算し、全ホストの署名キャッシュ (signatureCache) へ配る。
 // キャッシュに無い署名は従来どおり各ホストで計算するので、正しさは配布に依存しない。
@@ -63,7 +63,7 @@ type sigFarm struct {
 }
 
 func newSigFarm(config *Config, m *memStore, db *sqlx.DB) *sigFarm {
-	if os.Getenv("ISUREAL_MEM_SIGFARM") == "0" {
+	if os.Getenv("ISUREAL_MEM_SIGFARM") != "1" { // 署名は別エージェントの sign_*.go が担当。既定 off
 		return nil
 	}
 	index := map[string]int{"europe": 0, "america": 1}[config.Region]

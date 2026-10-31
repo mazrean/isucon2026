@@ -1,0 +1,28 @@
+time=2026-10-31T01:09:31.472Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T01:09:31.632Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T01:09:31.741Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T01:09:39.664Z level=INFO msg="asia 2 日目: 18 人"
+time=2026-10-31T01:09:43.288Z level=INFO msg="europe 2 日目: 7 人"
+time=2026-10-31T01:09:43.417Z level=INFO msg="america 2 日目: 6 人"
+time=2026-10-31T01:09:48.942Z level=INFO msg="asia 3 日目: 18 人"
+time=2026-10-31T01:09:51.902Z level=INFO msg="europe 3 日目: 7 人"
+time=2026-10-31T01:09:53.231Z level=INFO msg="america 3 日目: 6 人"
+time=2026-10-31T01:10:10.379Z level=INFO msg="europe 5 日目: 7 人"
+time=2026-10-31T01:10:10.423Z level=INFO msg="asia 5 日目: 18 人"
+time=2026-10-31T01:10:10.484Z level=INFO msg="america 5 日目: 6 人"
+time=2026-10-31T01:10:15.535Z level=INFO msg="america 最終日（グランプリ）: 6 人"
+time=2026-10-31T01:10:22.983Z level=INFO msg="asia 最終日（グランプリ）: 17 人"
+time=2026-10-31T01:10:23.064Z level=INFO msg="europe 最終日（グランプリ）: 7 人"
+time=2026-10-31T01:10:23.641Z level=INFO msg="グランプリ: アジア 0 人, ヨーロッパ 0 人, アメリカ 4 人"
+{
+  "pass": true,
+  "score": 3023,
+  "messages": [
+    "asia の投稿期間を開けません: POST /api/admin/posting-window: 応答がタイムアウトしました",
+    "europe の投稿期間を開けません: POST /api/admin/posting-window: 応答がタイムアウトしました",
+    "america の投稿期間を開けません: POST /api/admin/posting-window: 応答がタイムアウトしました"
+  ]
+}
+
+reason= 実行終了
+job=133 state=4 pass=true スコア=3023 種別エラー数=map[]

@@ -310,7 +310,7 @@ func storeWALRecover(dsn string) {
 	if _, err := db.ExecContext(ctx, `DELETE FROM store_wal_applied`); err != nil {
 		slog.Error("store wal: reset applied failed", "error", err)
 	}
-	slog.Info("store wal: recovered", "records", records, "replayed_ops", replayed, "elapsed", time.Since(start))
+	slog.Warn("store wal: recovered", "records", records, "replayed_ops", replayed, "elapsed", time.Since(start))
 }
 
 // storeWALAfterInit: initialize の init.sh の後 (表を作り直し、適用位置を空にする)。

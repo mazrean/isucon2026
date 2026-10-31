@@ -204,6 +204,9 @@ func (ps *memPeers) send(peer *memPeer, req memPushRequest) {
 			peer.down = true
 		} else {
 			peer.down = false
+			if !req.Probe && len(req.Batches) > 0 {
+				memPushLastRTT.Store(time.Now().UnixNano() - req.SentAt) // ISUREAL_ASIA_POST_CAP_LAG_MS
+			}
 			// ok=false: peer は not-ready (DB 経路) なので待つ必要なし
 			if peer.acked < req.Seq {
 				peer.acked = req.Seq

@@ -230,6 +230,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_STORE_BARRIER_LAZY '"${STORE_BARRIER_LAZY:-0}"'   # 1: PG barrier timeout re-waits instead of reading stale PG (store_pgbarrier.go)
       setenv ISUREAL_NOTIFY_MEM '"${NOTIFY_MEM:-0}"'   # 1: notification hub polls memStore instead of PG (notification_hub.go)
       setenv ISUREAL_IMG_MEM_ONLY '"${IMG_MEM_ONLY:-0}"'   # 1: image validity answered from memStore when possible (image_api.go)
+      setenv ISUREAL_EXPORT_MEM '"${EXPORT_MEM:-0}"'   # 1: /api/me/export from memStore when the user has no pre-hot posts (export_mem.go)
       setenv ISUREAL_POST_TIMING '"${POST_TIMING:-0}"'   # 1: 10s slog "post timing" (jpeg / localimg(_sync) / apply / pgflush / ack)
       setenv ISUREAL_ASIA_LOCALIMG_WB '"${ASIA_LOCALIMG_WB:-0}"'   # 1: start writeback at write so the group syncfs is shorter (localimg_groupsync.go)
       setenv ISUREAL_ASIA_LOCALIMG_FSYNC '"${ASIA_LOCALIMG_FSYNC:-0}"'   # 1: per-writer parallel fdatasync of data+meta + parent dir fsync instead of the whole-fs syncfs; gp: only while the asia1 window is a GP (gpWindowDeadline), group syncfs otherwise (localimg_fsync.go)

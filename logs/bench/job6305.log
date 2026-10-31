@@ -1,0 +1,35 @@
+time=2026-10-31T03:01:12.485Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:01:15.389Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:01:18.376Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:01:18.884Z level=INFO msg="user moved" user=fueva5044 from=asia to=america
+time=2026-10-31T03:01:21.294Z level=INFO msg="asia 2 日目: 45 人"
+time=2026-10-31T03:01:24.381Z level=INFO msg="europe 2 日目: 14 人"
+time=2026-10-31T03:01:27.671Z level=INFO msg="america 2 日目: 14 人"
+time=2026-10-31T03:01:30.321Z level=INFO msg="asia 3 日目: 120 人"
+time=2026-10-31T03:01:33.505Z level=INFO msg="europe 3 日目: 33 人"
+time=2026-10-31T03:01:37.065Z level=INFO msg="america 3 日目: 28 人"
+time=2026-10-31T03:01:39.160Z level=INFO msg="user moved" user=chichi5752 from=asia to=europe
+time=2026-10-31T03:01:39.488Z level=INFO msg="user moved" user=nasuso-5971 from=asia to=europe
+time=2026-10-31T03:01:39.626Z level=INFO msg="asia 4 日目: 279 人"
+time=2026-10-31T03:01:42.623Z level=INFO msg="europe 4 日目: 54 人"
+time=2026-10-31T03:01:46.103Z level=INFO msg="america 4 日目: 40 人"
+time=2026-10-31T03:01:49.294Z level=INFO msg="asia 5 日目: 507 人"
+time=2026-10-31T03:01:51.395Z level=INFO msg="user moved" user=chichi5752 from=europe to=asia
+time=2026-10-31T03:01:54.310Z level=INFO msg="europe 5 日目: 53 人"
+time=2026-10-31T03:01:55.395Z level=INFO msg="america 5 日目: 40 人"
+time=2026-10-31T03:02:04.045Z level=INFO msg="asia 最終日（グランプリ）: 507 人"
+time=2026-10-31T03:02:04.107Z level=INFO msg="america 最終日（グランプリ）: 40 人"
+time=2026-10-31T03:02:04.584Z level=INFO msg="europe 最終日（グランプリ）: 52 人"
+time=2026-10-31T03:02:12.106Z level=INFO msg="グランプリ: アジア 452 人, ヨーロッパ 37 人, アメリカ 31 人"
+{
+  "pass": true,
+  "score": 68929,
+  "messages": [
+    "ridan.6168: フィード friends: ridan.6168 に見えるべき投稿 c2e10779-9346-4dc9-a4f0-fc8bf6e89491 がありません",
+    "honoa_5422: フィード friends: honoa_5422 に見えるべき投稿 991daff3-aeee-4b3f-af20-a04d49fd69ff がありません",
+    "honoa_5422: フィード friends: honoa_5422 に見えるべき投稿 c1b24d85-3b5d-40b4-a148-5dd9f90d6c58 がありません"
+  ]
+}
+
+reason= 実行終了
+job=6305 state=4 pass=true スコア=68929 種別エラー数=map[]

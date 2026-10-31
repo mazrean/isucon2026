@@ -17,3 +17,4 @@
 11:53	e2a74ab	job=5642 state=4 pass=true スコア=69709 種別エラー数=map[]	プール是正 + login バリア自ホストのみ + PG 400
 11:56	0dbe7eb	job=5893 state=4 pass=false スコア=0 種別エラー数=map[]	heavy を asia1/asia2 で分担 + JPEG は eu/am + push off
 11:59	7f5e427	job=6145 state=4 pass=false スコア=0 種別エラー数=map[]	JPEG 配分を戻す + heavy 分担 + push off + JPEG 統計
+12:02	55b8f09	job=6305 state=4 pass=true スコア=68929 種別エラー数=map[]	切り分け: 5642 相当の構成 (heavy 分担なし, push on) + barrier 修正

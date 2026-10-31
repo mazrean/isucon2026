@@ -71,7 +71,7 @@ for h in "${HOSTS[@]}"; do
       setenv() { grep -q "^$1=" /home/isucon/env.sh && sed -i "s|^$1=.*|$1=$2|" /home/isucon/env.sh || echo "$1=$2" >> /home/isucon/env.sh; }
       setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-192.168.4.10}"'
       setenv ISUREAL_NODE_NAME '"$h"'
-      setenv PGSSLMODE allow
+      setenv PGSSLMODE '"${PGSSL:-allow}"'
       setenv ISUREAL_PPROF_ADDR 127.0.0.1:6060
       setenv ISUREAL_MEM '"$MEM"'
       setenv ISUREAL_MEM_WATERMARK '"$MEM_WM"'
@@ -126,7 +126,7 @@ if true; then
   jc_scp asia2
   "${SSH[@]}" asia2 'set -e
     grep -q "^ISUREAL_DB_MAX_OPEN=" /home/isucon/env.sh && sed -i "s|^ISUREAL_DB_MAX_OPEN=.*|ISUREAL_DB_MAX_OPEN=30|" /home/isucon/env.sh || echo "ISUREAL_DB_MAX_OPEN=30" >> /home/isucon/env.sh
-    grep -q "^PGSSLMODE=" /home/isucon/env.sh && sed -i "s|^PGSSLMODE=.*|PGSSLMODE=allow|" /home/isucon/env.sh || echo "PGSSLMODE=allow" >> /home/isucon/env.sh
+    grep -q "^PGSSLMODE=" /home/isucon/env.sh && sed -i "s|^PGSSLMODE=.*|PGSSLMODE='"${PGSSL:-allow}"'|" /home/isucon/env.sh || echo "PGSSLMODE='"${PGSSL:-allow}"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_FWD_SECRET=" /home/isucon/env.sh && sed -i "s|^ISUREAL_FWD_SECRET=.*|ISUREAL_FWD_SECRET='"$SECRET"'|" /home/isucon/env.sh || echo "ISUREAL_FWD_SECRET='"$SECRET"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_MEMORIES_PAR=" /home/isucon/env.sh && sed -i "s|^ISUREAL_MEMORIES_PAR=.*|ISUREAL_MEMORIES_PAR='"$MEMORIES_PAR"'|" /home/isucon/env.sh || echo "ISUREAL_MEMORIES_PAR='"$MEMORIES_PAR"'" >> /home/isucon/env.sh
     grep -q "^ISUREAL_HEAVY_LIMIT=" /home/isucon/env.sh && sed -i "s|^ISUREAL_HEAVY_LIMIT=.*|ISUREAL_HEAVY_LIMIT='"$HEAVY_LIMIT"'|" /home/isucon/env.sh || echo "ISUREAL_HEAVY_LIMIT='"$HEAVY_LIMIT"'" >> /home/isucon/env.sh

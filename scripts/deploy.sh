@@ -75,6 +75,7 @@ VM=${VM:-0}   # 1 = asia1+asia2 get /etc/sysctl.d/98-isucon-vm.conf (watermark_b
 NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -> tx-N (isucon-netq.service, scripts/os-knobs.sh); 0 = unit removed, xps 0, irqbalance on
 MEM_FULL=${MEM_FULL:-0}   # 1 (needs MEM=1) = asia2 app becomes a full-history mem peer of asia1 (ISUREAL_MEM_FULL, webapp/go/mem_full.go): cold-forwarded GETs (COLD_ORIGIN) wait for the seq and answer from memory; asia1 pushes to it too
 ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
+[[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1000MiB:50   # MEM_FULL: full-history load measured RSS 1.5GB (GOGC 100) vs peak 1.04GB / steady 0.91GB (900MiB:50) locally
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do

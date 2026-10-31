@@ -673,6 +673,12 @@ func (r *memReceiver) resyncLoop() {
 
 func (r *memReceiver) resyncOnce(g uint64) error {
 	start := time.Now()
+	if memFull && !r.m.ready.Load() {
+		// 全期間の memData (~0.9GB) を 2 つ同時に持たない: 作り直す前に古いものを捨てる (not-ready の間は誰も読まない)
+		r.m.mu.Lock()
+		r.m.d = newMemData()
+		r.m.mu.Unlock()
+	}
 	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark || memFull], 40*time.Second)
 	if err != nil {
 		return err

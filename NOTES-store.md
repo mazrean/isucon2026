@@ -68,3 +68,11 @@ pump の 200ms poll (フォールバック書き込み分のみ)、initialize。
 - TestStoreBench + 読み 64 本 (STORE_BENCH_READERS=64): バッチ化前 909〜1387 rps / p50 31〜69ms → 後 2935〜4142 rps / p50 10〜17ms。
 - TestStoreBench (main マージ前に計測。エンジンは同じ。ローカル RTT≒0 なので差は過小評価、peer なし): 64 並列の混合書き込み
   STORE=0 p50 17.7ms / p99 74〜82ms / 2.9k rps → STORE=1 p50 8.5ms / p99 15ms / 7.4k rps。
+
+## テーブル別レーン (088e7fd, ISUREAL_STORE_TABLE_LANES 既定 1)
+- job15806 (a449f26) vs 15544: eu/am の upstream 時間は d1-d2 で同等以下、d3-d4 で転送書き込みの p90 だけ 2 倍 (friend-requests 1.04s vs 0.50s, login 0.88 vs 0.35, posts 0.77 vs 0.58)。p50 は同じ。
+- 要求数は d1 から少ない (eu 5 秒ごとの数: 10-15s で 128 vs 182、40-50s で 1751 vs 4072)。逆に asia は多い (5521 vs 2980)。asia の負荷が高い区間ほど eu/am が細る形。
+- 原因の推定: 書き戻しが 1 本の直列 tx で、転送された書き込みも asia の login/セッションの洪水の後ろで PG の反映を待っていた (PG 側も 1 コア)。FWD_PRIORITY の優先がストアの中で消える。
+- 対策: 画像以外の文をテーブルごとのレーンに分ける。文はすべて単一テーブル・副問い合わせ無しで FK/トリガーも無効なので、効くのはテーブル内の順序だけ。
+- 注意: テーブルをまたぐ原子性は無くなる。kill -9 がレーンの flush の間に入ると、応答していない書き込みの一部だけが PG に残りうる (例: friendship は入ったが request はまだ pending)。2xx を返したものは全レーンの flush 後なので失われない。
+- 通知 (long-poll) は posting_windows の DB ポーリングで起きる。eu の分布は両回で同じ (p50 8.85 vs 8.84) なので、原因から外した。

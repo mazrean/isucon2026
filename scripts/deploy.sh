@@ -79,6 +79,19 @@ ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop
 [[ $MEM_FULL == 1 && -z $ASIA2_GOMEM ]] && ASIA2_GOMEM=1000MiB:50   # MEM_FULL: full-history load measured RSS 1.5GB (GOGC 100) vs peak 1.04GB / steady 0.91GB (900MiB:50) locally
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
+# PG_SB_MB (default empty = file absent = shared_buffers from isucon-tuning.conf, 1GB): e.g. 512 = asia2 conf.d/zz-sb.conf
+# "shared_buffers = 512MB" (frees RAM for MEM_FULL). Runs before any app restart; PostgreSQL is restarted only when
+# pg_settings reports pending_restart, then we wait until it accepts connections (apps restart afterwards below).
+PG_SB_MB=${PG_SB_MB-}
+"${SSH[@]}" asia2 'set -e
+  f=/etc/postgresql/16/main/conf.d/zz-sb.conf
+  if [ -n "'"$PG_SB_MB"'" ]; then echo "shared_buffers = '"$PG_SB_MB"'MB" | sudo tee $f.new >/dev/null && sudo chown postgres:postgres $f.new && sudo mv $f.new $f; elif [ -e $f ]; then sudo rm -f $f; else exit 0; fi
+  sudo -u postgres psql -XAtqc "select pg_reload_conf()" >/dev/null; sleep 0.5
+  if [ "$(sudo -u postgres psql -XAtc "select count(*) from pg_settings where pending_restart")" != 0 ]; then
+    echo "asia2: pg restart (pending_restart)"; sudo systemctl restart postgresql@16-main
+    for i in $(seq 150); do sudo -u postgres psql -XAtqc "select 1" >/dev/null 2>&1 && break; sleep 0.2; done
+  fi
+  echo "asia2: shared_buffers=$(sudo -u postgres psql -XAtc "show shared_buffers")"' </dev/null
 for h in "${HOSTS[@]}"; do
   (
     scp -q "$OUT/isureal" "$h:/tmp/isureal.new"

@@ -241,6 +241,67 @@ func TestMemFullCold(t *testing.T) {
 	if ca != cc || ba != bc || (code == 201 && !strings.Contains(bc, "mf-ryw")) {
 		t.Errorf("ryw mismatch: %d %.300s / db %.200s / peer %.200s", code, b, ba, bc)
 	}
+
+	// initialize の直後 0〜25 秒: asia2 は作り直し中は 503 で即座に断り、送り手 (ここでは sa = 自分の PG の経路で模擬) が答える。
+	// 全部の GET が正しく 2 秒以内に返ること。initialize は MEM_FULL の作り直しを待たない。
+	initStart := time.Now()
+	if code, body := pb.json("POST", "/api/initialize", map[string]any{}); code != 200 {
+		t.Fatalf("re-initialize: %d %.200s", code, body)
+	}
+	initTook := time.Since(initStart)
+	code, b = c.json("POST", "/api/auth/login", map[string]string{"username": u.name, "secretKey": u.secret})
+	if code != 200 {
+		t.Fatalf("login after init: %d", code)
+	}
+	_ = json.Unmarshal(b, &lr)
+	t.Logf("re-initialize took %v, peer ready=%v", initTook, memCurrentPeerStore.on())
+	end := time.Now().Add(25 * time.Second)
+	var n503, nMem, nBad, nSlow int
+	var maxEl time.Duration
+	var readyAt time.Duration
+	after := time.Now()
+	for k := 0; time.Now().Before(end); k++ {
+		p := paths[k%len(paths)]
+		if p == "/api/me/export" {
+			continue
+		}
+		start := time.Now()
+		cc, bc, _ := get(sc.URL, p, hop("pump", pumpSeq()))
+		if cc == http.StatusServiceUnavailable {
+			n503++
+			cc, bc, _ = get(sa.URL, p, nil) // 送り手の PG の経路
+		} else {
+			nMem++
+			if readyAt == 0 {
+				readyAt = time.Since(after)
+			}
+		}
+		el := time.Since(start)
+		maxEl = max(maxEl, el)
+		if el > 2*time.Second {
+			nSlow++
+		}
+		ca, ba, _ := get(sa.URL, p, nil)
+		if ca != cc || ba != bc {
+			nBad++
+			if nBad <= 3 {
+				t.Errorf("after init mismatch %s: db %d %.150s / got %d %.150s", p, ca, ba, cc, bc)
+			}
+		}
+	}
+	t.Logf("after init 25s: 503(fallback)=%d peer=%d mismatch=%d slow(>2s)=%d max=%v peer-first-answer-at=%v", n503, nMem, nBad, nSlow, maxEl, readyAt)
+	if nSlow > 0 || nBad > 0 {
+		t.Errorf("after init: slow=%d mismatch=%d", nSlow, nBad)
+	}
+	for i := 0; i < 600 && !memCurrentPeerStore.on(); i++ {
+		time.Sleep(100 * time.Millisecond)
+	}
+	cc, bc, el = get(sc.URL, paths[len(paths)-2], hop("pump", pumpSeq()))
+	ca, ba, _ = get(sa.URL, paths[len(paths)-2], nil)
+	t.Logf("peer ready again %v after initialize; then hop GET %d in %v same=%v", time.Since(after), cc, el, ca == cc && ba == bc)
+	if !memCurrentPeerStore.on() || ca != cc || ba != bc {
+		t.Errorf("peer not serving after re-initialize")
+	}
 }
 
 func readAllMF(resp *http.Response) ([]byte, error) {

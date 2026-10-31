@@ -85,6 +85,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		h.Mem = m
 		h.memPump = p
 		memCurrentPump = p
+		gpMem.Store(m)
 		if err := ensureMemSchema(h.DB); err != nil {
 			slog.Error("mem: schema setup failed; mem disabled", "error", err)
 			h.Mem, h.memPump = nil, nil

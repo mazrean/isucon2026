@@ -82,14 +82,16 @@ var (
 	}
 )
 
-var jpegStats struct{ remoteOK, remoteErr, local, sockErr atomic.Int64 }
+var jpegStats struct{ remoteOK, remoteErr, local, sockErr, gpCapped atomic.Int64 }
+
+var jpegRegion = envOrDefault("ISUREAL_REGION", "asia")
 
 func init() {
 	go func() {
 		for range time.Tick(10 * time.Second) {
-			ok, bad, loc, se := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0), jpegStats.sockErr.Swap(0)
+			ok, bad, loc, se, gc := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0), jpegStats.sockErr.Swap(0), jpegStats.gpCapped.Swap(0)
 			if ok+bad+loc > 0 {
-				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc, "sock", jpegLocalSock != "", "sock_err", se)
+				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc, "sock", jpegLocalSock != "", "sock_err", se, "gp_capped", gc)
 			}
 		}
 	}()
@@ -117,6 +119,11 @@ func checkJPEGLocal(data []byte) (w, h int, ok bool) {
 func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
 	if w, h, ok, hit := prevalidated(ctx, data); hit {
 		return w, h, ok
+	}
+	jpegRemotes := jpegRemotes
+	if gpJPEGRemotesMax > 0 && len(jpegRemotes) > gpJPEGRemotesMax && gpLocalActive(jpegRegion) {
+		jpegRemotes = jpegRemotes[:gpJPEGRemotesMax]
+		jpegStats.gpCapped.Add(1)
 	}
 	if len(jpegRemotes) == 0 {
 		return checkJPEGLocal(data)

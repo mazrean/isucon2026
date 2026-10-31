@@ -62,7 +62,7 @@ func lrSetSync(t *testing.T, config *Config, names ...string) {
 	db := lrAdmin(t, config)
 	defer db.Close()
 	db.MustExec(`SET synchronous_commit = local`)
-	db.MustExec(`UPDATE ` + lrMembersTable + ` SET blocked = true WHERE NOT (name = ANY($1))`, names)
+	db.MustExec(`UPDATE `+lrMembersTable+` SET blocked = true WHERE NOT (name = ANY($1))`, names)
 	ssn := ""
 	if len(names) > 0 {
 		ssn = fmt.Sprintf("ANY %d (%s)", len(names), strings.Join(names, ", "))
@@ -460,4 +460,3 @@ func TestLogReplDiff(t *testing.T) {
 	check(1501)
 	t.Logf("posts=%d comments=%d realmojis=%d mismatches=%d notOn=%d", len(postIDs), len(commentIDs), len(realmojiIDs), mismatches, notOn)
 }
-

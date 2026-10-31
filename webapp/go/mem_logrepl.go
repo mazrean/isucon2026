@@ -46,6 +46,11 @@ import (
 
 var memLogReplEnabled = os.Getenv("ISUREAL_MEM_LOGREPL") == "1"
 
+// ISUREAL_MEM_LOGREPL_SNAPSHOT=1: ローカルのスナップショットから再起動する (flush = 保存済み LSN)。
+// flush を遅らせるので、synchronous_commit=on (remote flush 待ち) の commit は保存まで止まる。
+// asia2 の既定 synchronous_commit が off/local のときだけ使うこと。既定 off (flush = apply、再起動時は COPY し直す)。
+var memLogReplSnapshot = os.Getenv("ISUREAL_MEM_LOGREPL_SNAPSHOT") == "1"
+
 const (
 	lrPublication  = "isureal_mem"
 	lrLease        = 1 * time.Second
@@ -280,7 +285,7 @@ SELECT true AS exists, active, coalesce(confirmed_flush_lsn::text, '0/0') AS flu
 FROM pg_replication_slots WHERE slot_name = $1 AND plugin = 'pgoutput' AND database = current_database()`, r.slot); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return 0, err
 	}
-	if si.Exists {
+	if si.Exists && memLogReplSnapshot {
 		flushed, _ := pglogrepl.ParseLSN(si.Flushed)
 		start := time.Now()
 		d, lsn, err := lrReadSnapshot(r.snapPath())
@@ -291,6 +296,8 @@ FROM pg_replication_slots WHERE slot_name = $1 AND plugin = 'pgoutput' AND datab
 			return pglogrepl.LSN(lsn), nil
 		}
 		slog.Warn("mem-logrepl: local snapshot unusable; recreating slot", "error", err, "lsn", pglogrepl.LSN(lsn), "slot_flushed", flushed)
+	}
+	if si.Exists {
 		if si.Active {
 			// 前プロセスの walsender がまだ残っている
 			_, _ = r.db.ExecContext(ctx, `SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots WHERE slot_name = $1 AND active_pid IS NOT NULL`, r.slot)
@@ -455,7 +462,7 @@ func (r *memLogRepl) stream(ctx context.Context, conn *pgconn.PgConn) error {
 func (r *memLogRepl) sendStatus(ctx context.Context, conn *pgconn.PgConn) error {
 	applied := pglogrepl.LSN(r.applied.Load())
 	flush := pglogrepl.LSN(r.saved.Load())
-	if flush == 0 || flush > applied {
+	if !memLogReplSnapshot || flush == 0 || flush > applied {
 		flush = applied
 	}
 	return pglogrepl.SendStandbyStatusUpdate(ctx, conn, pglogrepl.StandbyStatusUpdate{
@@ -706,6 +713,9 @@ type lrSnapHeader struct {
 
 // maybeSave は受信ループから呼ばれ、必要なら非同期でスナップショットを保存する。
 func (r *memLogRepl) maybeSave() {
+	if !memLogReplSnapshot {
+		return
+	}
 	if !r.needSave && time.Since(r.lastSave) < lrSaveEvery {
 		return
 	}

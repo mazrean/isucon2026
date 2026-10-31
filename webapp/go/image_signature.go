@@ -1,7 +1,6 @@
 package isureal
 
 import (
-	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -62,7 +61,8 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 	if ok {
 		return cached
 	}
-	value := computeImageSignature(key, imageID, exp)
+	// 16-lane AVX-512 kernel shared with concurrent misses (sign_pool.go).
+	value := computeSignature(key, imageID, exp)
 	signatureCacheMu.Lock()
 	if len(signatureCache) >= signatureCacheLimit {
 		signatureCache = make(map[signatureCacheKey][]byte)
@@ -74,18 +74,7 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 
 // computeImageSignature はキャッシュを使わずに署名を計算する (署名ファームと共用)。
 func computeImageSignature(key []byte, imageID string, exp int64) []byte {
-	// one HMAC reused via Reset: the padded key blocks are hashed once, so each
-	// round costs 2 SHA-256 compressions instead of 4 and allocates nothing.
-	mac := hmac.New(sha256.New, key)
-	mac.Write([]byte(strconv.FormatInt(exp, 10) + ":" + imageID))
-	var buf [sha256.Size]byte
-	value := mac.Sum(buf[:0])
-	for range imageSignatureIterations - 1 {
-		mac.Reset()
-		mac.Write(value)
-		value = mac.Sum(value[:0])
-	}
-	return append([]byte(nil), value...)
+	return computeSignature(key, imageID, exp)
 }
 
 func signedImageURL(user User, imageID string) string {

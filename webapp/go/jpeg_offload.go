@@ -193,7 +193,7 @@ func registerJPEGCheckRoutes(e *echo.Echo) {
 		if !memAuthOK(c) {
 			return c.NoContent(http.StatusForbidden)
 		}
-		data, err := io.ReadAll(c.Request().Body)
+		data, err := readAllSized(c.Request().Body, c.Request().ContentLength)
 		if err != nil {
 			return c.NoContent(http.StatusBadRequest)
 		}

@@ -62,12 +62,18 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 	if ok {
 		return cached
 	}
-	value := []byte(strconv.FormatInt(exp, 10) + ":" + imageID)
-	for range imageSignatureIterations {
-		mac := hmac.New(sha256.New, key)
+	// one HMAC reused via Reset: the padded key blocks are hashed once, so each
+	// round costs 2 SHA-256 compressions instead of 4 and allocates nothing.
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(strconv.FormatInt(exp, 10) + ":" + imageID))
+	var buf [sha256.Size]byte
+	value := mac.Sum(buf[:0])
+	for range imageSignatureIterations - 1 {
+		mac.Reset()
 		mac.Write(value)
-		value = mac.Sum(nil)
+		value = mac.Sum(value[:0])
 	}
+	value = append([]byte(nil), value...)
 	signatureCacheMu.Lock()
 	if len(signatureCache) >= signatureCacheLimit {
 		signatureCache = make(map[signatureCacheKey][]byte)

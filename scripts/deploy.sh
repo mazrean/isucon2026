@@ -159,6 +159,8 @@ for h in "${HOSTS[@]}"; do
       sudo install -D -m 644 /tmp/30-front.conf /etc/systemd/system/isureal-go.service.d/30-front.conf && sudo systemctl daemon-reload
       '"$JC_REMOTE"'
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
+      # the image disk cache is pure cache and its byte budget is per process: clear it on every deploy so it never fills the disk (12063/12395/12488)
+      if [ "'"${IMGCACHE_CLEAR:-1}"'" = 1 ] && [ -d /home/isucon/imgcache ]; then sudo mv /home/isucon/imgcache /home/isucon/imgcache.trash-$(date +%s) && (sudo nohup ionice -c3 rm -rf /home/isucon/imgcache.trash-* >/dev/null 2>&1 &); sudo install -d -o isucon -g isucon /home/isucon/imgcache; fi
       sudo systemctl restart isureal-go
       if [ "'"$fr"'" = 1 ]; then
         # the Go front retries bind(:80) every 200ms, so it takes over as soon as nginx is gone

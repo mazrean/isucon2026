@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -36,7 +37,23 @@ type imgReplJob struct {
 	peer    string
 	id      string
 	obj     *imageObject
+	sig     *imgReplSigOnce // shared by every peer's job (and retries) for this image
 	attempt int
+}
+
+// imgReplSigOnce computes imgReplSign once per image instead of once per peer
+// send: the SHA-256 over the whole image was ~4% of asia1 CPU with 2 peers.
+type imgReplSigOnce struct {
+	once sync.Once
+	v    string
+}
+
+func (s *imgReplSigOnce) get(secret, id string, obj *imageObject) string {
+	if s == nil {
+		return imgReplSign(secret, id, obj.Owner, obj.MediaType, obj.Data)
+	}
+	s.once.Do(func() { s.v = imgReplSign(secret, id, obj.Owner, obj.MediaType, obj.Data) })
+	return s.v
 }
 
 type imgReplicator struct {
@@ -101,6 +118,7 @@ func (r *imgReplicator) enqueue(id string, obj *imageObject, regions map[string]
 		return
 	}
 	n := int64(len(obj.Data))
+	sig := &imgReplSigOnce{}
 	for _, p := range r.peers {
 		if regions != nil {
 			if pr := imgPeerRegion(p); pr != "" && !regions[pr] {
@@ -111,7 +129,7 @@ func (r *imgReplicator) enqueue(id string, obj *imageObject, regions map[string]
 		}
 		imgPushStats.pushed.Add(1)
 		imgPushStats.pushedBytes.Add(n)
-		r.submit(imgReplJob{peer: p, id: id, obj: obj})
+		r.submit(imgReplJob{peer: p, id: id, obj: obj, sig: sig})
 	}
 }
 
@@ -168,7 +186,7 @@ func (r *imgReplicator) send(j imgReplJob) error {
 	req.Header.Set(forwardedSecretHeader, r.secret)
 	req.Header.Set(imgReplOwnerHeader, j.obj.Owner)
 	req.Header.Set(imgReplMediaTypeHeader, j.obj.MediaType)
-	req.Header.Set(imgReplSigHeader, imgReplSign(r.secret, j.id, j.obj.Owner, j.obj.MediaType, j.obj.Data))
+	req.Header.Set(imgReplSigHeader, j.sig.get(r.secret, j.id, j.obj))
 	resp, err := r.client.Do(req)
 	if err != nil {
 		return err

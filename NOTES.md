@@ -220,6 +220,8 @@ END: 2026-10-31 18:00 JST
 | 20730 | - | 163611 | bare + MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32 + MEM_PUSH_STATS=1。asia 875 / eu 262 / am 320、GP 683/191/283 (合計 1157、過去最多)。d4 の人数が低め (331/136/127) |
 | 20956 | - | 167525 | bare + IMG_FRIEND_PUSH=1 + _REV=1。asia 1046 / eu 327 / am 301、GP 579/311/271 (合計 1161)。d1→d2 は asia 2.78。先置き: asia1 sent 388 / 150MB、dropped 618 (キュー溢れ)。受け側 recv/hit: eu 247/25、am 187/14、asia1 856/88。害なし、19508 と同点圏。採用候補 |
 | 21263 | - | 151491 | bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1、PUSH_STATS off。asia 1043 / eu 357 / am 272、GP 593/294/250 (1137)。人数は 20956 と同じなのに -16k。新しい APPLY_CHUNK を疑う。次は APPLY_CHUNK 抜き |
+| 21553 | - | 155995 | bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + IMG_FRIEND_PUSH=1 + _REV=1 (APPLY_CHUNK なし)。asia 1040 / eu 365 / am 327、GP 367/332/321 (1020、asia 35%)。APPLY_CHUNK は無罪 (分析: fallback eu 349→196, am 159→2)。WM_EARLY は asia の GP を揺らす (78%→35%)。最終候補は WM_EARLY なしへ |
+| 21833 | - | **170531** | **新最高**。bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし。asia 1013 / eu 323 / am 331、GP 674/263/265 (1202、過去最多)。先置き: asia1 sent 1549 / 553MB、eu/am から各 1300〜1600 件。これを既定にする |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -324,3 +326,9 @@ END: 2026-10-31 18:00 JST
 - 17:30 以降に最終候補で 16 万台の pass が出たら、それ以上は流さない。低かったときだけ、時間があればもう 1 本流す。
 - 最後のベンチは 17:40 までに結果まで取り終える。17:40 以降は新しいベンチを積まない。
 - 追試の 75% 規定: 最高 167,878 の 75% は約 12.6 万。同じ系統の最近の回は 14.5〜16.8 万なので、点の揺れの余裕はある。ただし FAIL は 0 点 (16951 の OOM、13:20 のディスク満杯)。だから最終候補は、点の上振れより FAIL の芽が無いことで選ぶ。final-check.sh で確かめるのは、asia2 の空きメモリ、ディスク、PG の再起動の秒数、計測系 (pprof・DBTRACE・PUSH_STATS) が off であること。
+
+### WM_EARLY 一式は不採用 (15:28)
+- WM_EARLY 一式なし: 19508 167,878 / 98.0k、20463 165,725 / 93.8k、20956 167,525 / 93.4k。
+- WM_EARLY 一式あり: 20730 163,611 / 92.4k、21553 155,995 / 88.5k、21263 151,491 / 86.7k。
+- 数字は「点 / 要求の総数 (3 拠点の nginx の行数)」。一式は MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32。
+- 一式ありの 3 回は、どれもなしの 3 回より低い (平均で約 −1 万)。GP の合計は少し増えるが、通常時の処理量を削る。3 つのノブは分けて試していないので、どれが原因かは分からない。最終では 3 つとも 0 にする。

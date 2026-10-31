@@ -79,7 +79,9 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
+		jpegStart := time.Now()
 		imgW, imgH, imgOK := checkJPEG(c.Request().Context(), imageData)
+		postTimingAdd("jpeg", time.Since(jpegStart))
 		if !imgOK {
 			return NewAPIError(http.StatusBadRequest, "invalid_post")
 		}

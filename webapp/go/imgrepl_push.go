@@ -92,7 +92,11 @@ func newImgReplicator(peersEnv, secret string) *imgReplicator {
 			IdleConnTimeout:     5 * time.Minute,
 		},
 	}
-	for range imgReplWorkers {
+	workers := imgReplWorkers
+	if imgDedupOn {
+		workers = 2 * imgReplWorkers // have 確認で 1 往復増えるぶん、並列を増やして送出量を保つ
+	}
+	for range workers {
 		go r.worker()
 	}
 	go imgPushStatsLogger()
@@ -178,6 +182,16 @@ func imgReplSign(secret, id, owner, mediaType string, data []byte) string {
 func (r *imgReplicator) send(j imgReplJob) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+	if imgDedupOn && j.attempt == 0 {
+		have, err := r.imgHave(ctx, j.peer, j.id)
+		if err != nil {
+			imgStats.haveErr.Add(1)
+		} else if have {
+			imgStats.pushSkip.Add(1)
+			imgStats.pushSkipBytes.Add(int64(len(j.obj.Data)))
+			return nil
+		}
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "http://"+j.peer+"/internal/images/"+j.id, bytes.NewReader(j.obj.Data))
 	if err != nil {
 		return err
@@ -196,6 +210,8 @@ func (r *imgReplicator) send(j imgReplJob) error {
 	if resp.StatusCode/100 != 2 {
 		return fmt.Errorf("imgrepl: %s status %d", j.peer, resp.StatusCode)
 	}
+	imgStats.pushSent.Add(1)
+	imgStats.pushBytes.Add(int64(len(j.obj.Data)))
 	return nil
 }
 
@@ -224,6 +240,13 @@ func imageReplReceiveHandler(store *imageStore, secret string) echo.HandlerFunc 
 		if !safeImageID(id) || owner == "" || mediaType == "" {
 			return c.NoContent(http.StatusBadRequest)
 		}
+		if imgDedupOn {
+			if store.has(id) {
+				imgStats.recvDup.Add(1)
+			}
+			done := store.beginRecv(id)
+			defer done()
+		}
 		data, err := io.ReadAll(http.MaxBytesReader(c.Response(), req.Body, imgReplMaxBody))
 		if err != nil {
 			return c.NoContent(http.StatusBadRequest)
@@ -232,10 +255,17 @@ func imageReplReceiveHandler(store *imageStore, secret string) echo.HandlerFunc 
 			return c.NoContent(http.StatusForbidden)
 		}
 		store.put(id, &imageObject{Owner: owner, MediaType: mediaType, Data: data})
+		imgStats.recvN.Add(1)
+		imgStats.recvBytes.Add(int64(len(data)))
 		return c.NoContent(http.StatusNoContent)
 	}
 }
 
 func registerImageReplicationRoutes(e *echo.Echo) {
 	e.POST("/internal/images/:imageId", imageReplReceiveHandler(images, forwardSecret))
+	if imgDedupOn {
+		registerImgDedupRoutes(e, images, forwardSecret)
+	}
 }
+
+func subtleEq(a, b string) bool { return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1 }

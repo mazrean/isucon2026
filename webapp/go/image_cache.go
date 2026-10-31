@@ -107,6 +107,7 @@ type imageStore struct {
 	writes   chan imageDiskWrite
 	flightMu sync.Mutex
 	flight   map[string]*imageCall
+	recv     map[string]chan struct{} // ISUREAL_IMG_DEDUP: push 受信中
 }
 
 type imageDiskWrite struct {
@@ -120,6 +121,7 @@ func newImageStore(dir string) *imageStore {
 	s := &imageStore{
 		mem:    newImageLRU(imageMemCacheBudget),
 		flight: make(map[string]*imageCall),
+		recv:   make(map[string]chan struct{}),
 	}
 	if dir != "" && dir != "-" && os.MkdirAll(dir, 0o755) == nil {
 		s.dir = dir
@@ -207,11 +209,13 @@ func (s *imageStore) diskWriter() {
 // 順に メモリ LRU → ディスク → DB (同時取得は 1 本にまとめる)。
 func (s *imageStore) get(ctx context.Context, db, primary *sqlx.DB, id string) (*imageObject, error) {
 	if obj, ok := s.mem.get(id); ok {
+		imgStats.memHit.Add(1)
 		return obj, nil
 	}
 	s.flightMu.Lock()
 	if call, ok := s.flight[id]; ok {
 		s.flightMu.Unlock()
+		imgStats.flightJoin.Add(1)
 		call.wg.Wait()
 		return call.obj, call.err
 	}
@@ -231,12 +235,20 @@ func (s *imageStore) get(ctx context.Context, db, primary *sqlx.DB, id string) (
 
 func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) (*imageObject, error) {
 	if obj := s.readDisk(id); obj != nil {
+		imgStats.diskHit.Add(1)
 		s.mem.add(id, obj)
 		return obj, nil
 	}
 	if obj := localImgOwn(id); obj != nil {
+		imgStats.own.Add(1)
 		s.mem.add(id, obj)
 		return obj, nil
+	}
+	if imgDedupOn {
+		// push の本文が流れている最中なら、同じバイト列をもう一度回線で取らない。
+		if obj := s.waitRecv(ctx, id); obj != nil {
+			return obj, nil
+		}
 	}
 	// singleflight の待機者がいるので、呼び出し元のキャンセルに巻き込まれないようにする。
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
@@ -256,6 +268,8 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 		// ISUREAL_LOCALIMG: the bytes may still be only at the origin region.
 		obj, perr := localImgPull(ctx, id)
 		if obj != nil {
+			imgStats.pullMiss.Add(1)
+			imgStats.pullB.Add(int64(len(obj.Data)))
 			s.put(id, obj)
 			return obj, nil
 		}
@@ -265,6 +279,8 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 		return nil, err
 	}
 	obj := &imageObject{Owner: row.Owner, MediaType: row.MediaType, Data: row.Data}
+	imgStats.dbMiss.Add(1)
+	imgStats.dbBytes.Add(int64(len(row.Data)))
 	s.mem.add(id, obj)
 	if s.writes != nil && safeImageID(id) {
 		select {

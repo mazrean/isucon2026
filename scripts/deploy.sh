@@ -66,6 +66,9 @@ DROP_DUP_IDX=${DROP_DUP_IDX:-0}   # 1 = drop redundant indexes on asia2 (posting
 PGCPU=${PGCPU:-0}   # 1 = install etc/pg/primary-cpu.conf as asia2 conf.d/zz-cpu.conf (max_wal_size 12GB, jit off, ...) + pg_reload_conf; 0 = remove it
 IMG_HOTPART=${IMG_HOTPART:-1}   # 1 = new image IDs get a d0d0d0 tag; tagged IDs are read from the contest partition only (webapp/go/image_hotpart.go); 0 = old all-partition lookup
 PGFPW=${PGFPW:-0}   # 1 = install etc/pg/primary-fpw-off.conf (full_page_writes=off; torn-page corruption risk on a crash) ; 0 = remove it
+VM=${VM:-0}   # 1 = asia1+asia2 get /etc/sysctl.d/98-isucon-vm.conf (watermark_boost 0, min_free 128MB, scale 125, compaction_proactiveness 0, dirty_bg 64MB/dirty 512MB) (scripts/os-knobs.sh); 0 = file removed + kernel defaults back
+NETQ=${NETQ:-0}   # 1 = asia1: irqbalance off, queue N IRQ -> CPU N, XPS CPU N -> tx-N (isucon-netq.service, scripts/os-knobs.sh); 0 = unit removed, xps 0, irqbalance on
+ASIA2_GOMEM=${ASIA2_GOMEM-}   # e.g. 900MiB:100 = asia2 app GOMEMLIMIT:GOGC drop-in 45-gomem.conf (now 1200MiB:200 from 10-tune; leaves page cache to PG); "" = drop-in removed
 FRONT_LOG=${FRONT_LOG-}   # e.g. /home/isucon/front-access.log: nginx "timed" access log from the Go front (default off)
 region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) echo america;; esac; }
 for h in "${HOSTS[@]}"; do
@@ -195,6 +198,7 @@ if true; then
     grep -q "^ISUREAL_PREVALIDATE=" /home/isucon/env.sh && sed -i "s|^ISUREAL_PREVALIDATE=.*|ISUREAL_PREVALIDATE='"$PREVALIDATE"'|" /home/isucon/env.sh || echo "ISUREAL_PREVALIDATE='"$PREVALIDATE"'" >> /home/isucon/env.sh
     sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf
     sudo install -D -m 644 /tmp/40-oom.conf /etc/systemd/system/isureal-go.service.d/40-oom.conf
+    if [ -n "'"$ASIA2_GOMEM"'" ]; then printf "[Service]\nEnvironment=GOMEMLIMIT=%s\nEnvironment=GOGC=%s\n" "'"${ASIA2_GOMEM%%:*}"'" "'"${ASIA2_GOMEM##*:}"'" | sudo tee /etc/systemd/system/isureal-go.service.d/45-gomem.conf >/dev/null; else sudo rm -f /etc/systemd/system/isureal-go.service.d/45-gomem.conf; fi
     sudo install -D -m 644 /tmp/50-pgoom.conf /etc/systemd/system/postgresql@16-main.service.d/50-oom.conf && sudo systemctl daemon-reload
     '"$JC_REMOTE"'
     install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal
@@ -207,4 +211,5 @@ fi
 wait
 # always runs on all 3 app hosts so PACE=0/CWND=0 reverts everywhere, even on a single-host deploy
 LOCK_HELD=1 PACE=$PACE CWND=$CWND scripts/pace.sh asia1 europe1 america1
+LOCK_HELD=1 VM=$VM NETQ=$NETQ scripts/os-knobs.sh
 rm -rf "$OUT"

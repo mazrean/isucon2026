@@ -305,3 +305,4 @@ END: 2026-10-31 18:00 JST
 - 16572 の eu/am 崩れ: 軽い GET の WM の待ちが eu p50 0.274 / p90 1.568、am 0.280 / 1.163 (前の回は 0.13 / 0.25)。1 要求あたり 2 往復待っている形。最有力の疑いは MEM_WM_HB=1 + MEM_PULL_UNLOCKED=1。PREEXTEND は asia の d1→d2 (2.39 倍) を落とした疑い。3 つとも既定 off のまま。
 - 14:40 asia1 の bw_out_allowance_exceeded は起動から累計 3836 (asia2 は 2)。ASIA_LOCALIMG_FAST で、asia1 が eu/am へ asia の画像を直接送るので、送信の上限に当たっている疑い (18156 の eu の GP 50%)。次の回の前後の差分で確かめる。
 - 18394 で DROP_DUP_IDX は効果なし (asia の GP 投稿 p50 4.04→5.19)。インデックスは次のベンチの合間に作り直す: CREATE INDEX CONCURRENTLY posting_windows_active / posts_author_id (001-schema.sql / 010-indexes.sql と同じ定義)。
+- インデックスの方針 (14:45): 元のスキーマどおり 2 つとも残す (DROP_DUP_IDX 既定 0、asia2 で作り直し済み)。18619 (165,858) は削除したままの回だったが、18394 の悪化の要因と切り分けられないので、安全側 (元の状態) に揃える。最終候補の 2 本はインデックスありで流す。

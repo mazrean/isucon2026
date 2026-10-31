@@ -42,6 +42,10 @@ func (m *memStore) sessionFromHeader(c *echo.Context) (*Session, bool) {
 	if !u.active() {
 		return nil, false
 	}
+	// 別の地域で無効化を確定中 (local_session.go): メモリでは有効と答えず DB で確かめる
+	if m.marks.marked(s.UserID) {
+		return nil, false
+	}
 	return &Session{UserID: s.UserID, TokenHash: tokenHash, CreatedAt: s.CreatedAt, Region: u.Region}, true
 }
 

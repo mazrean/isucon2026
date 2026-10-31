@@ -38,6 +38,7 @@ LOGREPL=${LOGREPL:-0}   # 1 = app hosts subscribe to PG logical replication (web
 PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
 MEMORIES_PAR=${MEMORIES_PAR:-1}   # 1 = Memories run posts/RealMojis/comments queries at once (1 DB round trip instead of 3)
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
+LOCAL_SESSION=${LOCAL_SESSION:-0}   # 1 = europe1/america1 commit login/logout in-region (webapp/go/local_session.go); needs MEM=1 MEM_WM=1 LOGREPL=0 STORE=0
 STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 IMG_PUSH_FILTER=${IMG_PUSH_FILTER:-0}   # 1 = asia1 pushes post/RealMoji images only to regions with a likely viewer (author's friends; public = all); others pull from PG
@@ -54,7 +55,8 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/systemd/isureal-go.service.d/30-front.conf "$h:/tmp/30-front.conf"
     jc_scp "$h"
     r=$(region_of "$h"); fr=0; [[ $h == asia1 ]] && fr=$FRONT; f=$FWD; g=$FWD_GET; pv=$PREVALIDATE; pvt="$FWD_TARGET:8080"; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && pvt="" && ht=${HEAVY_TARGET-192.168.4.10}; [[ $f == 1 ]] || pvt=""
-    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
+    ls=$LOCAL_SESSION; { [[ $h == asia1 || $f != 1 || $MEM != 1 || $MEM_WM != 1 || $LOGREPL == 1 || $STORE == 1 ]]; } && ls=0
+    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf
@@ -70,6 +72,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_PREVALIDATE '"$pv"'
       setenv ISUREAL_PREVALIDATE_TARGET '"$pvt"'
       setenv ISUREAL_LOCALIMG '"$LOCALIMG"'
+      setenv ISUREAL_LOCAL_SESSION '"$ls"'
       setenv ISUREAL_MEMORIES_PAR '"$MEMORIES_PAR"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-1}"'

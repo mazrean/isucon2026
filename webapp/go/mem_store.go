@@ -120,6 +120,8 @@ type memStore struct {
 	leaseUntil atomic.Int64 // unix nano
 
 	w memWM // ISUREAL_MEM_WATERMARK (peer のみ使う)
+
+	marks sessMarks // ISUREAL_LOCAL_SESSION: 地域内で無効化中のユーザー (local_session.go)
 }
 
 // on は、このリクエストをメモリから返してよいか (フラグ ON かつロード完了、peer は lease 内)。

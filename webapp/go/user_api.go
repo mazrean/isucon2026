@@ -132,6 +132,9 @@ func loginHandler(h *HandlerContext) echo.HandlerFunc {
 		if !usernamePattern.MatchString(input.Username) {
 			return NewAPIError(http.StatusUnauthorized, "invalid_credentials")
 		}
+		if ls := getLocalSession(c); ls != nil {
+			return ls.login(c, h, input)
+		}
 		if h.Store != nil {
 			if ok, err := h.Store.login(c, input); ok {
 				return err
@@ -171,6 +174,9 @@ func logoutHandler(h *HandlerContext) echo.HandlerFunc {
 		session := GetSession(c)
 		if session == nil {
 			return NewAPIError(http.StatusUnauthorized, "invalid_session")
+		}
+		if ls := getLocalSession(c); ls != nil {
+			return ls.logout(c, h, session)
 		}
 		if h.Store != nil {
 			if ok, err := h.Store.logout(c, session); ok {

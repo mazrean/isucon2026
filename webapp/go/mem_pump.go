@@ -92,6 +92,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		}
 		e.Use(memWriteBarrier(p))
 		registerMemPumpRoutes(e, p)
+		registerSessMarkRoute(e, h, p)
 		go p.ticker()
 		go memBarrierStatsLoop()
 		if p.peers != nil {

@@ -1,0 +1,35 @@
+time=2026-10-31T02:35:38.935Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:35:42.112Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:35:44.899Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T02:35:45.406Z level=INFO msg="user moved" user=mono-5037 from=asia to=europe
+time=2026-10-31T02:35:48.092Z level=INFO msg="asia 2 日目: 46 人"
+time=2026-10-31T02:35:50.981Z level=INFO msg="europe 2 日目: 16 人"
+time=2026-10-31T02:35:53.561Z level=INFO msg="user moved" user=miniel-5198 from=asia to=europe
+time=2026-10-31T02:35:54.167Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T02:35:57.154Z level=INFO msg="asia 3 日目: 126 人"
+time=2026-10-31T02:36:00.054Z level=INFO msg="europe 3 日目: 44 人"
+time=2026-10-31T02:36:03.096Z level=INFO msg="america 3 日目: 36 人"
+time=2026-10-31T02:36:05.968Z level=INFO msg="asia 4 日目: 323 人"
+time=2026-10-31T02:36:06.740Z level=INFO msg="user moved" user=miniel-5198 from=europe to=america
+time=2026-10-31T02:36:10.183Z level=INFO msg="europe 4 日目: 76 人"
+time=2026-10-31T02:36:12.877Z level=INFO msg="america 4 日目: 47 人"
+time=2026-10-31T02:36:17.760Z level=INFO msg="asia 5 日目: 323 人"
+time=2026-10-31T02:36:21.742Z level=INFO msg="user moved" user=isro-7570 from=asia to=europe
+time=2026-10-31T02:36:22.229Z level=INFO msg="europe 5 日目: 77 人"
+time=2026-10-31T02:36:23.691Z level=INFO msg="user moved" user=fuzoe-7823 from=europe to=asia
+time=2026-10-31T02:36:25.286Z level=INFO msg="user moved" user=ivyre_7078 from=asia to=america
+time=2026-10-31T02:36:26.106Z level=INFO msg="america 5 日目: 48 人"
+time=2026-10-31T02:36:30.631Z level=INFO msg="asia 最終日（グランプリ）: 321 人"
+time=2026-10-31T02:36:30.631Z level=INFO msg="america 最終日（グランプリ）: 47 人"
+time=2026-10-31T02:36:30.808Z level=INFO msg="europe 最終日（グランプリ）: 76 人"
+time=2026-10-31T02:36:38.788Z level=INFO msg="グランプリ: アジア 51 人, ヨーロッパ 3 人, アメリカ 4 人"
+{
+  "pass": true,
+  "score": 49892,
+  "messages": [
+    "hiulse_5066: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）"
+  ]
+}
+
+reason= 実行終了
+job=4513 state=4 pass=true スコア=49892 種別エラー数=map[]

@@ -252,6 +252,7 @@ END: 2026-10-31 18:00 JST
 | 30326 | - | 191164 | A の既定 + ASIA_LOCALIMG_SEG=1。pass。d5 1165/336/316、GP 700/234/209。A 系の平均 (約 195.6k) と同等。+1 万に届かないので不採用 (画像の保存形式を変える危険に見合わない) |
 | 30587 | - | 178908 | A の既定 + FWD_LOCAL_SLOTS=256。pass。d5 1165/387/297 だが GP 612/119/125 で eu/am の GP が崩れる (asia のローカルの枠を広げると転送の書き込みが押される)。不採用 |
 | 30925 | - | 173907 | A の既定 + FWD_POST_SLOTS=64。pass。グランプリ: アジア 708 人, ヨーロッパ 38 人, アメリカ 106 人。A 系を下回る。不採用 |
+| 31222 | - | 182308 | A の既定 + STORE_PRIO=1。pass。GP 658/185/192。A 系を下回る。不採用 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -387,3 +388,4 @@ END: 2026-10-31 18:00 JST
 - 画像の fsync を後回しにする手 (201 を永続化の前に返す) は、ユーザーの承認が無いので入れない。
 - (16:38 改) 再起動試験の後のデプロイなしの 1 本を、最終の 1 本目とする。pass で 180k 以上なら、それを最後の走行として止める。FAIL か 180k 未満なら、17:50 までに 2 本目を積んでよい (17:55 には終わる)。
 - (16:39、ユーザーの直接の指示) ASIA_LOCALIMG_ASYNC=1 (画像を fsync 前に 201) を試してよい。synchronous_commit=off と同じ種類の判断。採るなら 17:30 の再起動試験で画像の照合を必ず通し、欠けたら即 0 に戻す。
+- (16:59) 600k 設計案 (/tmp/isucon2026-600k-analysis/PLAN.md) の §2〜§4 は担当に渡したが、凍結までに入らない。WAL 正本化 (§3) は、PG を読む経路 (Memories・export・画像の有効性・通知 hub・フォールバック・asia2 origin) を全部メモリかログに移す必要があり、数時間かかる (担当の見積もり)。

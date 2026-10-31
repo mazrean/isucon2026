@@ -8,6 +8,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -758,20 +759,17 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 			if st != nil {
 				st.pulls++
 			}
-			missing, err := r.pull(req.Epoch, r.seq+1, b.Seq-1)
-			if err == nil {
-				for _, mb := range missing {
-					if err = r.m.applyBatch(mb.Changes); err != nil {
-						break
-					}
-					r.seq = mb.Seq
+			if err := r.fillGap(req.Epoch, b.Seq-1); err != nil {
+				if errors.Is(err, errMemGapStale) {
+					return false // 無効化 / epoch 切り替えが割り込んだ: 後始末は割り込んだ側が済ませている
 				}
-			}
-			if err != nil || r.seq != b.Seq-1 {
 				slog.Warn("mem: gap recovery failed", "error", err)
 				r.m.ready.Store(false)
 				go r.invalidate()
 				return false
+			}
+			if b.Seq <= r.seq {
+				continue // ロックを手放している間に、先行の push がこのバッチまで適用した
 			}
 		}
 		if err := r.m.applyBatch(b.Changes); err != nil {
@@ -786,16 +784,10 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 		if st != nil {
 			st.pulls++
 		}
-		missing, err := r.pull(req.Epoch, r.seq+1, req.Seq)
-		if err == nil {
-			for _, mb := range missing {
-				if err = r.m.applyBatch(mb.Changes); err != nil {
-					break
-				}
-				r.seq = mb.Seq
+		if err := r.fillGap(req.Epoch, req.Seq); err != nil {
+			if errors.Is(err, errMemGapStale) {
+				return false
 			}
-		}
-		if err != nil || r.seq != req.Seq {
 			slog.Warn("mem: gap recovery failed", "error", err)
 			r.m.ready.Store(false)
 			go r.invalidate()
@@ -816,6 +808,64 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 }
 
 var memSkewWarnAt atomic.Int64
+
+// ISUREAL_MEM_PULL_UNLOCKED=1 (既定 0): 欠番の pull (asia1 への 1 往復) の間、r.mu を手放す。
+// 従来は pull の間 r.mu を持ち続けるので、その間に届いた push (多くは欠番そのもの) と wm 通知が
+// 1 RTT 以上止まり、wm の push の尾 (500ms 超) になっていた。
+//
+// 正しさ:
+//   - 適用は従来どおり r.mu の下で、連番どおりに 1 つずつ (mb.Seq == r.seq+1 のものだけ) 行う。
+//     ロックを手放している間に他の push が先に進めた分 (mb.Seq <= r.seq) は捨てる。同じ epoch の同じ seq の
+//     バッチは pump のバッファ上で同一なので、どちらの経路で適用しても中身は同じ。
+//   - 再取得の後に gen / epoch / ready を確認し、無効化や resync が割り込んでいたら何も適用しない
+//     (errMemGapStale。メモリは割り込んだ側が作り直す)。
+//   - 目標 to に届かなければ従来どおり失敗 (呼び出し側が invalidate)。
+//   - wm は r.seq を見て進める (wmAfterPush / wmMsg) ので、適用前の seq に対して wm が進むことはない。
+//     ロックを手放している間に wmMsg が来ても、r.seq が足りなければ保留される。
+var memPullUnlocked = os.Getenv("ISUREAL_MEM_PULL_UNLOCKED") == "1"
+
+var errMemGapStale = errors.New("mem: receiver invalidated during gap pull")
+
+// fillGap は r.mu 保持中に呼ぶ。r.seq >= to になるまで pump から取り寄せて適用する (戻るときも r.mu 保持)。
+func (r *memReceiver) fillGap(epoch string, to int64) error {
+	if r.seq >= to {
+		return nil
+	}
+	from := r.seq + 1
+	var missing []memBatch
+	var err error
+	if memPullUnlocked {
+		gen := r.gen
+		r.mu.Unlock()
+		missing, err = r.pull(epoch, from, to)
+		r.mu.Lock()
+		if r.gen != gen || r.epoch != epoch || !r.m.ready.Load() {
+			return errMemGapStale
+		}
+	} else {
+		missing, err = r.pull(epoch, from, to)
+	}
+	if err != nil {
+		return err
+	}
+	for _, mb := range missing {
+		if mb.Seq <= r.seq {
+			continue
+		}
+		if mb.Seq != r.seq+1 {
+			return fmt.Errorf("mem: pulled batch %d does not follow %d", mb.Seq, r.seq)
+		}
+		if err := r.m.applyBatch(mb.Changes); err != nil {
+			return err
+		}
+		r.seq = mb.Seq
+		r.seqCond.Broadcast()
+	}
+	if r.seq < to {
+		return fmt.Errorf("mem: gap pull reached %d, want %d", r.seq, to)
+	}
+	return nil
+}
 
 func (r *memReceiver) pull(epoch string, from, to int64) ([]memBatch, error) {
 	resp, cancel, err := memGet(r.pumpAddr, fmt.Sprintf("/internal/mem/batches?e=%s&from=%d&to=%d", epoch, from, to), 3*time.Second)

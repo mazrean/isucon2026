@@ -4,6 +4,8 @@
 # Host state owned here: /home/isucon/webapp/go/isureal, /etc/nginx/nginx.conf, /etc/nginx/sites-available/isureal.conf
 set -euo pipefail
 cd "$(dirname "$0")/.."
+mkdir -p /tmp/isucon
+if [[ -z ${LOCK_HELD:-} ]]; then exec 9>/tmp/isucon/env.lock; flock -w 600 9 || { echo "env busy: $(cat /tmp/isucon/env.lock.owner 2>/dev/null)" >&2; exit 75; }; echo "$(date +%T) deploy $(git rev-parse --short HEAD)" >| /tmp/isucon/env.lock.owner; fi
 HOSTS=("$@"); [[ ${#HOSTS[@]} -gt 0 ]] || HOSTS=(asia1 europe1 america1)
 OUT=$(mktemp -d)
 ( cd webapp/go && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o "$OUT/isureal" ./cmd/isureal )

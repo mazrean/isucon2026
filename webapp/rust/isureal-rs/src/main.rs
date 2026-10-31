@@ -169,21 +169,7 @@ pub async fn proxy(app: &App, req: Request<Incoming>) -> Response<Body> {
     }
 }
 
-/// raw deflate of the export manifest. Placeholder: stored blocks (valid
-/// deflate, not Go's bytes) until the Go-compatible compressor lands.
+/// raw deflate of the export manifest, byte-identical to Go 1.27 archive/zip (flate level 5).
 pub fn deflate(input: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(input.len() + input.len() / 65535 * 5 + 5);
-    let mut chunks: Vec<&[u8]> = input.chunks(65535).collect();
-    if chunks.is_empty() {
-        chunks.push(&[]);
-    }
-    let n = chunks.len();
-    for (i, c) in chunks.into_iter().enumerate() {
-        out.push(if i + 1 == n { 1 } else { 0 });
-        let len = c.len() as u16;
-        out.extend_from_slice(&len.to_le_bytes());
-        out.extend_from_slice(&(!len).to_le_bytes());
-        out.extend_from_slice(c);
-    }
-    out
+    goflate::deflate_like_go_zip(input)
 }

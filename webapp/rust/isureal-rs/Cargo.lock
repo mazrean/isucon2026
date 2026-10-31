@@ -326,6 +326,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "goflate"
+version = "0.1.0"
+
+[[package]]
 name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -468,6 +472,7 @@ dependencies = [
  "chrono",
  "crc32fast",
  "deadpool-postgres",
+ "goflate",
  "hex",
  "http-body-util",
  "hyper",

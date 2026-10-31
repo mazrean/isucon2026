@@ -1,0 +1,16 @@
+[package]
+name = "goflate"
+version = "0.1.0"
+edition = "2021"
+description = "Byte-exact port of Go 1.27 archive/zip (compress/flate level 5) Deflate output"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "goflate-cli"
+path = "src/bin/cli.rs"
+
+[profile.release]
+opt-level = 3
+debug = false

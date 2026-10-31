@@ -17,6 +17,7 @@ crc32fast = "1"
 hex = "0.4"
 base64 = "0.22"
 parking_lot = "0.12"
+goflate = { path = "../goflate" }
 
 [profile.release]
 opt-level = 3

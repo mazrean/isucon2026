@@ -207,3 +207,4 @@ END: 2026-10-31 18:00 JST
 | 11091 | - | 104839 | FOR KEY SHARE + asia1 CPU 3 本。asia5 967 (最多) / eu 122 / am 100。GP asia 467 / eu 65 / am 55 (eu/am 崩れ)。通知 503 ×7、client cancel |
 | 11272 | - | 112194 | 画像 push 停止 (IMG_PEERS 空) + KEY SHARE。asia5 953 / eu 185 / am 115。GP asia 551 (58%) / eu 32 / am 62。eu/am の窓 POST 3.2/5.2s が新しい律速。画像 500 (deadline) ×2 |
 | 11493 | - | **129380** | push 停止 + KEY SHARE + FWD_PRIORITY=1。asia5 423 / eu 277 / am 302 (eu/am 激増)。GP asia 178 / eu 261 / am 261。asia ローカルの待ち p50 1.1〜1.9s (枠 32 が狭い) → 既定に FWD_PRIORITY=1・push 停止 |
+| 11716 | - | **139085** | FWD_PRIORITY + ローカル枠 64。asia5 823 / eu 224 / am 331。GP 400 / 220 / 244。ローカル待ち p50 1.3〜2.0s (まだ詰まる) → 既定 64 |

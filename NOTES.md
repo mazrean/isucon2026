@@ -24,6 +24,8 @@ END: 2026-10-31 18:00 JST
 ## スコアログ
 | 時刻 | commit | score | pass | 内容 |
 |---|---|---|---|---|
+| 10:10 | 初期 | 3023 | true | 初期実装 (posting-window タイムアウト×3, 4日目欠落) |
+| 10:25 | 8cd4fff | 3407 | true | 画像署名キャッシュ |
 
 ## バックログ (優先順)
 1. [進行中] 各アプリホストにローカル PG ホットスタンバイ (asia2 から streaming, remote_apply ANY 3) → 読みをローカル化 (europe/america の 100ms/クエリ を除去)

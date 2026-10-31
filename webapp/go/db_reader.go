@@ -81,7 +81,7 @@ func newReadRouter(config *Config, primary *sqlx.DB) *readRouter {
 	if !config.ReadReplicaEnabled() {
 		return router
 	}
-	replica, err := sqlx.Open("pgx", config.databaseDSNForHost(config.ReadHost))
+	replica, err := sqlx.Open("pgx", traceDSN(config.databaseDSNForHost(config.ReadHost), "read"))
 	if err != nil {
 		slog.Error("failed to open read replica; reading from primary", "error", err)
 		return router

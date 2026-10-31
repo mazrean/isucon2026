@@ -48,7 +48,7 @@ func getFeedHandler(h *HandlerContext) echo.HandlerFunc {
 			return NewAPIError(http.StatusBadRequest, "invalid_pagination")
 		}
 		ctx := c.Request().Context()
-		viewer, err := loadViewerContext(ctx, h.DB, GetSession(c).UserID)
+		viewer, err := loadViewerContext(ctx, h.Reader(), GetSession(c).UserID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return c.JSON(http.StatusOK, getFeedResponse{Items: []feedItemResponse{}})
 		}
@@ -58,7 +58,7 @@ func getFeedHandler(h *HandlerContext) echo.HandlerFunc {
 		following := map[string]bool{}
 		if input.Feed == "following" {
 			var followeeIDs []string
-			if err := h.DB.SelectContext(ctx, &followeeIDs, `SELECT followee_id FROM follows WHERE follower_id = $1`, viewer.ID); err != nil {
+			if err := h.Reader().SelectContext(ctx, &followeeIDs, `SELECT followee_id FROM follows WHERE follower_id = $1`, viewer.ID); err != nil {
 				return err
 			}
 			for _, id := range followeeIDs {
@@ -69,7 +69,7 @@ func getFeedHandler(h *HandlerContext) echo.HandlerFunc {
 		if ranked {
 			beforePostedAt, beforeID = nil, ""
 		}
-		posts, err := selectPostsWithAuthor(ctx, h.DB, `
+		posts, err := selectPostsWithAuthor(ctx, h.Reader(), `
    AND p.author_id <> $1 AND w.ended_at IS NULL
    AND ($2::timestamptz IS NULL OR (p.posted_at, p.id) < ($2, $3))
    ORDER BY p.posted_at DESC, p.id DESC
@@ -85,7 +85,7 @@ func getFeedHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		var scores map[string]int64
 		if ranked {
-			if scores, err = recommendationScores(ctx, h.DB, viewer, candidates); err != nil {
+			if scores, err = recommendationScores(ctx, h.Reader(), viewer, candidates); err != nil {
 				return err
 			}
 			sort.SliceStable(candidates, func(i, j int) bool {

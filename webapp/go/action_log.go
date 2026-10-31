@@ -76,6 +76,11 @@ func ActionLogMiddleware(minLevel string, output io.Writer) echo.MiddlewareFunc 
 			}
 
 			route := c.RouteInfo()
+			// isureal-guard が BAN 判定に使う行 (login 401 / put_profile_image 400 invalid_image /
+			// get_image 403 invalid_signature) と 5xx だけを出力する。形式は従来どおり。
+			if status < http.StatusInternalServerError && !guardRelevant(route.Method+" "+route.Path, status, c) {
+				return nil
+			}
 			entry := map[string]any{
 				"level":   level,
 				"action":  nil,
@@ -108,4 +113,17 @@ func ActionLogMiddleware(minLevel string, output io.Writer) echo.MiddlewareFunc 
 			return writeErr
 		}
 	}
+}
+
+func guardRelevant(route string, status int, c *echo.Context) bool {
+	abuse, _ := c.Get("abuse").(string)
+	switch route {
+	case "POST /api/auth/login":
+		return status == http.StatusUnauthorized
+	case "PUT /api/me/profile-image":
+		return status == http.StatusBadRequest && abuse == "invalid_image"
+	case "GET /api/images/:imageId":
+		return status == http.StatusForbidden && abuse == "invalid_signature"
+	}
+	return false
 }

@@ -14,6 +14,8 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	LogLevel   string
+	ReadHost   string
+	NodeName   string
 }
 
 func ConfigFromEnv() *Config {
@@ -25,14 +27,25 @@ func ConfigFromEnv() *Config {
 		DBPassword: envOrDefault("ISUREAL_DB_PASSWORD", "isureal"),
 		DBName:     envOrDefault("ISUREAL_DB_NAME", "isureal"),
 		LogLevel:   envOrDefault("ISUREAL_LOG_LEVEL", "debug"),
+		ReadHost:   os.Getenv("ISUREAL_DB_READ_HOST"),
+		NodeName:   os.Getenv("ISUREAL_NODE_NAME"),
 	}
 }
 
 func (c *Config) DatabaseDSN() string {
+	return c.databaseDSNForHost(c.DBHost)
+}
+
+// ReadReplicaEnabled は、primary とは別の読み取り用ホストが指定されているかを返す。
+func (c *Config) ReadReplicaEnabled() bool {
+	return c.ReadHost != "" && c.ReadHost != c.DBHost
+}
+
+func (c *Config) databaseDSNForHost(host string) string {
 	u := url.URL{
 		Scheme: "postgres",
 		User:   url.UserPassword(c.DBUser, c.DBPassword),
-		Host:   net.JoinHostPort(c.DBHost, c.DBPort),
+		Host:   net.JoinHostPort(host, c.DBPort),
 		Path:   "/" + c.DBName,
 	}
 	return u.String()

@@ -65,7 +65,7 @@ func replaceRealMojiHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		actor := GetSession(c).UserID
-		post, err := getPost(ctx, h.DB, input.PostID)
+		post, err := getPost(ctx, h.Reader(), input.PostID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusForbidden, "interaction_forbidden")
 		}
@@ -134,14 +134,14 @@ func getRealMojisHandler(h *HandlerContext) echo.HandlerFunc {
 			return NewAPIError(http.StatusBadRequest, "invalid_pagination")
 		}
 		ctx := c.Request().Context()
-		allowed, err := canViewPost(ctx, h.DB, GetSession(c).UserID, input.PostID)
+		allowed, err := canViewPost(ctx, h.Reader(), GetSession(c).UserID, input.PostID)
 		if err != nil {
 			return err
 		}
 		if !allowed {
 			return NewAPIError(http.StatusForbidden, "interaction_forbidden")
 		}
-		reactions, err := selectCurrentRealMojis(ctx, h.DB, `AND r.post_id=$1 AND ($2::timestamptz IS NULL OR (r.created_at,r.id)<($2,$3)) ORDER BY r.created_at DESC,r.id DESC LIMIT 51`, input.PostID, input.BeforeCreatedAt, input.BeforeID)
+		reactions, err := selectCurrentRealMojis(ctx, h.Reader(), `AND r.post_id=$1 AND ($2::timestamptz IS NULL OR (r.created_at,r.id)<($2,$3)) ORDER BY r.created_at DESC,r.id DESC LIMIT 51`, input.PostID, input.BeforeCreatedAt, input.BeforeID)
 		if err != nil {
 			return err
 		}

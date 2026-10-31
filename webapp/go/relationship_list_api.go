@@ -65,7 +65,7 @@ func getRelationshipsHandler(h *HandlerContext) echo.HandlerFunc {
 			UpdatedAt time.Time `db:"updated_at"`
 			User      User      `db:"user"`
 		}
-		if err := h.DB.SelectContext(ctx, &records, `
+		if err := h.Reader().SelectContext(ctx, &records, `
    SELECT relations.id, relations.updated_at, `+userColumnsAs("u", "user")+`
    FROM (`+query+`) relations
    JOIN users u ON u.status = 'active'

@@ -90,7 +90,8 @@ func registerHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		defer tx.Rollback()
 		// ユーザー名が一意である必要があります。
-		if _, err := tx.ExecContext(ctx, `LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE`); err != nil {
+		// テーブルロックは他の users 更新と競合するため、同じユーザー名の登録だけを直列化する。
+		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(1, hashtext($1))`, input.Username); err != nil {
 			return err
 		}
 		var exists bool
@@ -174,7 +175,7 @@ func getMeHandler(h *HandlerContext) echo.HandlerFunc {
 		if session == nil {
 			return NewAPIError(http.StatusUnauthorized, "invalid_session")
 		}
-		user, err := getUser(c.Request().Context(), h.DB, session.UserID)
+		user, err := getUser(c.Request().Context(), h.Reader(), session.UserID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusNotFound, "account_not_found")
 		}

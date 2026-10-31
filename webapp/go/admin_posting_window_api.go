@@ -43,7 +43,9 @@ func openPostingWindowHandler(h *HandlerContext) echo.HandlerFunc {
 			return err
 		}
 		defer tx.Rollback()
-		if _, err := tx.ExecContext(ctx, `LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE`); err != nil {
+		// 以前は LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE を取っていたが、users への UPDATE/INSERT と
+		// 競合してロックの行列ができ、投稿ラッシュ中にタイムアウトしていた。同一リージョンの開始処理だけを直列化する。
+		if _, err := tx.ExecContext(ctx, `SELECT pg_advisory_xact_lock(2, hashtext($1))`, region); err != nil {
 			return err
 		}
 		var conflict bool
@@ -65,6 +67,9 @@ func openPostingWindowHandler(h *HandlerContext) echo.HandlerFunc {
    INSERT INTO posting_windows (id, region, local_date, starts_at, on_time_deadline)
    VALUES ($1, $2, $3, $4, $5)
   `, windowID, region, localDate, startsAt, startsAt.Add(time.Duration(seconds)*time.Second)); err != nil {
+			if isUniqueViolation(err) {
+				return NewAPIError(http.StatusConflict, "posting_window_conflict")
+			}
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `

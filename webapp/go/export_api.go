@@ -19,7 +19,7 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
-		author, err := getUser(ctx, h.DB, userID)
+		author, err := getUser(ctx, h.Reader(), userID)
 		if err != nil {
 			return err
 		}
@@ -27,7 +27,7 @@ func exportPostsHandler(h *HandlerContext) echo.HandlerFunc {
 			Post
 			ImageData []byte `db:"image_data"`
 		}
-		if err := h.DB.SelectContext(ctx, &posts, `
+		if err := h.Reader().SelectContext(ctx, &posts, `
    SELECT `+postColumns+`, i.data AS image_data
    FROM posts p
    JOIN posting_windows w ON w.id = p.posting_window_id

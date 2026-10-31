@@ -37,7 +37,7 @@ func getNotificationsHandler(h *HandlerContext) echo.HandlerFunc {
 		ticker := time.NewTicker(500 * time.Millisecond)
 		defer ticker.Stop()
 		for {
-			user, err := getUser(ctx, h.DB, userID)
+			user, err := getUser(ctx, h.Reader(), userID)
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) && ctx.Err() == nil {
 					c.Logger().Error("failed to get notification recipient", "error", err)
@@ -48,7 +48,7 @@ func getNotificationsHandler(h *HandlerContext) echo.HandlerFunc {
 				return nil
 			}
 			var notification getNotificationsResponse
-			err = h.DB.GetContext(ctx, &notification, `
+			err = h.Reader().GetContext(ctx, &notification, `
     SELECT n.id, n.posting_window_id, w.region, n.created_at
     FROM notifications n JOIN posting_windows w ON w.id = n.posting_window_id
     WHERE n.user_id = $1 AND n.created_at > $2 AND w.ended_at IS NULL

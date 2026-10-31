@@ -12,8 +12,15 @@ import (
 
 type HandlerContext struct {
 	DB     *sqlx.DB
+	reads  *readRouter
 	Config *Config
 	IPBans *IPBanList
+}
+
+// Reader は、トランザクション外の読み取り専用クエリに使う接続を返す。
+// ローカル replica が同期メンバーとして健全なときだけ replica、それ以外は primary。
+func (h *HandlerContext) Reader() *sqlx.DB {
+	return h.reads.reader()
 }
 
 func NewServer(config *Config) *echo.Echo {
@@ -31,7 +38,8 @@ func NewServer(config *Config) *echo.Echo {
 	if err != nil {
 		panic("failed to open database: " + err.Error())
 	}
-	db.SetMaxOpenConns(30)
+	// 既定の MaxIdleConns=2 だと 100ms 先の primary へ頻繁に再接続するため、プールを保持する。
+	configurePool(db, 30)
 	err = db.Ping()
 	if err != nil {
 		panic("failed to ping database: " + err.Error())
@@ -39,6 +47,7 @@ func NewServer(config *Config) *echo.Echo {
 
 	handlerContext := &HandlerContext{
 		DB:     db,
+		reads:  newReadRouter(config, db),
 		Config: config,
 		IPBans: &IPBanList{},
 	}

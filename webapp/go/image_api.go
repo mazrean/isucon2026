@@ -42,7 +42,7 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		var secretKeyHash string
-		err = h.DB.GetContext(ctx, &secretKeyHash, `
+		err = h.Reader().GetContext(ctx, &secretKeyHash, `
    SELECT u.secret_key_hash
    FROM image_objects i JOIN users u ON u.id = i.owner_user_id
    WHERE i.id = $1 AND u.status = 'active'
@@ -67,7 +67,7 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 			Data      []byte `db:"data"`
 			MediaType string `db:"media_type"`
 		}
-		err = h.DB.GetContext(ctx, &object, `
+		err = h.Reader().GetContext(ctx, &object, `
    SELECT i.data, i.media_type
    FROM image_objects i JOIN users u ON u.id = i.owner_user_id AND u.status = 'active'
    WHERE i.id = $1 AND (

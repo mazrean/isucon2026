@@ -23,6 +23,11 @@ import (
 
 var asiaLocalImgPerFileSync = os.Getenv("ISUREAL_ASIA_LOCALIMG_SYNC") == "file"
 
+// ISUREAL_ASIA_LOCALIMG_WB=1 (既定 0): writeFileNoSync が書いた直後に sync_file_range(WRITE) で writeback を始める
+// (localimg_wb_linux.go)。job23341 の GP では syncfs 1 回が 100 件前後をまとめて 1〜2.5 秒かかっていた
+// (sync_batches=4〜13 / 10 秒、members 580〜770)。
+var asiaLocalImgWB = os.Getenv("ISUREAL_ASIA_LOCALIMG_WB") == "1"
+
 type syncGroup struct {
 	done  chan struct{}
 	err   error
@@ -93,6 +98,9 @@ func writeFileNoSync(path string, data []byte) error {
 		return err
 	}
 	_, werr := f.Write(data)
+	if werr == nil && asiaLocalImgWB {
+		kickWriteback(f)
+	}
 	cerr := f.Close()
 	if werr != nil || cerr != nil {
 		os.Remove(f.Name())

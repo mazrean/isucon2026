@@ -25,6 +25,8 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 	}
 	var respond func() error
 	var after []func()
+	timed := postTimingOn && name == "createPost"
+	applyStart := time.Now()
 	seq, err := e.write(func(t *storeTx) error {
 		var err error
 		respond, err = fn(t)
@@ -43,7 +45,19 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 			f()
 		}
 	}
-	e.commitWait(c, seq)
+	if timed {
+		postTimingAdd("apply", time.Since(applyStart))
+		if seq != nil && storeAwaitPG {
+			fs := time.Now()
+			e.waitFlushed(seq) // commitWait と同じ待ち (先に済ませて時間を分けるだけ。commitWait の中の待ちは即座に返る)
+			postTimingAdd("pgflush", time.Since(fs))
+		}
+		as := time.Now()
+		e.commitWait(c, seq)
+		postTimingAdd("ack", time.Since(as))
+	} else {
+		e.commitWait(c, seq)
+	}
 	if err != nil {
 		return true, err
 	}
@@ -133,7 +147,9 @@ func storeDropUncommitted(imageID string, kept, committed bool) {
 }
 
 func (e *storeEngine) createPost(c *echo.Context, userID string, input createPostRequest, location PostLocation, imageData []byte) (bool, error) {
+	keepStart := time.Now()
 	imageID, kept := storePreKeepImage(c, userID, imageData)
+	postTimingAdd("localimg", time.Since(keepStart))
 	committed := false
 	defer func() { storeDropUncommitted(imageID, kept, committed) }()
 	return e.run(c, func(t *storeTx) (func() error, error) {

@@ -84,7 +84,9 @@ func TestFwdPriorityPostSlotsSeparate(t *testing.T) {
 	e := echo.New()
 	var wg sync.WaitGroup
 	for range 4 {
-		wg.Go(func() { _ = h(e.NewContext(httptest.NewRequest(http.MethodPost, "/api/posts", nil), httptest.NewRecorder())) })
+		wg.Go(func() {
+			_ = h(e.NewContext(httptest.NewRequest(http.MethodPost, "/api/posts", nil), httptest.NewRecorder()))
+		})
 	}
 	time.Sleep(50 * time.Millisecond)
 	if posts.Load() != 2 {

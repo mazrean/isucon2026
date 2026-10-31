@@ -114,7 +114,7 @@ for h in "${HOSTS[@]}"; do
     sed -e "s/__MEMORIES_TARGET__/$mt/" -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__PREVALIDATE__/$pv/" -e "s/__HEAVY_TARGET__/$ht/" -e "s/__LOCAL_SESSION__/$ls/" -e "s/__ASIA_READ_SPLIT__/$rs/" -e "s/__ASIA_SPLIT_W1__/$ars_w1/" -e "s/__ASIA_SPLIT_W2__/$ars_w2/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     # NGX_REQBUF_OFF=1: stream request bodies to the app (no /var/lib/nginx/body temp file per image upload)
     # NGX_BODYBUF=512k: keep image request bodies in nginx memory instead of a /var/lib/nginx/body temp file
-    if [ -n "${NGX_BODYBUF:-}" ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  client_body_buffer_size $NGX_BODYBUF;|" "$OUT/isureal.$h.conf"; fi
+    NGX_BODYBUF=${NGX_BODYBUF-512k}; if [ -n "$NGX_BODYBUF" ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  client_body_buffer_size $NGX_BODYBUF;|" "$OUT/isureal.$h.conf"; fi
     if [ "${NGX_REQBUF_OFF:-0}" = 1 ]; then sed -i "s|^\(  client_max_body_size 32m;\)|\1\n  proxy_request_buffering off;|" "$OUT/isureal.$h.conf"; fi
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e

@@ -33,6 +33,13 @@ func createFriendRequestHandler(h *HandlerContext) echo.HandlerFunc {
 				return err
 			}
 		}
+		if friendBatchOn {
+			resp, err := createFriendRequestBatch(ctx, h.DB, actor, input.RecipientID)
+			if err != nil {
+				return err
+			}
+			return c.JSON(http.StatusCreated, resp)
+		}
 		tx, err := beginRelationshipTx(ctx, h.DB, actor, input.RecipientID)
 		if err != nil {
 			return err

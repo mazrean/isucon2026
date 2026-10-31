@@ -254,7 +254,9 @@ func TestStoreWriteParity(t *testing.T) {
 		case 11:
 			p := pickID(posts, false)
 			v := vis[rng.Intn(3)]
-			do(step, "patch post", u, func(k int) req { return req{method: "PATCH", path: "/api/posts/" + p[k], json: map[string]string{"visibility": v}} })
+			do(step, "patch post", u, func(k int) req {
+				return req{method: "PATCH", path: "/api/posts/" + p[k], json: map[string]string{"visibility": v}}
+			})
 		case 12:
 			p := pickID(posts, false)
 			do(step, "delete post", u, func(k int) req { return req{method: "DELETE", path: "/api/posts/" + p[k]} })

@@ -38,23 +38,36 @@ func startImgPreextend(db *sqlx.DB) {
 		return
 	}
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-		defer cancel()
 		start := time.Now()
-		part, err := imgPreextend(ctx, db, imgPreextendMB)
-		slog.Info("img-preextend", "mb", imgPreextendMB, "partition", part, "took", time.Since(start), "err", err)
+		// Inserting stops at its own deadline; the cleanup (DELETE + VACUUM)
+		// always runs afterwards with a fresh context and a fresh connection,
+		// so filler rows never outlive a slow or failed run.
+		ictx, icancel := context.WithTimeout(context.Background(), 60*time.Second)
+		part, inserted, ierr := imgPreextendFill(ictx, db, imgPreextendMB)
+		icancel()
+		var deleted int64
+		var cerr error
+		if part != "" {
+			cctx, ccancel := context.WithTimeout(context.Background(), 90*time.Second)
+			deleted, cerr = imgPreextendCleanup(cctx, db, part)
+			ccancel()
+		}
+		slog.Info("img-preextend", "mb", imgPreextendMB, "partition", part, "inserted_mb", inserted,
+			"deleted_rows", deleted, "took", time.Since(start), "fill_err", ierr, "cleanup_err", cerr)
 	}()
 }
 
-func imgPreextend(ctx context.Context, db *sqlx.DB, mb int) (string, error) {
+// imgPreextendFill returns the partition name ("" if nothing may need cleanup)
+// and the number of MB inserted.
+func imgPreextendFill(ctx context.Context, db *sqlx.DB, mb int) (string, int, error) {
 	conn, err := db.Connx(ctx)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	defer conn.Close()
 	var owner string
 	if err := conn.GetContext(ctx, &owner, `SELECT id FROM users ORDER BY created_at LIMIT 1`); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	now := time.Now().UTC()
 	// The partition that a row created now lands in.
@@ -65,25 +78,34 @@ func imgPreextend(ctx context.Context, db *sqlx.DB, mb int) (string, error) {
      AND $1::timestamptz >= (regexp_match(pg_get_expr(c.relpartbound, c.oid), 'FROM \(''([^'']+)''\)'))[1]::timestamptz
      AND $1::timestamptz <  (regexp_match(pg_get_expr(c.relpartbound, c.oid), 'TO \(''([^'']+)''\)'))[1]::timestamptz
    LIMIT 1`, now); err != nil {
-		return "", err
+		return "", 0, err
 	}
-	if strings.ContainsAny(part, `"'; `) {
-		return part, nil
+	if !strings.HasPrefix(part, "image_objects_") || strings.ContainsAny(part, `"'; `) {
+		return "", 0, nil
 	}
 	if _, err := conn.ExecContext(ctx, `ALTER TABLE `+part+` SET (vacuum_truncate = false, toast.vacuum_truncate = false)`); err != nil {
-		return part, err
+		return "", 0, err
 	}
-	for left := mb; left > 0; left -= 16 {
+	inserted := 0
+	for inserted < mb {
+		n := min(16, mb-inserted)
 		if _, err := conn.ExecContext(ctx, `
    INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at)
    SELECT gen_random_uuid()::text, $1, convert_to(repeat('x', 1048576), 'UTF8'), $2, $3
-   FROM generate_series(1, $4)`, owner, imgPreextendMediaType, now, min(16, left)); err != nil {
-			return part, err
+   FROM generate_series(1, $4)`, owner, imgPreextendMediaType, now, n); err != nil {
+			return part, inserted, err
 		}
+		inserted += n
 	}
-	if _, err := conn.ExecContext(ctx, `DELETE FROM image_objects WHERE created_at = $1 AND media_type = $2`, now, imgPreextendMediaType); err != nil {
-		return part, err
+	return part, inserted, nil
+}
+
+func imgPreextendCleanup(ctx context.Context, db *sqlx.DB, part string) (int64, error) {
+	res, err := db.ExecContext(ctx, `DELETE FROM `+part+` WHERE media_type = $1`, imgPreextendMediaType)
+	if err != nil {
+		return 0, err
 	}
-	_, err = conn.ExecContext(ctx, `VACUUM (TRUNCATE false) `+part)
-	return part, err
+	n, _ := res.RowsAffected()
+	_, err = db.ExecContext(ctx, `VACUUM (TRUNCATE false) `+part)
+	return n, err
 }

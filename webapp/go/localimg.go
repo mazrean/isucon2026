@@ -706,6 +706,7 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 	}
 	asiaStore.mu.RLock() // purge (initialize) takes the write lock
 	defer asiaStore.mu.RUnlock()
+	fwdSlotYield(ctx)    // 画像の書き込みと sync (SEG・ファイル・どの FSYNC モードでも) は I/O の待ち。分岐より前で枠を返す
 	if asiaLocalImgSeg { // ISUREAL_ASIA_LOCALIMG_SEG: 追記セグメント (localimg_seg.go)
 		if err := asiaSeg.put(id, owner, time.Now().UnixNano(), data); err != nil {
 			slog.Warn("asia localimg seg", "error", err)
@@ -719,7 +720,6 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		write = writeFileSync
 	}
 	dataPath, metaPath := asiaStore.p("data", id), asiaStore.p("meta", id)
-	fwdSlotYield(ctx) // 画像の書き込みと sync (どの FSYNC モードでも) は I/O の待ち
 	if err := write(dataPath, data); err != nil {
 		slog.Warn("asia localimg data", "error", err)
 		return false

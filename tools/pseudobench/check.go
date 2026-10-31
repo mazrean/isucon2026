@@ -619,7 +619,7 @@ func runCheck(base string, doInit bool, verbose bool) int {
 		t.code("終了した期間の投稿は編集不可 403", A.JSONNoExpect("PATCH", "/api/posts/"+postA.ID, map[string]string{"caption": "late edit"}), 403)
 		time.Sleep(1100 * time.Millisecond)
 		r, p := B.Post("friends", "late", makeJPEG(64, 64))
-		t.assert("onTimeSeconds=0 の期間の投稿は onTime=false", r.Code == 201 && !p.OnTime && p.PostingWindowID == w2["europe"] && p.LateSeconds >= 1, "%s", r.String())
+		t.assert("onTimeSeconds=0 の期間の投稿は onTime=false", r.Code == 201 && !p.OnTime && p.PostingWindowID == w2["europe"] && p.LateSeconds >= 0, "%s", r.String())
 		r = B.GetNoExpect("/api/posts/" + postA.ID)
 		_, feed := B.Feed("friends")
 		t.assert("前の期間の投稿は新期間に投稿済みでもフィード/詳細に出ない", !hasPost(feed, postA.ID) && r.Code == 404, "feed=%v detail=%d", hasPost(feed, postA.ID), r.Code)

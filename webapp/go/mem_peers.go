@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
-	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -18,7 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -39,25 +37,17 @@ type memPushRequest struct {
 	Epoch   string     `json:"e"`
 	Seq     int64      `json:"q"` // pump の最新連番 (heartbeat でも送る。peer はこれで欠番を検知)
 	Batches []memBatch `json:"b"`
-	// pump の送信時刻 (unix ns)。peer の lease は min(受信時刻, SentAt) + memLease まで (遅れて届いた push で延びない)。
-	SentAt int64 `json:"t"`
-	// probe: down 扱いの peer への送信。peer は反映するが lease は延ばさない (pump が lease の上界を把握するため)。
-	Probe bool `json:"p,omitempty"`
 	// watermark (ISUREAL_MEM_WATERMARK): Seq までのバッチに、この時刻より前に応答が返ったコミットがすべて含まれる。
 	WM int64 `json:"w,omitempty"`
 }
 
-// peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
-// pump は peer ごとに lease を与えうる push の最終送信時刻 (lastGrantAt) を持ち、
-// ack の無い peer は lastGrantAt + memLease + memClockSkew を過ぎれば必ず not-ready なので待たずに進む。
-// push は peer ごとに最大 memMaxInflight 本まで並列に送る (stop-and-wait をやめて 1 RTT で ack)。
+// peer は最後に push/heartbeat を受け取ってから memLease を過ぎたら自発的にメモリ読みをやめる (DB 経路)。
+// pump の push タイムアウト (memPushTimeout) > memLease なので、pump が ack 無しで先に進む時点で
+// その peer は必ず not-ready になっている。
 const (
 	memLease          = 1 * time.Second
 	memPushTimeout    = 3 * time.Second
 	memHeartbeatEvery = 250 * time.Millisecond
-	memClockSkew      = 200 * time.Millisecond
-	memMaxInflight    = 4
-	memReorderWait    = 50 * time.Millisecond
 )
 
 type memPushResponse struct {
@@ -94,31 +84,30 @@ func memNewEpoch() string {
 // ---------------- pump side ----------------
 
 type memPeer struct {
-	addr     string
-	pending  []memBatch
-	inflight int
-	acked    int64
-	down     bool
-	// lease を与えうる (probe でない) push の最終送信時刻。peer の lease はこれ + memLease (+時計ずれ) より前に必ず切れる。
-	lastGrantAt time.Time
+	addr    string
+	pending []memBatch
+	sending bool
+	acked   int64
+	down    bool
+	beat    bool
+	// 最後に ok ack を受けた時刻。peer の lease はこれ + memLease より前に必ず切れる。
+	lastAckAt time.Time
 	// この epoch で invalidate (not-ready 化) の成功を確認済み
 	invalidatedEpoch string
 	// dump 取得時に watermark で読みを待つと申告した (ISUREAL_MEM_WATERMARK)。この peer の ack は待たない。
-	wmMode bool
+	wmMode     bool
+	wmInflight int
 }
 
 type memPeers struct {
-	// soft reset (initialize) 直前の epoch と最終連番。peer がこれに一致すれば初期データ行を引き継げる。
-	prevEpoch string
-	prevSeq   int64
-	p         *memPump
-	mu        sync.Mutex
-	cond      *sync.Cond
-	epoch     string
-	seq       int64
-	buf       []memBatch
-	peers     []*memPeer
-	wm        int64 // seq に対して有効な watermark (unix ns)
+	p     *memPump
+	mu    sync.Mutex
+	cond  *sync.Cond
+	epoch string
+	seq   int64
+	buf   []memBatch
+	peers []*memPeer
+	wm    int64 // seq に対して有効な watermark (unix ns)
 }
 
 func newMemPeersFromEnv(p *memPump) *memPeers {
@@ -131,7 +120,7 @@ func newMemPeersFromEnv(p *memPump) *memPeers {
 	for _, a := range strings.Split(list, ",") {
 		if a = strings.TrimSpace(a); a != "" {
 			// 前プロセスが与えた lease を考慮して起動時刻で初期化 (保守的)
-			ps.peers = append(ps.peers, &memPeer{addr: a, lastGrantAt: time.Now()})
+			ps.peers = append(ps.peers, &memPeer{addr: a, lastAckAt: time.Now()})
 		}
 	}
 	return ps
@@ -149,60 +138,67 @@ func (ps *memPeers) publish(changes []memChange) {
 	}
 	for _, peer := range ps.peers {
 		peer.pending = append(peer.pending, b)
-		ps.kick(peer, false)
-	}
-}
-
-// kick は ps.mu 保持中に呼ぶ。未送信分 (または heartbeat) を新しい並列 push として送る。
-func (ps *memPeers) kick(peer *memPeer, beat bool) {
-	if peer.inflight >= memMaxInflight || (len(peer.pending) == 0 && !beat) {
-		return
-	}
-	batches := peer.pending
-	peer.pending = nil
-	last := ps.seq
-	if len(batches) > 0 {
-		last = batches[len(batches)-1].Seq
-	}
-	now := time.Now()
-	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
-	if last == ps.seq {
-		req.WM = ps.wm // ps.wm は ps.seq に対して有効
-	}
-	if !req.Probe {
-		peer.lastGrantAt = now
-	}
-	peer.inflight++
-	go ps.send(peer, req)
-}
-
-func (ps *memPeers) send(peer *memPeer, req memPushRequest) {
-	body, err := memHTTPPost(peer.addr, "/internal/mem/push", req, memPushTimeout)
-	var resp memPushResponse
-	if err == nil {
-		err = json.Unmarshal(body, &resp)
-	}
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
-	peer.inflight--
-	if ps.epoch == req.Epoch {
-		if err != nil {
-			// 失敗した peer は lease (lastGrantAt + memLease + memClockSkew) が切れるまで待たれる。以後は probe で様子を見る。
-			// 欠番は peer が次の push で検知して取り直す。
-			if !peer.down {
-				slog.Warn("mem: peer push failed; marking down", "peer", peer.addr, "error", err)
-			}
-			peer.down = true
-		} else {
-			peer.down = false
-			// ok=false: peer は not-ready (DB 経路) なので待つ必要なし
-			if peer.acked < req.Seq {
-				peer.acked = req.Seq
-			}
+		if !peer.sending {
+			peer.sending = true
+			go ps.sender(peer, ps.epoch)
 		}
 	}
-	ps.cond.Broadcast()
-	ps.kick(peer, false)
+}
+
+func (ps *memPeers) sender(peer *memPeer, epoch string) {
+	for {
+		ps.mu.Lock()
+		if ps.epoch != epoch && len(peer.pending) > 0 {
+			epoch = ps.epoch // 新しい epoch の送信を引き継ぐ
+		}
+		if (len(peer.pending) == 0 && !peer.beat) || ps.epoch != epoch {
+			peer.sending = false
+			ps.mu.Unlock()
+			return
+		}
+		peer.beat = false
+		batches := peer.pending
+		peer.pending = nil
+		last := ps.seq
+		if len(batches) > 0 {
+			last = batches[len(batches)-1].Seq
+		}
+		var wm int64
+		if last == ps.seq && epoch == ps.epoch {
+			wm = ps.wm // ps.wm は ps.seq に対して有効
+		}
+		ps.mu.Unlock()
+
+		body, err := memHTTPPost(peer.addr, "/internal/mem/push", memPushRequest{Epoch: epoch, Seq: last, Batches: batches, WM: wm}, memPushTimeout)
+		var resp memPushResponse
+		if err == nil {
+			err = json.Unmarshal(body, &resp)
+		}
+
+		ps.mu.Lock()
+		if ps.epoch == epoch {
+			if err != nil {
+				// 失敗した peer は待たないが、その peer の lease (最後の ok ack + memLease) が切れるまでは
+				// 書き込みレスポンスを保留する (waitAcked)。欠番は peer が次の push で検知して取り直す。
+				if !peer.down {
+					slog.Warn("mem: peer push failed; marking down", "peer", peer.addr, "error", err)
+				}
+				peer.down = true
+			} else {
+				peer.down = false
+				if resp.OK {
+					// peer は応答前に lease を延長している → lastAckAt は延長時刻の上界
+					peer.lastAckAt = time.Now()
+				}
+				// ok=false: peer は not-ready (DB 経路) なので待つ必要なし
+				if peer.acked < last {
+					peer.acked = last
+				}
+			}
+		}
+		ps.cond.Broadcast()
+		ps.mu.Unlock()
+	}
 }
 
 // heartbeat: 送信中でない peer に空 push を送る (lease 延長 + 欠番検知)。
@@ -215,8 +211,10 @@ func (ps *memPeers) heartbeatLoop() {
 		}
 		ps.mu.Lock()
 		for _, peer := range ps.peers {
-			if peer.inflight == 0 {
-				ps.kick(peer, true)
+			if !peer.sending {
+				peer.beat = true
+				peer.sending = true
+				go ps.sender(peer, ps.epoch)
 			}
 		}
 		ps.mu.Unlock()
@@ -227,7 +225,7 @@ func (ps *memPeers) heartbeatLoop() {
 // peer ごとの完了条件:
 //   - 同一 epoch で ack 済み (acked >= target、down でない)
 //   - epoch が変わった場合は新 epoch での invalidate 成功確認
-//   - いずれでもなければ lastGrantAt + memLease + memClockSkew を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
+//   - いずれでもなければ lastAckAt + memLease を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
 func (ps *memPeers) waitAcked() {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
@@ -246,13 +244,13 @@ func (ps *memPeers) waitAcked() {
 			if memWatermark && peer.wmMode {
 				continue // peer の読みが watermark を待つ
 			}
-			if ps.epoch == epoch && peer.acked >= target {
+			if ps.epoch == epoch && !peer.down && peer.acked >= target {
 				continue
 			}
 			if ps.epoch != epoch && peer.invalidatedEpoch == ps.epoch {
 				continue
 			}
-			leaseEnd := peer.lastGrantAt.Add(memLease + memClockSkew)
+			leaseEnd := peer.lastAckAt.Add(memLease + 50*time.Millisecond)
 			if !now.Before(leaseEnd) {
 				continue
 			}
@@ -277,16 +275,8 @@ func (ps *memPeers) waitAcked() {
 }
 
 // newEpoch: pump がリロードした。peer に無効化を通知 (peer はダンプから作り直す)。cycleMu 保持中に呼ばれる。
-func (ps *memPeers) newEpoch() { ps.newEpochKeep(false) }
-
-// newEpochKeep(true): 直前の epoch で同期済みの peer は初期データ行を引き継げる (initialize の soft reset)。
-func (ps *memPeers) newEpochKeep(keep bool) {
+func (ps *memPeers) newEpoch() {
 	ps.mu.Lock()
-	if keep {
-		ps.prevEpoch, ps.prevSeq = ps.epoch, ps.seq
-	} else {
-		ps.prevEpoch, ps.prevSeq = "", 0
-	}
 	ps.epoch = memNewEpoch()
 	ps.seq = 0
 	ps.wm = 0
@@ -403,11 +393,11 @@ type memDump struct {
 	Posts       []memPostRow          `json:"posts"`
 	Comments    []memCommentRow       `json:"comments"`
 	RealMojis   []memRealMojiRow      `json:"realmojis"`
-	WM          int64                 `json:"wm"`     // Seq に対して有効な watermark
-	WMMode      bool                  `json:"wmMode"` // pump が ack を待たずに返す (peer は watermark を待つ)
+	WM          int64                 `json:"wm,omitempty"`     // Seq に対して有効な watermark
+	WMMode      bool                  `json:"wmMode,omitempty"` // pump が ack を待たずに返す (peer は watermark を待つ)
 }
 
-func (d *memData) dump(includeCold bool) *memDump {
+func (d *memData) dump() *memDump {
 	out := &memDump{}
 	for _, w := range d.windows {
 		out.Windows = append(out.Windows, memWindowRow{ID: w.ID, Region: w.Region, LocalDate: w.LocalDate.Format(time.DateOnly), StartsAt: w.StartsAt, OnTimeDeadline: w.OnTimeDeadline, EndedAt: w.EndedAt})
@@ -433,31 +423,24 @@ func (d *memData) dump(includeCold bool) *memDump {
 		out.Sessions = append(out.Sessions, memSessionRow{TokenHash: hash, UserID: s.UserID, Active: true, CreatedAt: s.CreatedAt})
 	}
 	for _, p := range d.posts {
-		if includeCold || !p.cold {
-			r := memPostRow{ID: p.ID, AuthorID: p.AuthorID, PostingWindowID: p.PostingWindowID, ImageID: p.ImageID, Caption: p.Caption, Visibility: p.Visibility,
-				LocationKind: p.Kind, Latitude: p.Latitude, Longitude: p.Longitude, Locality: p.Locality, PostedAt: p.PostedAt, Cold: p.cold}
-			if p.deleted {
-				t := p.PostedAt
-				r.DeletedAt = &t
-			}
-			out.Posts = append(out.Posts, r)
+		r := memPostRow{ID: p.ID, AuthorID: p.AuthorID, PostingWindowID: p.PostingWindowID, ImageID: p.ImageID, Caption: p.Caption, Visibility: p.Visibility,
+			LocationKind: p.Kind, Latitude: p.Latitude, Longitude: p.Longitude, Locality: p.Locality, PostedAt: p.PostedAt}
+		if p.deleted {
+			t := p.PostedAt
+			r.DeletedAt = &t
 		}
+		out.Posts = append(out.Posts, r)
 		for _, c := range p.comments {
-			if includeCold || !c.cold {
-				out.Comments = append(out.Comments, memCommentRow{ID: c.ID, PostID: c.PostID, AuthorID: c.author.ID, Body: c.Body, CreatedAt: c.CreatedAt, Cold: c.cold})
-			}
+			out.Comments = append(out.Comments, memCommentRow{ID: c.ID, PostID: c.PostID, AuthorID: c.author.ID, Body: c.Body, CreatedAt: c.CreatedAt})
 		}
 		for _, x := range p.realmojis {
-			if includeCold || !x.cold {
-				out.RealMojis = append(out.RealMojis, memRealMojiRow{ID: x.ID, PostID: x.PostID, ReactorID: x.reactor.ID, ImageID: x.ImageID, ReactionType: x.ReactionType, CreatedAt: x.CreatedAt, Cold: x.cold})
-			}
+			out.RealMojis = append(out.RealMojis, memRealMojiRow{ID: x.ID, PostID: x.PostID, ReactorID: x.reactor.ID, ImageID: x.ImageID, ReactionType: x.ReactionType, CreatedAt: x.CreatedAt})
 		}
 	}
 	return out
 }
 
-// memDataFromDump: old != nil なら old の初期データ行を引き継ぐ (呼び出し側は m.mu 書きロック中)。
-func memDataFromDump(dump *memDump, old *memData) (*memData, error) {
+func memDataFromDump(dump *memDump) (*memData, error) {
 	d := newMemData()
 	for _, r := range dump.Windows {
 		if err := d.applyWindow(r); err != nil {
@@ -482,9 +465,6 @@ func memDataFromDump(dump *memDump, old *memData) (*memData, error) {
 	for _, r := range dump.Requests {
 		d.applyFriendRequest(false, r)
 	}
-	if old != nil {
-		d.adoptCold(old)
-	}
 	for _, r := range dump.Posts {
 		d.applyPost(r)
 	}
@@ -506,36 +486,28 @@ func registerMemPumpRoutes(e *echo.Echo, p *memPump) {
 		if p.peers == nil {
 			return c.NoContent(http.StatusNotFound)
 		}
-		ce := c.QueryParam("ce")
-		cs, _ := strconv.ParseInt(c.QueryParam("cs"), 10, 64)
 		p.cycleMu.Lock()
 		if !p.m.ready.Load() {
 			p.cycleMu.Unlock()
 			return c.NoContent(http.StatusServiceUnavailable)
 		}
+		p.m.mu.RLock()
+		dump := p.m.d.dump()
+		p.m.mu.RUnlock()
 		p.peers.mu.Lock()
-		// peer が直前の epoch の最終連番まで同期していたなら、初期データ行は peer 手元のものを使わせる
-		keep := ce != "" && ce == p.peers.prevEpoch && cs == p.peers.prevSeq
-		epoch, seq, wm := p.peers.epoch, p.peers.seq, p.peers.wm
+		dump.Epoch, dump.Seq = p.peers.epoch, p.peers.seq
+		dump.WM, dump.WMMode = p.peers.wm, memWatermark
 		p.peers.mu.Unlock()
 		p.peers.markWMMode(c.Request().RemoteAddr, c.QueryParam("wm") == "1")
-		p.m.mu.RLock()
-		dump := p.m.d.dump(!keep)
-		p.m.mu.RUnlock()
-		dump.Epoch, dump.Seq = epoch, seq
-		dump.WM, dump.WMMode = wm, memWatermark
 		p.cycleMu.Unlock()
-		start := time.Now()
-		c.Response().Header().Set("X-Mem-Cold", map[bool]string{true: "keep", false: "full"}[keep])
-		c.Response().Header().Set("Content-Type", "application/octet-stream")
-		c.Response().WriteHeader(http.StatusOK)
-		zw, _ := gzip.NewWriterLevel(c.Response(), gzip.BestSpeed)
-		if err := gob.NewEncoder(zw).Encode(dump); err != nil {
-			return nil
+		var buf bytes.Buffer
+		zw, _ := gzip.NewWriterLevel(&buf, gzip.BestSpeed)
+		if err := json.NewEncoder(zw).Encode(dump); err != nil {
+			return err
 		}
 		zw.Close()
-		slog.Info("mem: dump served", "keep", keep, "users", len(dump.Users), "posts", len(dump.Posts), "elapsed", time.Since(start))
-		return nil
+		slog.Info("mem: dump served", "bytes", buf.Len(), "users", len(dump.Users), "posts", len(dump.Posts))
+		return c.Blob(http.StatusOK, "application/octet-stream", buf.Bytes())
 	})
 	e.GET("/internal/mem/batches", func(c *echo.Context) error {
 		if !memAuthOK(c) {
@@ -564,7 +536,6 @@ func registerMemPumpRoutes(e *echo.Echo, p *memPump) {
 type memReceiver struct {
 	m        *memStore
 	pumpAddr string
-	farm     *sigFarm
 
 	mu     sync.Mutex // apply 直列化
 	epoch  string
@@ -574,34 +545,23 @@ type memReceiver struct {
 	rsCond *sync.Cond
 	rsGen  uint64 // 再構築完了済みの gen
 	rsRun  bool
-	// r.seq が進んだら Broadcast (並列 push の到着順の入れ替わりを短時間待つ)
-	seqCond *sync.Cond
-	// 直前に同期していた (epoch, seq)。pump が initialize 前の最終状態と一致すると判断すれば初期データ行を引き継ぐ。
-	coldEpoch string
-	coldSeq   int64
+	// まだバッチが届いていない seq の watermark (mu 下)
+	wmPending []memWMMsg
 }
 
-func newMemReceiver(m *memStore, farm *sigFarm) *memReceiver {
-	r := &memReceiver{m: m, farm: farm, pumpAddr: envOrDefault("ISUREAL_MEM_PUMP", "192.168.1.10:8080")}
+func newMemReceiver(m *memStore) *memReceiver {
+	r := &memReceiver{m: m, pumpAddr: envOrDefault("ISUREAL_MEM_PUMP", "192.168.1.10:8080")}
 	r.rsCond = sync.NewCond(&r.rsMu)
-	r.seqCond = sync.NewCond(&r.mu)
 	r.invalidate()
 	return r
 }
 
-// invalidate: not-ready にして再構築を開始する (手元の初期データ行は引き継がない)。返り値は待つべき gen。
-func (r *memReceiver) invalidate() uint64 { return r.invalidateKeep(false) }
-
-// invalidateKeep(true): 同期済みなら現在の (epoch, seq) を初期データ行の引き継ぎ候補として記録する。
-func (r *memReceiver) invalidateKeep(keepCold bool) uint64 {
+// invalidate: not-ready にして再構築を開始する。返り値は待つべき gen。
+func (r *memReceiver) invalidate() uint64 {
 	r.mu.Lock()
-	if !keepCold {
-		r.coldEpoch = ""
-	} else if r.m.ready.Load() && r.epoch != "" {
-		r.coldEpoch, r.coldSeq = r.epoch, r.seq
-	}
 	r.m.ready.Store(false)
 	r.epoch = ""
+	r.wmPending = nil
 	r.m.w.set(0)
 	r.gen++
 	g := r.gen
@@ -646,29 +606,23 @@ func (r *memReceiver) resyncLoop() {
 
 func (r *memReceiver) resyncOnce(g uint64) error {
 	start := time.Now()
-	r.mu.Lock()
-	ce, cs := r.coldEpoch, r.coldSeq
-	r.mu.Unlock()
-	resp, cancel, err := memGet(r.pumpAddr, fmt.Sprintf("/internal/mem/dump?ce=%s&cs=%d&wm=%s", ce, cs, map[bool]string{true: "1", false: "0"}[memWatermark]), 180*time.Second)
+	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark], 40*time.Second)
 	if err != nil {
 		return err
 	}
 	defer cancel()
 	defer resp.Body.Close()
-	keep := resp.Header.Get("X-Mem-Cold") == "keep"
 	zr, err := gzip.NewReader(resp.Body)
 	if err != nil {
 		return err
 	}
 	var dump memDump
-	if err := gob.NewDecoder(zr).Decode(&dump); err != nil {
+	if err := json.NewDecoder(zr).Decode(&dump); err != nil {
 		return err
 	}
-	var d *memData
-	if !keep {
-		if d, err = memDataFromDump(&dump, nil); err != nil {
-			return err
-		}
+	d, err := memDataFromDump(&dump)
+	if err != nil {
+		return err
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -676,28 +630,14 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 		return nil // 途中で無効化された → ループが再試行する
 	}
 	r.m.mu.Lock()
-	if keep {
-		if r.coldEpoch != ce || r.coldSeq != cs {
-			r.m.mu.Unlock()
-			return fmt.Errorf("mem: cold base changed during resync")
-		}
-		if d, err = memDataFromDump(&dump, r.m.d); err != nil {
-			r.m.mu.Unlock()
-			r.coldEpoch = ""
-			return err
-		}
-	}
 	r.m.d = d
 	r.m.mu.Unlock()
-	r.coldEpoch = ""
 	r.epoch, r.seq = dump.Epoch, dump.Seq
+	r.wmPending = nil
 	r.m.w.pumpWM.Store(memWatermark && dump.WMMode)
 	r.m.w.set(dump.WM)
-	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
+	// lease は次の push/heartbeat の ok 応答時にだけ延長する (pump が lastAckAt で上界を把握するため)
 	r.m.ready.Store(true)
-	if r.farm != nil {
-		go r.farm.onReset()
-	}
 	slog.Info("mem: synced from pump", "seq", dump.Seq, "users", len(d.users), "posts", len(d.posts), "elapsed", time.Since(start))
 	return nil
 }
@@ -726,35 +666,7 @@ func (r *memReceiver) push(req memPushRequest) bool {
 		}
 		return false
 	}
-	// 並列 push は到着順が入れ替わりうる: 先行分が届くのを少しだけ待ってから欠番 pull に回る
-	need := req.Seq
-	if len(req.Batches) > 0 {
-		need = req.Batches[0].Seq - 1
-	}
-	if need > r.seq {
-		deadline := time.Now().Add(memReorderWait)
-		timer := time.AfterFunc(memReorderWait, func() {
-			r.mu.Lock()
-			r.seqCond.Broadcast()
-			r.mu.Unlock()
-		})
-		for need > r.seq && req.Epoch == r.epoch && r.m.ready.Load() && time.Now().Before(deadline) {
-			r.seqCond.Wait()
-		}
-		timer.Stop()
-		if !r.m.ready.Load() || req.Epoch != r.epoch {
-			r.mu.Unlock()
-			return false
-		}
-	}
 	defer r.mu.Unlock()
-	var applied []memChange
-	defer func() {
-		r.seqCond.Broadcast()
-		if r.farm != nil && len(applied) > 0 {
-			go r.farm.onApplied(applied)
-		}
-	}()
 	for _, b := range req.Batches {
 		if b.Seq <= r.seq {
 			continue
@@ -763,7 +675,7 @@ func (r *memReceiver) push(req memPushRequest) bool {
 			missing, err := r.pull(req.Epoch, r.seq+1, b.Seq-1)
 			if err == nil {
 				for _, mb := range missing {
-					if err = r.applyTracked(&applied, mb.Changes); err != nil {
+					if err = r.m.applyBatch(mb.Changes); err != nil {
 						break
 					}
 					r.seq = mb.Seq
@@ -776,7 +688,7 @@ func (r *memReceiver) push(req memPushRequest) bool {
 				return false
 			}
 		}
-		if err := r.applyTracked(&applied, b.Changes); err != nil {
+		if err := r.m.applyBatch(b.Changes); err != nil {
 			slog.Error("mem: apply failed", "error", err)
 			r.m.ready.Store(false)
 			go r.invalidate()
@@ -788,7 +700,7 @@ func (r *memReceiver) push(req memPushRequest) bool {
 		missing, err := r.pull(req.Epoch, r.seq+1, req.Seq)
 		if err == nil {
 			for _, mb := range missing {
-				if err = r.applyTracked(&applied, mb.Changes); err != nil {
+				if err = r.m.applyBatch(mb.Changes); err != nil {
 					break
 				}
 				r.seq = mb.Seq
@@ -801,27 +713,8 @@ func (r *memReceiver) push(req memPushRequest) bool {
 			return false
 		}
 	}
-	if !req.Probe {
-		r.m.extendLeaseFrom(req.SentAt)
-		// 片道遅延 (時計ずれ込み) が大きいと lease が短くなる / RYW の前提が崩れるので警告 (10 秒に 1 回)
-		if d := time.Duration(time.Now().UnixNano() - req.SentAt); d > 500*time.Millisecond || d < -memClockSkew {
-			if now := time.Now().Unix(); memSkewWarnAt.Load()+10 <= now {
-				memSkewWarnAt.Store(now)
-				slog.Warn("mem: large push delay or clock skew", "delay", d)
-			}
-		}
-	}
+	r.m.extendLease()
 	return true
-}
-
-var memSkewWarnAt atomic.Int64
-
-func (r *memReceiver) applyTracked(applied *[]memChange, changes []memChange) error {
-	if err := r.m.applyBatch(changes); err != nil {
-		return err
-	}
-	*applied = append(*applied, changes...)
-	return nil
 }
 
 func (r *memReceiver) pull(epoch string, from, to int64) ([]memBatch, error) {
@@ -853,11 +746,22 @@ func registerMemPeerRoutes(e *echo.Echo, r *memReceiver) {
 		}
 		return c.JSON(http.StatusOK, memPushResponse{OK: ok})
 	})
+	e.POST("/internal/mem/wm", func(c *echo.Context) error {
+		if !memAuthOK(c) {
+			return c.NoContent(http.StatusForbidden)
+		}
+		var msg memWMMsg
+		if err := json.NewDecoder(c.Request().Body).Decode(&msg); err != nil {
+			return c.NoContent(http.StatusBadRequest)
+		}
+		r.wmMsg(msg)
+		return c.NoContent(http.StatusOK)
+	})
 	e.POST("/internal/mem/invalidate", func(c *echo.Context) error {
 		if !memAuthOK(c) {
 			return c.NoContent(http.StatusForbidden)
 		}
-		g := r.invalidateKeep(true)
+		g := r.invalidate()
 		if c.QueryParam("wait") == "true" {
 			r.waitResynced(g, 44*time.Second)
 		}

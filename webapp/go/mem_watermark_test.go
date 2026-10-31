@@ -14,7 +14,7 @@ import (
 func wmTestStore() *memStore {
 	m := &memStore{d: newMemData(), useLease: true}
 	m.ready.Store(true)
-	m.extendLeaseFrom(0)
+	m.extendLease()
 	m.w.pumpWM.Store(true)
 	return m
 }
@@ -193,7 +193,6 @@ func TestMemReadWaitMiddleware(t *testing.T) {
 func wmTestReceiver(m *memStore, epoch string, seq int64) *memReceiver {
 	r := &memReceiver{m: m, pumpAddr: "127.0.0.1:1", epoch: epoch, seq: seq}
 	r.rsCond = sync.NewCond(&r.rsMu)
-	r.seqCond = sync.NewCond(&r.mu)
 	return r
 }
 
@@ -231,7 +230,7 @@ func TestMemReceiverWMAfterPush(t *testing.T) {
 func TestMemReceiverPushCarriesWM(t *testing.T) {
 	m := wmTestStore()
 	r := wmTestReceiver(m, "e1", 0)
-	req := memPushRequest{Epoch: "e1", Seq: 1, Batches: []memBatch{{Seq: 1}}, SentAt: time.Now().UnixNano(), WM: 111}
+	req := memPushRequest{Epoch: "e1", Seq: 1, Batches: []memBatch{{Seq: 1}}, WM: 111}
 	if !r.push(req) {
 		t.Fatal("push failed")
 	}
@@ -239,7 +238,7 @@ func TestMemReceiverPushCarriesWM(t *testing.T) {
 	if m.w.wm.Load() != 111 {
 		t.Fatalf("wm=%d", m.w.wm.Load())
 	}
-	hb := memPushRequest{Epoch: "e1", Seq: 1, SentAt: time.Now().UnixNano(), WM: 222}
+	hb := memPushRequest{Epoch: "e1", Seq: 1, WM: 222}
 	if !r.push(hb) {
 		t.Fatal("heartbeat failed")
 	}
@@ -265,7 +264,7 @@ func TestMemWaitAckedSkipsWMPeers(t *testing.T) {
 	old := memWatermark
 	memWatermark = true
 	t.Cleanup(func() { memWatermark = old })
-	wmPeer := &memPeer{addr: "127.0.0.1:1", lastGrantAt: time.Now(), wmMode: true}
+	wmPeer := &memPeer{addr: "127.0.0.1:1", lastAckAt: time.Now(), wmMode: true}
 	ps := &memPeers{epoch: "e1", peers: []*memPeer{wmPeer}}
 	ps.cond = sync.NewCond(&ps.mu)
 	ps.seq = 3
@@ -274,7 +273,7 @@ func TestMemWaitAckedSkipsWMPeers(t *testing.T) {
 	if el := time.Since(start); el > 50*time.Millisecond {
 		t.Fatalf("waitAcked on wm peer took %v", el)
 	}
-	ps.peers = append(ps.peers, &memPeer{addr: "127.0.0.1:2", lastGrantAt: time.Now()})
+	ps.peers = append(ps.peers, &memPeer{addr: "127.0.0.1:2", lastAckAt: time.Now()})
 	start = time.Now()
 	ps.waitAcked()
 	if el := time.Since(start); el < memLease {
@@ -282,7 +281,7 @@ func TestMemWaitAckedSkipsWMPeers(t *testing.T) {
 	}
 	// フラグ off なら wm 申告があっても待つ (既定の挙動は不変)
 	memWatermark = false
-	wmPeer.lastGrantAt = time.Now()
+	wmPeer.lastAckAt = time.Now()
 	ps.peers = ps.peers[:1]
 	start = time.Now()
 	ps.waitAcked()
@@ -313,22 +312,56 @@ func TestMemMarkWMMode(t *testing.T) {
 	}
 }
 
-// pump: setWM は単調で、newEpoch で 0 に戻る。push は送信時点の (seq, wm) の組を運ぶ。
+// pump: setWM は単調で、newEpoch で 0 に戻る。並列数の上限を超えて送らない。
 func TestMemPeersSetWM(t *testing.T) {
-	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", inflight: memMaxInflight, wmMode: true}}}
+	ps := &memPeers{epoch: "e1", peers: []*memPeer{{addr: "127.0.0.1:1", wmInflight: memWMInflight, wmMode: true}, {addr: "127.0.0.1:2"}}}
 	ps.cond = sync.NewCond(&ps.mu)
 	ps.setWM(100)
 	ps.setWM(90)
-	if ps.wm != 100 {
-		t.Fatalf("wm=%d", ps.wm)
+	if ps.wm != 100 || ps.peers[0].wmInflight != memWMInflight || ps.peers[1].wmInflight != 0 {
+		t.Fatalf("wm=%d inflight=%d/%d", ps.wm, ps.peers[0].wmInflight, ps.peers[1].wmInflight)
 	}
 	ps.mu.Lock()
 	ps.epoch = memNewEpoch()
-	ps.seq, ps.wm = 0, 0 // newEpochKeep と同じ (invalidateAll はネットワークを使うので直接)
+	ps.seq, ps.wm = 0, 0 // newEpoch と同じ (invalidateAll はネットワークを使うので直接)
 	ps.mu.Unlock()
 	ps.setWM(5)
 	if ps.wm != 5 {
 		t.Fatalf("after epoch wm=%d", ps.wm)
+	}
+}
+
+// 専用の wm 通知: データ (push) より先に届いたら保留し、push の反映後に適用。順序の入れ替わりで後退しない。
+func TestMemReceiverWMMsgPending(t *testing.T) {
+	m := wmTestStore()
+	m.w.set(0)
+	r := wmTestReceiver(m, "e1", 1)
+	r.wmMsg(memWMMsg{Epoch: "e1", Seq: 1, WM: 100})
+	r.wmMsg(memWMMsg{Epoch: "e1", Seq: 3, WM: 300}) // seq 2,3 が未着
+	r.wmMsg(memWMMsg{Epoch: "e1", Seq: 2, WM: 200})
+	r.wmMsg(memWMMsg{Epoch: "e0", Seq: 1, WM: 999}) // 古い epoch
+	if m.w.wm.Load() != 100 {
+		t.Fatalf("wm=%d want 100", m.w.wm.Load())
+	}
+	req := memPushRequest{Epoch: "e1", Seq: 2, Batches: []memBatch{{Seq: 2}}}
+	if !r.push(req) {
+		t.Fatal("push failed")
+	}
+	r.wmAfterPush(req)
+	if m.w.wm.Load() != 200 || len(r.wmPending) != 1 {
+		t.Fatalf("after seq2 wm=%d pending=%d", m.w.wm.Load(), len(r.wmPending))
+	}
+	req = memPushRequest{Epoch: "e1", Seq: 3, Batches: []memBatch{{Seq: 3}}, WM: 250}
+	if !r.push(req) {
+		t.Fatal("push failed")
+	}
+	r.wmAfterPush(req)
+	if m.w.wm.Load() != 300 || len(r.wmPending) != 0 {
+		t.Fatalf("after seq3 wm=%d pending=%d", m.w.wm.Load(), len(r.wmPending))
+	}
+	r.wmMsg(memWMMsg{Epoch: "e1", Seq: 3, WM: 150}) // 遅れて届いた古い通知
+	if m.w.wm.Load() != 300 {
+		t.Fatal("wm regressed")
 	}
 }
 

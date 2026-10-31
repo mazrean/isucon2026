@@ -47,6 +47,12 @@ func appendUserProfileImageReq(reqs []imageURLReq, user User) []imageURLReq {
 	return appendImageURLReq(reqs, user, *user.ProfileImageID)
 }
 
+func currentImageExp() int64 {
+	exp := time.Now().Add(imageURLLifetime).Unix()
+	exp -= exp % int64((imageURLLifetime-imageURLReuseMargin)/time.Second)
+	return exp
+}
+
 func buildSignedImageURL(imageID string, exp int64, sig []byte) string {
 	query := url.Values{
 		"exp": {strconv.FormatInt(exp, 10)},
@@ -69,7 +75,7 @@ func prewarmImageURLs(reqs []imageURLReq) {
 // missing signatures as one batch.
 func signedImageURLs(reqs []imageURLReq) []string {
 	out := make([]string, len(reqs))
-	exp := currentImageExp(time.Now())
+	exp := currentImageExp()
 	type miss struct {
 		ck  signatureCacheKey
 		idx []int

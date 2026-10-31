@@ -95,6 +95,7 @@ func newTestAsia(t *testing.T, cap *captured) *httptest.Server {
 	})
 	prevalidateTarget = ""
 	registerPrevalidate(e, "asia")
+	e.Pre(localImgAccept)
 	sess := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			c.Set("session", &Session{UserID: "u1", Region: "europe"})
@@ -152,7 +153,9 @@ func doReq(t *testing.T, base string, rc reqCase, hdr map[string]string) (int, s
 // Same requests straight to asia1 and via the eu/am validate-and-forward app
 // must produce byte-identical responses, with the via-eu ones skipping the
 // local JPEG decode on asia1.
-func TestPrevalidateDifferential(t *testing.T) {
+func TestPrevalidateDifferential(t *testing.T) { runPrevalidateDifferential(t, false) }
+
+func runPrevalidateDifferential(t *testing.T, localImg bool) {
 	oldSecret, oldOn, oldTarget := forwardSecret, prevalidateOn, prevalidateTarget
 	forwardSecret, prevalidateOn = "test-secret", true
 	t.Cleanup(func() { forwardSecret, prevalidateOn, prevalidateTarget = oldSecret, oldOn, oldTarget })
@@ -209,8 +212,11 @@ func TestPrevalidateDifferential(t *testing.T) {
 			t.Fatalf("%s: direct=%d %q via-eu=%d %q", rc.name, ds, db, es, eb)
 		}
 		cap.mu.Lock()
-		if cap.region != "europe" || cap.sec != "test-secret" || cap.bodySum != sha256.Sum256(rc.body) || !strings.HasPrefix(euSrv.URL, "http://"+cap.host) {
+		if cap.region != "europe" || cap.sec != "test-secret" || (!localImg && cap.bodySum != sha256.Sum256(rc.body)) || !strings.HasPrefix(euSrv.URL, "http://"+cap.host) {
 			t.Fatalf("%s: forwarded region=%q secret-ok=%v body-ok=%v host=%q", rc.name, cap.region, cap.sec == "test-secret", cap.bodySum == sha256.Sum256(rc.body), cap.host)
+		}
+		if localImg && strings.HasSuffix(rc.name, "/good") && cap.bodySum == sha256.Sum256(rc.body) {
+			t.Fatalf("%s: image bytes were sent to asia1", rc.name)
 		}
 		cap.mu.Unlock()
 		if rc.wantHit && (hits != 1 || locals != 0) {

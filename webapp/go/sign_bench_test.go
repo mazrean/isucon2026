@@ -118,7 +118,7 @@ func TestSignedImageURLsMatchesSingle(t *testing.T) {
 			t.Fatalf("cached url mismatch at %d", i)
 		}
 		// ...and must equal a from-scratch computation.
-		exp := currentImageExp(time.Now())
+		exp := currentImageExp()
 		if want := buildSignedImageURL(rq.ImageID, exp, signatureReference(rq.Key, rq.ImageID, exp)); want != got[i] {
 			t.Fatalf("url mismatch at %d: %s vs %s", i, want, got[i])
 		}
@@ -198,7 +198,7 @@ func TestSignPrefetchNextExp(t *testing.T) {
 		t.Fatal("target is not the next floor boundary")
 	}
 
-	cur := currentImageExp(time.Now())
+	cur := currentImageExp()
 	jobs := randomJobs(rand.New(rand.NewPCG(15, 16)), 40)
 	signedURLCacheMu.Lock()
 	for _, j := range jobs {

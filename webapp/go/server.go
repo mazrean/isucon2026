@@ -66,6 +66,7 @@ func NewServer(config *Config) *echo.Echo {
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
 	setupMem(handlerContext, e)
+	registerLocalImg(e, handlerContext)
 
 	e.POST("/api/initialize", initializeHandler(handlerContext))
 	e.POST("/api/auth/register", registerHandler(handlerContext))

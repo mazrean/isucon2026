@@ -72,11 +72,6 @@ func imageSignature(key []byte, imageID string, exp int64) []byte {
 	return value
 }
 
-// computeImageSignature はキャッシュを使わずに署名を計算する (署名ファームと共用)。
-func computeImageSignature(key []byte, imageID string, exp int64) []byte {
-	return computeSignature(key, imageID, exp)
-}
-
 func signedImageURL(user User, imageID string) string {
 	var ck signedURLCacheKey
 	copy(ck.key[:], user.ImageKey)

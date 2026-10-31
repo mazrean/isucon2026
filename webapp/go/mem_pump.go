@@ -42,8 +42,6 @@ type memPump struct {
 	// ロード中に無効化されていたら ready にしない (次のサイクルで再ロード)。
 	wantGen   atomic.Uint64
 	loadedGen uint64
-	softReset atomic.Bool // initialize 直後: cold 行を引き継ぐ
-	haveFull  bool        // p.m.d が DB と整合した全量を持つ (reload 中は loop goroutine のみが触る)
 
 	peers *memPeers // 分散モード (nil なら集中モード)
 }
@@ -71,7 +69,6 @@ func memRole(config *Config) string {
 
 // setupMem は ISUREAL_MEM=1 のときだけメモリモデルを準備する。失敗しても DB 経路で動く。
 func setupMem(h *HandlerContext, e *echo.Echo) {
-	startImagePrewarm(h.DB)
 	switch memRole(h.Config) {
 	case "pump":
 		m := &memStore{d: newMemData()}
@@ -88,7 +85,6 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		}
 		e.Use(memWriteBarrier(p))
 		registerMemPumpRoutes(e, p)
-		registerMemSigRoute(e)
 		go p.ticker()
 		if p.peers != nil {
 			go p.peers.heartbeatLoop()
@@ -98,12 +94,10 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		m := &memStore{d: newMemData(), useLease: true}
 		h.Mem = m
 		memCurrentPeerStore = m
-		recv := newMemReceiver(m, newSigFarm(h.Config, m, h.DB))
 		if memWatermark {
 			e.Use(memReadWait(m))
 		}
-		registerMemPeerRoutes(e, recv)
-		registerMemSigRoute(e)
+		registerMemPeerRoutes(e, newMemReceiver(m))
 	}
 }
 
@@ -304,36 +298,13 @@ func (p *memPump) invalidate() {
 }
 
 func (p *memPump) reload() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 	start := time.Now()
 	gen := p.wantGen.Load()
 	p.m.ready.Store(false)
-	soft := p.softReset.Swap(false) && p.haveFull
-	var d *memData
-	var snap string
-	var err error
-	if soft {
-		// initialize は初期データ行を変えないので、手元の cold 行を引き継ぎ、DB からは小テーブルと新規行だけ読む
-		d, snap, err = loadMemFromDBWith(ctx, p.db, func(nd *memData) error {
-			rows, err := loadMemHotRows(ctx, p.db)
-			if err != nil {
-				return err
-			}
-			p.m.mu.Lock()
-			nd.adoptCold(p.m.d)
-			rows.apply(nd)
-			p.m.d = nd
-			p.m.mu.Unlock()
-			return nil
-		})
-	} else {
-		d, snap, err = loadMemFromDB(ctx, p.db)
-	}
+	d, snap, err := loadMemFromDB(ctx, p.db)
 	if err != nil {
-		if soft {
-			p.haveFull = false // 次は全量ロード
-		}
 		return err
 	}
 	p.m.mu.Lock()
@@ -341,14 +312,13 @@ func (p *memPump) reload() error {
 	p.m.mu.Unlock()
 	p.snap = snap
 	if p.peers != nil {
-		p.peers.newEpochKeep(soft)
+		p.peers.newEpoch()
 	}
 	// ロード中にコミットされた分を取り込んでから公開する
 	if err := p.poll(); err != nil {
 		return err
 	}
 	p.loadedGen = gen
-	p.haveFull = true
 	if gen != p.wantGen.Load() {
 		return fmt.Errorf("mem: invalidated during reload")
 	}
@@ -359,9 +329,6 @@ func (p *memPump) reload() error {
 
 // resetAfterInitialize は initialize (DB リセット) 後に呼ぶ。全ホストのメモリを作り直して完了を待つ。
 func (p *memPump) resetAfterInitialize(ctx context.Context) {
-	// リセット前の変更を取り込み切ってから (cold 行を引き継ぐため)
-	p.barrier()
-	p.softReset.Store(true)
 	if _, err := p.db.ExecContext(ctx, `TRUNCATE mem_changelog`); err != nil {
 		slog.Error("mem: truncate changelog failed", "error", err)
 	}
@@ -373,13 +340,6 @@ func (p *memPump) resetAfterInitialize(ctx context.Context) {
 }
 
 func loadMemFromDB(ctx context.Context, db *sqlx.DB) (*memData, string, error) {
-	return loadMemFromDBWith(ctx, db, nil)
-}
-
-// loadMemFromDBWith: old != nil のときは初期データ行 (cold) を old から引き継ぎ、DB からは initialize 後に追加された行だけ読む。
-// old を引き継ぐ場合、呼び出し側は m.mu の書きロックを持たない (old を読む者が居るため) ので、
-// 引き継ぎは finish コールバック内 (書きロック下) で行う。
-func loadMemFromDBWith(ctx context.Context, db *sqlx.DB, adopt func(d *memData) error) (*memData, string, error) {
 	d := newMemData()
 	var snap string
 	if err := db.GetContext(ctx, &snap, `SELECT pg_current_snapshot()::text`); err != nil {
@@ -436,12 +396,45 @@ func loadMemFromDBWith(ctx context.Context, db *sqlx.DB, adopt func(d *memData) 
 	for _, r := range requests {
 		d.applyFriendRequest(false, r)
 	}
-	if adopt != nil {
-		if err := adopt(d); err != nil {
+	var minDate *time.Time
+	for _, w := range d.open {
+		if minDate == nil || w.LocalDate.Before(*minDate) {
+			v := w.LocalDate
+			minDate = &v
+		}
+	}
+	if minDate != nil {
+		var posts []memPostRow
+		if err := db.SelectContext(ctx, &posts, `
+   SELECT p.id, p.author_id, p.posting_window_id, p.image_id, p.caption, p.visibility,
+          p.location_kind, p.latitude, p.longitude, p.locality, p.posted_at, p.deleted_at
+   FROM posts p JOIN posting_windows w ON w.id = p.posting_window_id
+   WHERE w.local_date >= $1::date`, minDate.Format(time.DateOnly)); err != nil {
 			return nil, "", err
 		}
-	} else if err := loadMemRows(ctx, db, d, false); err != nil {
-		return nil, "", err
+		for _, r := range posts {
+			d.applyPost(r)
+		}
+		var comments []memCommentRow
+		if err := db.SelectContext(ctx, &comments, `
+   SELECT c.id, c.post_id, c.author_id, c.body, c.created_at, c.deleted_at
+   FROM comments c JOIN posts p ON p.id = c.post_id JOIN posting_windows w ON w.id = p.posting_window_id
+   WHERE w.local_date >= $1::date AND c.deleted_at IS NULL`, minDate.Format(time.DateOnly)); err != nil {
+			return nil, "", err
+		}
+		for _, r := range comments {
+			d.applyComment(r)
+		}
+		var realmojis []memRealMojiRow
+		if err := db.SelectContext(ctx, &realmojis, `
+   SELECT r.id, r.post_id, r.reactor_id, r.image_id, r.reaction_type, r.created_at, r.replaced_at, r.deleted_at
+   FROM realmojis r JOIN posts p ON p.id = r.post_id JOIN posting_windows w ON w.id = p.posting_window_id
+   WHERE w.local_date >= $1::date AND r.replaced_at IS NULL AND r.deleted_at IS NULL`, minDate.Format(time.DateOnly)); err != nil {
+			return nil, "", err
+		}
+		for _, r := range realmojis {
+			d.applyRealMoji(r)
+		}
 	}
 	d.sortedUsers()
 	return d, snap, nil
@@ -497,88 +490,6 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			return err
 		}
 	}
-}
-
-const memColdExpr = `COALESCE(created_at <= (SELECT created_at FROM initial_data_boundary), false) AS cold`
-
-// loadMemRows は投稿 (削除済み含む) と有効なコメント/RealMoji を読む。hotOnly なら初期データ以外だけ。
-func loadMemRows(ctx context.Context, db *sqlx.DB, d *memData, hotOnly bool) error {
-	cond := ""
-	if hotOnly {
-		cond = ` AND NOT COALESCE(created_at <= (SELECT created_at FROM initial_data_boundary), false)`
-	}
-	var posts []memPostRow
-	if err := db.SelectContext(ctx, &posts, `
-   SELECT id, author_id, posting_window_id, image_id, caption, visibility,
-          location_kind, latitude, longitude, locality, posted_at, deleted_at, `+memColdExpr+`
-   FROM posts WHERE true`+cond); err != nil {
-		return err
-	}
-	for _, r := range posts {
-		d.applyPost(r)
-	}
-	posts = nil
-	var comments []memCommentRow
-	if err := db.SelectContext(ctx, &comments, `
-   SELECT id, post_id, author_id, body, created_at, deleted_at, `+memColdExpr+`
-   FROM comments WHERE deleted_at IS NULL`+cond); err != nil {
-		return err
-	}
-	for _, r := range comments {
-		d.applyComment(r)
-	}
-	comments = nil
-	var realmojis []memRealMojiRow
-	if err := db.SelectContext(ctx, &realmojis, `
-   SELECT id, post_id, reactor_id, image_id, reaction_type, created_at, replaced_at, deleted_at, `+memColdExpr+`
-   FROM realmojis WHERE replaced_at IS NULL AND deleted_at IS NULL`+cond); err != nil {
-		return err
-	}
-	for _, r := range realmojis {
-		d.applyRealMoji(r)
-	}
-	return nil
-}
-
-type memHotRows struct {
-	posts     []memPostRow
-	comments  []memCommentRow
-	realmojis []memRealMojiRow
-}
-
-func (rs *memHotRows) apply(d *memData) {
-	for _, r := range rs.posts {
-		d.applyPost(r)
-	}
-	for _, r := range rs.comments {
-		d.applyComment(r)
-	}
-	for _, r := range rs.realmojis {
-		d.applyRealMoji(r)
-	}
-}
-
-// loadMemHotRows は初期データ以外 (initialize 直後はごく少数) の投稿/コメント/RealMoji を読む。
-func loadMemHotRows(ctx context.Context, db *sqlx.DB) (*memHotRows, error) {
-	const notCold = ` AND NOT COALESCE(created_at <= (SELECT created_at FROM initial_data_boundary), false)`
-	rs := &memHotRows{}
-	if err := db.SelectContext(ctx, &rs.posts, `
-   SELECT id, author_id, posting_window_id, image_id, caption, visibility,
-          location_kind, latitude, longitude, locality, posted_at, deleted_at, false AS cold
-   FROM posts WHERE true`+notCold); err != nil {
-		return nil, err
-	}
-	if err := db.SelectContext(ctx, &rs.comments, `
-   SELECT id, post_id, author_id, body, created_at, deleted_at, false AS cold
-   FROM comments WHERE deleted_at IS NULL`+notCold); err != nil {
-		return nil, err
-	}
-	if err := db.SelectContext(ctx, &rs.realmojis, `
-   SELECT id, post_id, reactor_id, image_id, reaction_type, created_at, replaced_at, deleted_at, false AS cold
-   FROM realmojis WHERE replaced_at IS NULL AND deleted_at IS NULL`+notCold); err != nil {
-		return nil, err
-	}
-	return rs, nil
 }
 
 // localOnlyWrite: login/logout of a user of this host's own region (not forwarded

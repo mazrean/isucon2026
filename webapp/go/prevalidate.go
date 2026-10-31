@@ -135,6 +135,10 @@ func parseJPEGResults(secret, v string) map[[32]byte]jpegResult {
 
 // prevalidated is consulted first by checkJPEG.
 func prevalidated(ctx context.Context, data []byte) (w, h int, ok, hit bool) {
+	if m := localImgFromCtx(ctx); m != nil && len(data) == 0 {
+		prevalidateHits.Add(1)
+		return m.w, m.h, true, true
+	}
 	m, _ := ctx.Value(jpegResultsKey{}).(map[[32]byte]jpegResult)
 	if m == nil {
 		return 0, 0, false, false
@@ -226,8 +230,10 @@ func newPrevalidateProxy(target, region string) *httputil.ReverseProxy {
 			DisableCompression:  true,
 			ForceAttemptHTTP2:   false,
 		},
-		BufferPool: proxyBufPool{},
+		BufferPool:     proxyBufPool{},
+		ModifyResponse: localImgModifyResponse,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			localImgAbort(r)
 			slog.Warn("prevalidate proxy", "error", err)
 			w.WriteHeader(http.StatusBadGateway)
 		},
@@ -295,6 +301,10 @@ func prevalidateForward(c *echo.Context, proxy *httputil.ReverseProxy) error {
 	req.Body.Close()
 	body := buf.Bytes()
 	req.Header.Del(jpegResultHeader)
+	req.Header.Del(localImgHeader)
+	if localImgOn && localImgRegion != "" && localImgTryForward(c, proxy, body) {
+		return nil
+	}
 	if v := jpegResultsHeader(forwardSecret, req.Header.Get("Content-Type"), body); v != "" {
 		req.Header.Set(jpegResultHeader, v)
 	}

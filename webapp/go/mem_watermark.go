@@ -228,18 +228,34 @@ func memPercentiles(d []time.Duration) (p50, p90, p99 time.Duration) {
 
 // ---- pump side ----
 
+// memWMMsg: watermark だけの軽い通知 (毎サイクル)。データの push (逐次、1 RTT に 1 本) とは別に、並列に送る。
+type memWMMsg struct {
+	Epoch string `json:"e"`
+	Seq   int64  `json:"q"`
+	WM    int64  `json:"w"`
+}
+
+const memWMInflight = 8 // peer ごとの並列数 (RTT 100ms / 周期 20ms ≒ 5)
+
 // setWM は cycleMu 保持中、poll の反映 (と publish) の後に呼ぶ。wm は現在の ps.seq に対して有効。
-// wm モードの peer へ heartbeat を送り (並列数の上限内)、watermark を早く届ける。
 func (ps *memPeers) setWM(wm int64) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 	if wm > ps.wm {
 		ps.wm = wm
 	}
+	msg := memWMMsg{Epoch: ps.epoch, Seq: ps.seq, WM: ps.wm}
 	for _, peer := range ps.peers {
-		if peer.wmMode {
-			ps.kick(peer, true)
+		if !peer.wmMode || peer.wmInflight >= memWMInflight {
+			continue
 		}
+		peer.wmInflight++
+		go func(peer *memPeer) {
+			_, _ = memHTTPPost(peer.addr, "/internal/mem/wm", msg, time.Second)
+			ps.mu.Lock()
+			peer.wmInflight--
+			ps.mu.Unlock()
+		}(peer)
 	}
 }
 
@@ -271,14 +287,43 @@ func (ps *memPeers) markWMMode(remoteAddr string, wm bool) {
 
 // ---- peer side ----
 
-// wmAfterPush: push が seq まで反映できていれば watermark を進める。
-func (r *memReceiver) wmAfterPush(req memPushRequest) {
-	if req.WM <= 0 {
-		return
-	}
+// wmMsg: seq まで反映済みなら進める。未着なら保留し、push の反映後に適用する。
+func (r *memReceiver) wmMsg(msg memWMMsg) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.m.ready.Load() && req.Epoch == r.epoch && r.epoch != "" && r.seq >= req.Seq {
+	if !r.m.ready.Load() || r.epoch == "" || msg.Epoch != r.epoch || msg.WM <= 0 {
+		return
+	}
+	if r.seq >= msg.Seq {
+		r.m.w.advance(msg.WM)
+		return
+	}
+	r.wmPending = append(r.wmPending, msg)
+	if len(r.wmPending) > 64 {
+		r.wmPending = append([]memWMMsg(nil), r.wmPending[len(r.wmPending)-32:]...)
+	}
+}
+
+// wmAfterPush: push が seq まで反映できていれば watermark を進める (保留分も)。
+func (r *memReceiver) wmAfterPush(req memPushRequest) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if !r.m.ready.Load() || r.epoch == "" || req.Epoch != r.epoch {
+		return
+	}
+	if req.WM > 0 && r.seq >= req.Seq {
 		r.m.w.advance(req.WM)
 	}
+	rest := r.wmPending[:0]
+	for _, msg := range r.wmPending {
+		if msg.Epoch != r.epoch {
+			continue
+		}
+		if r.seq >= msg.Seq {
+			r.m.w.advance(msg.WM)
+		} else {
+			rest = append(rest, msg)
+		}
+	}
+	r.wmPending = rest
 }

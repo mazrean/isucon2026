@@ -48,23 +48,64 @@ var (
 
 const imgFriendHeader = "X-Isureal-Img-Friend"
 
+// ISUREAL_IMG_FRIEND_PUSH_FRESH=1: a push is worth something only if it lands
+// before the viewers read the image, so prefer fresh images: a full queue
+// evicts its oldest job (not the new one), and a job older than
+// ISUREAL_IMG_FRIEND_PUSH_MAX_AGE_MS (10000) at send time is skipped (the
+// viewers have pulled it by then). ISUREAL_IMG_FRIEND_PUSH_MIN_FRIENDS (1):
+// push to a region only when the owner has at least this many friends there.
+var (
+	imgFriendPushFresh      = os.Getenv("ISUREAL_IMG_FRIEND_PUSH_FRESH") == "1"
+	imgFriendPushMaxAge     = time.Duration(envIntOrDefault("ISUREAL_IMG_FRIEND_PUSH_MAX_AGE_MS", 10000)) * time.Millisecond
+	imgFriendPushMinFriends = envIntOrDefault("ISUREAL_IMG_FRIEND_PUSH_MIN_FRIENDS", 1)
+	// ISUREAL_IMG_FRIEND_PUSH_HI_NOWAIT=1: friend-region jobs skip the busy-NIC
+	// wait (GP still stops them), so they land before the viewers pull.
+	imgFriendPushHiNoWait = os.Getenv("ISUREAL_IMG_FRIEND_PUSH_HI_NOWAIT") == "1"
+	// ISUREAL_IMG_FRIEND_PUSH_WINDOW_MB (0 = off): at most this many MB queued
+	// per destination per posting window of the sender's region.
+	imgFriendPushWindowBytes = int64(envIntOrDefault("ISUREAL_IMG_FRIEND_PUSH_WINDOW_MB", 0)) << 20
+)
+
 var imgFriendStats struct {
-	queuedHi, queuedMid, queuedLo, sent, sentBytes, dropped, errs, gpWait, busyWait, recv, recvHit atomic.Int64
+	queuedHi, queuedMid, queuedLo, sent, sentBytes, dropped, evicted, stale, budgetSkip, errs, gpWait, busyWait, recv, recvHit, recvLate atomic.Int64
 }
 
 // friendPusher is non-nil only on asia1 with the flag on.
 var friendPusher *imgFriendPusher
 
 type imgFriendJob struct {
-	id  string
-	obj *imageObject
-	sig *imgReplSigOnce
+	id   string
+	obj  *imageObject
+	sig  *imgReplSigOnce
+	at   time.Time
+	tier int
 }
 
 type imgFriendDest struct {
-	region string
-	addr   string
+	region      string
+	addr        string
 	hi, mid, lo chan imgFriendJob
+
+	winMu    sync.Mutex
+	winID    string
+	winBytes int64
+}
+
+// windowAllow charges n bytes to (dest, window); false = over the budget.
+func (d *imgFriendDest) windowAllow(win string, n int64) bool {
+	if imgFriendPushWindowBytes <= 0 {
+		return true
+	}
+	d.winMu.Lock()
+	defer d.winMu.Unlock()
+	if win != d.winID {
+		d.winID, d.winBytes = win, 0
+	}
+	if d.winBytes+n > imgFriendPushWindowBytes {
+		return false
+	}
+	d.winBytes += n
+	return true
 }
 
 type imgFriendPusher struct {
@@ -75,7 +116,7 @@ type imgFriendPusher struct {
 	client *http.Client
 	queued atomic.Int64 // bytes pinned by queued jobs
 	// gate returns true when sending is allowed now (idle NIC, no GP).
-	gate func(dest string) bool
+	gate  func(dest string) bool
 	txBps atomic.Int64
 }
 
@@ -134,6 +175,15 @@ func startImgFriendPush(h *HandlerContext) {
 // the user is unknown or mem is not ready).
 func (d *memData) friendRegions(userID string) map[string]bool {
 	out := map[string]bool{}
+	for r := range d.friendRegionCounts(userID) {
+		out[r] = true
+	}
+	return out
+}
+
+// friendRegionCounts: region -> number of userID's friends there (non-nil).
+func (d *memData) friendRegionCounts(userID string) map[string]int {
+	out := map[string]int{}
 	if d == nil {
 		return out
 	}
@@ -143,19 +193,26 @@ func (d *memData) friendRegions(userID string) map[string]bool {
 	}
 	for id := range u.friends {
 		if f := d.users[id]; f != nil && f.Region != "" {
-			out[f.Region] = true
+			out[f.Region]++
 		}
 	}
 	return out
 }
 
-func (p *imgFriendPusher) friendRegionsOf(userID string) map[string]bool {
+// friendRegionsOf also returns the ID of the sender region's open window.
+func (p *imgFriendPusher) friendRegionsOf(userID string) (map[string]int, string) {
 	if p.mem == nil || !p.mem.ready.Load() {
-		return map[string]bool{}
+		return map[string]int{}, ""
 	}
 	p.mem.mu.RLock()
 	defer p.mem.mu.RUnlock()
-	return p.mem.d.friendRegions(userID)
+	win := ""
+	if p.mem.d != nil {
+		if w := p.mem.d.open[p.region]; w != nil {
+			win = w.ID
+		}
+	}
+	return p.mem.d.friendRegionCounts(userID), win
 }
 
 // enqueue never blocks (called right after the commit).
@@ -164,34 +221,51 @@ func (p *imgFriendPusher) enqueue(id string, obj *imageObject, visibility string
 	if p == nil || !safeImageID(id) || obj == nil || obj.Owner == "" || len(obj.Data) == 0 {
 		return
 	}
-	regions := p.friendRegionsOf(obj.Owner)
+	regions, win := p.friendRegionsOf(obj.Owner)
 	sig := &imgReplSigOnce{}
 	for _, d := range p.dests {
 		tier := 2
-		if regions[d.region] {
+		if n := regions[d.region]; n > 0 && n >= imgFriendPushMinFriends {
 			tier = 0
 		} else if !imgFriendPushAll {
 			continue
 		} else if visibility == "public" || visibility == "friends_of_friends" {
 			tier = 1
 		}
-		p.submit(d, imgFriendJob{id: id, obj: obj, sig: sig}, tier)
+		if !d.windowAllow(win, int64(len(obj.Data))) {
+			imgFriendStats.budgetSkip.Add(1)
+			continue
+		}
+		p.submit(d, imgFriendJob{id: id, obj: obj, sig: sig, at: time.Now(), tier: tier}, tier)
 	}
 }
 
 func (p *imgFriendPusher) submit(d *imgFriendDest, j imgFriendJob, tier int) {
 	n := int64(len(j.obj.Data))
-	if p.queued.Add(n) > imgFriendPushMaxByte {
-		p.queued.Add(-n)
-		imgFriendStats.dropped.Add(1)
-		return
-	}
 	ch, ctr := d.lo, &imgFriendStats.queuedLo
 	switch tier {
 	case 0:
 		ch, ctr = d.hi, &imgFriendStats.queuedHi
 	case 1:
 		ch, ctr = d.mid, &imgFriendStats.queuedMid
+	}
+	if imgFriendPushFresh {
+		// evict the oldest jobs of this tier until the new one fits
+	evict:
+		for i := 0; i < 64 && (p.queued.Load()+n > imgFriendPushMaxByte || len(ch) == cap(ch)); i++ {
+			select {
+			case old := <-ch:
+				p.queued.Add(-int64(len(old.obj.Data)))
+				imgFriendStats.evicted.Add(1)
+			default:
+				break evict
+			}
+		}
+	}
+	if p.queued.Add(n) > imgFriendPushMaxByte {
+		p.queued.Add(-n)
+		imgFriendStats.dropped.Add(1)
+		return
 	}
 	select {
 	case ch <- j:
@@ -204,10 +278,6 @@ func (p *imgFriendPusher) submit(d *imgFriendDest, j imgFriendJob, tier int) {
 
 func (p *imgFriendPusher) worker(d *imgFriendDest) {
 	for {
-		// wait for an open gate first, then take the highest-priority job
-		for !p.gate(d.region) {
-			time.Sleep(100 * time.Millisecond)
-		}
 		var j imgFriendJob
 		select {
 		case j = <-d.hi:
@@ -223,10 +293,20 @@ func (p *imgFriendPusher) worker(d *imgFriendDest) {
 				}
 			}
 		}
-		for !p.gate(d.region) { // the gate may have closed while idle
-			time.Sleep(100 * time.Millisecond)
+		if imgFriendPushHiNoWait && j.tier == 0 {
+			for p.gpBlocked(d.region) {
+				time.Sleep(100 * time.Millisecond)
+			}
+		} else {
+			for !p.gate(d.region) {
+				time.Sleep(100 * time.Millisecond)
+			}
 		}
 		p.queued.Add(-int64(len(j.obj.Data)))
+		if imgFriendPushFresh && time.Since(j.at) > imgFriendPushMaxAge {
+			imgFriendStats.stale.Add(1)
+			continue
+		}
 		if err := p.send(d.addr, j); err != nil {
 			imgFriendStats.errs.Add(1) // no retry: the pull path still works
 			continue
@@ -236,17 +316,26 @@ func (p *imgFriendPusher) worker(d *imgFriendDest) {
 	}
 }
 
+// gpBlocked: a GP window is open at the sender or the destination.
+func (p *imgFriendPusher) gpBlocked(dest string) bool {
+	if imgFriendPushGP || p.mem == nil {
+		return false
+	}
+	now := time.Now()
+	if _, gp := p.mem.gpWindowDeadline(p.region, now); gp {
+		imgFriendStats.gpWait.Add(1)
+		return true
+	}
+	if _, gp := p.mem.gpWindowDeadline(dest, now); gp {
+		imgFriendStats.gpWait.Add(1)
+		return true
+	}
+	return false
+}
+
 func (p *imgFriendPusher) defaultGate(dest string) bool {
-	if !imgFriendPushGP && p.mem != nil {
-		now := time.Now()
-		if _, gp := p.mem.gpWindowDeadline(p.region, now); gp {
-			imgFriendStats.gpWait.Add(1)
-			return false
-		}
-		if _, gp := p.mem.gpWindowDeadline(dest, now); gp {
-			imgFriendStats.gpWait.Add(1)
-			return false
-		}
+	if p.gpBlocked(dest) {
+		return false
 	}
 	if p.txBps.Load() >= imgFriendPushMaxBps {
 		imgFriendStats.busyWait.Add(1)
@@ -338,11 +427,21 @@ var (
 
 const imgFriendRecvMaxIDs = 200000
 
-func imgFriendRecvMark(id string) {
+// imgFriendRecvLate: the receiver already had the image (pulled before the
+// push landed). Call before storing the push.
+func imgFriendRecvLate(s *imageStore, req *http.Request, id string) bool {
+	return imgFriendPushOn && req.Header.Get(imgFriendHeader) == "1" && s.has(id)
+}
+
+func imgFriendRecvMark(id string, late bool) {
 	if !imgFriendPushOn {
 		return
 	}
 	imgFriendStats.recv.Add(1)
+	if late {
+		imgFriendStats.recvLate.Add(1)
+		return
+	}
 	if imgFriendRecvN.Add(1) > imgFriendRecvMaxIDs {
 		imgFriendRecvIDs.Clear()
 		imgFriendRecvN.Store(0)
@@ -382,7 +481,8 @@ func imgFriendStatsLogger() {
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	s := &imgFriendStats
-	ctrs := []*atomic.Int64{&s.queuedHi, &s.queuedMid, &s.queuedLo, &s.sent, &s.sentBytes, &s.dropped, &s.errs, &s.gpWait, &s.busyWait, &s.recv, &s.recvHit}
+	ctrs := []*atomic.Int64{&s.queuedHi, &s.queuedMid, &s.queuedLo, &s.sent, &s.sentBytes, &s.dropped, &s.evicted, &s.stale, &s.budgetSkip, &s.errs, &s.gpWait, &s.busyWait, &s.recv, &s.recvHit, &s.recvLate}
+	var recvT, hitT, lateT int64 // cumulative, for the never-read estimate
 	for range t.C {
 		v := make([]int64, len(ctrs))
 		var sum int64
@@ -397,8 +497,10 @@ func imgFriendStatsLogger() {
 		if p := friendPusher; p != nil {
 			txMbps, qBytes = p.txBps.Load()/1_000_000, p.queued.Load()
 		}
+		recvT, hitT, lateT = recvT+v[12], hitT+v[13], lateT+v[14]
 		slog.Info("imgfriendpush", "queued_hi", v[0], "queued_mid", v[1], "queued_lo", v[2], "sent", v[3], "sent_bytes", v[4],
-			"dropped", v[5], "err", v[6], "gp_wait_ticks", v[7], "busy_wait_ticks", v[8],
-			"recv", v[9], "recv_hit", v[10], "tx_mbps", txMbps, "queued_bytes", qBytes)
+			"dropped", v[5], "evicted", v[6], "stale", v[7], "budget_skip", v[8], "err", v[9], "gp_wait_ticks", v[10], "busy_wait_ticks", v[11],
+			"recv", v[12], "recv_hit", v[13], "recv_late", v[14],
+			"recv_total", recvT, "hit_total", hitT, "late_total", lateT, "unread_total", recvT-hitT-lateT, "tx_mbps", txMbps, "queued_bytes", qBytes)
 	}
 }

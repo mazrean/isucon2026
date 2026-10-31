@@ -247,6 +247,7 @@ func imageReplReceiveHandler(store *imageStore, secret string) echo.HandlerFunc 
 		if !safeImageID(id) || owner == "" || mediaType == "" {
 			return c.NoContent(http.StatusBadRequest)
 		}
+		late := imgFriendRecvLate(store, req, id)
 		if imgDedupOn {
 			if store.has(id) {
 				imgStats.recvDup.Add(1)
@@ -265,7 +266,7 @@ func imageReplReceiveHandler(store *imageStore, secret string) echo.HandlerFunc 
 			store.put(id, obj)
 		}
 		imgStats.recvN.Add(1)
-		imgFriendRecvMark(id)
+		imgFriendRecvMark(id, late)
 		imgStats.recvBytes.Add(int64(len(data)))
 		return c.NoContent(http.StatusNoContent)
 	}

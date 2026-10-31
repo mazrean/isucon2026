@@ -231,3 +231,54 @@ func TestFriendRecvNoDisk(t *testing.T) {
 		t.Fatal("not moved out of the friend LRU")
 	}
 }
+
+// FRESH: a full queue evicts its oldest job instead of dropping the new one.
+func TestFriendPushFreshEvicts(t *testing.T) {
+	oldF, oldQ := imgFriendPushFresh, imgFriendPushMaxByte
+	imgFriendPushFresh, imgFriendPushMaxByte = true, 10
+	defer func() { imgFriendPushFresh, imgFriendPushMaxByte = oldF, oldQ }()
+	p, _ := newTestFriendPusher(t, map[string]string{"europe": "e:1"})
+	ev := imgFriendStats.evicted.Load()
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455550001", &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("123456")}, "")
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455550002", &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("123456")}, "")
+	d := p.dests[0]
+	if len(d.hi) != 1 || imgFriendStats.evicted.Load()-ev != 1 {
+		t.Fatalf("hi %d evicted %d", len(d.hi), imgFriendStats.evicted.Load()-ev)
+	}
+	if j := <-d.hi; j.id != "0b0c5f3e-1111-4222-8333-944455550002" {
+		t.Fatalf("kept %s, want the newest", j.id)
+	}
+}
+
+func TestFriendPushWindowBudget(t *testing.T) {
+	old := imgFriendPushWindowBytes
+	imgFriendPushWindowBytes = 10
+	defer func() { imgFriendPushWindowBytes = old }()
+	d := &imgFriendDest{}
+	if !d.windowAllow("w1", 6) || d.windowAllow("w1", 6) {
+		t.Fatal("w1: first fits, second over")
+	}
+	if !d.windowAllow("w2", 6) {
+		t.Fatal("new window resets the budget")
+	}
+}
+
+// a push for an image the receiver already has counts as late, not pending.
+func TestFriendRecvLate(t *testing.T) {
+	oldOn := imgFriendPushOn
+	imgFriendPushOn = true
+	defer func() { imgFriendPushOn = oldOn }()
+	store := newImageStore(t.TempDir())
+	e := newImgReplTestEcho(store)
+	id := "0b0c5f3e-1111-4222-8333-944455554444"
+	data := []byte("\xff\xd8abc")
+	store.mem.add(id, &imageObject{Owner: "owner-1", MediaType: "image/jpeg", Data: data}) // pulled already
+	req := imgReplTestRequest(id, "192.168.2.10:1", imgReplTestSecret, imgReplSign(imgReplTestSecret, id, "owner-1", "image/jpeg", data), data)
+	req.Header.Set(imgFriendHeader, "1")
+	before := imgFriendStats.recvLate.Load()
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent || imgFriendStats.recvLate.Load()-before != 1 {
+		t.Fatalf("status %d late +%d", rec.Code, imgFriendStats.recvLate.Load()-before)
+	}
+}

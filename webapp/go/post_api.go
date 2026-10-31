@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,6 +44,8 @@ type createPostResponse struct {
 	OnTime          bool               `json:"onTime"`
 	LateSeconds     int64              `json:"lateSeconds"`
 }
+
+var postWindowFast = os.Getenv("ISUREAL_PW_FAST") != "0"
 
 func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
@@ -97,6 +100,17 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
+		// ISUREAL_PW_FAST (既定 on): 361KB の image_objects INSERT を窓の FOR SHARE より前に出す。
+		// 窓の行ロックを持つ時間が短くなり、admin の open (UPDATE ended_at) が投稿の tx を待つ時間が減る。
+		// 同じ tx の中なので、409 などで rollback すれば画像の行も消える (挙動は従来と同じ)。
+		imageID := newImageID(ctx)
+		imageInserted := false
+		if postWindowFast && localImgFromCtx(ctx) == nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, time.Now().UTC()); err != nil {
+				return err
+			}
+			imageInserted = true
+		}
 		var window struct {
 			ID        string    `db:"id"`
 			LocalDate time.Time `db:"local_date"`
@@ -131,9 +145,8 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if counts.Active != 0 || counts.Deleted >= 2 || postedAt.Before(window.StartsAt) {
 			return NewAPIError(http.StatusConflict, "post_slot_unavailable")
 		}
-		imageID := newImageID(ctx)
 		external := externalImage(c, userID)
-		if !external {
+		if !external && !imageInserted {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt); err != nil {
 				return err
 			}

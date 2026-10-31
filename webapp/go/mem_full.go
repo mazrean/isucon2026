@@ -40,7 +40,11 @@ var memFull = os.Getenv("ISUREAL_MEM_FULL") == "1"
 // memFullLoaders: pump / logrepl の loader を全期間にするか (テストで peer だけ全期間にするときに false)
 var memFullLoaders = memFull
 
-const memColdMaxWait = 2000 * time.Millisecond
+// memColdMaxWait: 受け手が seq を待つ上限 (超えたら 503 = 送り手が自分の経路へ)。coldForwardMax: 送り手の転送全体の上限。
+var (
+	memColdMaxWait = time.Duration(envIntOrDefault("ISUREAL_COLD_WAIT_MS", 300)) * time.Millisecond
+	coldForwardMax = time.Duration(envIntOrDefault("ISUREAL_COLD_FORWARD_MAX_MS", 1000)) * time.Millisecond
+)
 
 var (
 	memFullDB    *sqlx.DB // peer の setupMem が設定 (ホット外のロード元 = 自分の PG)
@@ -147,8 +151,8 @@ func memColdWaitMiddleware(r *memReceiver) echo.MiddlewareFunc {
 			} else {
 				memColdStats.notOn.Add(1)
 			}
-			c.SetRequest(req.WithContext(context.WithValue(req.Context(), memForceDBKey{}, true)))
-			return next(c)
+			// 待ちの上限を超えた: 自分の PG で答えず断る (送り手は 5xx で自分の経路へ。asia2 の PG に重い読みを足さない)
+			return c.NoContent(http.StatusServiceUnavailable)
 		}
 	}
 }

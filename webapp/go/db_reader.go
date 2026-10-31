@@ -2,6 +2,7 @@ package isureal
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"os"
 	"sync/atomic"
@@ -46,8 +47,10 @@ func (r *readRouter) check() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	// replica が primary から streaming 中か。
-	var status string
-	if err := r.replica.GetContext(ctx, &status, `SELECT status FROM pg_stat_wal_receiver`); err != nil || status != "streaming" {
+	// pg_read_all_stats 権限が無いと status は NULL になる。その場合は行の存在 (= WAL receiver 稼働) だけを見る。
+	// 正しさは primary 上の in_sync (watchdog が同期集合から外す前に false にする) で担保される。
+	var status sql.NullString
+	if err := r.replica.GetContext(ctx, &status, `SELECT status FROM pg_stat_wal_receiver`); err != nil || (status.Valid && status.String != "streaming") {
 		return false
 	}
 	// watchdog が primary に書く同期メンバー表。遅延中の replica 上の値は古い可能性があるので primary から読む。

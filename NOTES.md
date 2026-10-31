@@ -184,3 +184,19 @@ END: 2026-10-31 18:00 JST
 | 8506 | - | 110123 | push パイプライン化 (mem-pipeline)。112k とノイズの範囲。エラー無し。バリア p50 220ms / p90 316〜459ms |
 | 8713 | - | **113783** | MEM_WM=1 (watermark)。asia 5 日目 944 / eu 192 / am 111。GP は asia 199 に崩れ (asia1 飽和)、eu 171、am 103。wm 待ち p50 63〜144ms、fallback 少 → 既定 on |
 | 8957 | - | 111710 | JC=1 (Rust JPEG)。asia5 823 / eu 182 / am 118。GP asia 0 人 (崩壊)、eu 174、am 116。jpeg remote_err 33 |
+
+## asia2 論理レプリカ watchdog (pg-logrepl-watchdog)
+- 対象: ISUREAL_MEM_LOGREPL=1 の各 app の購読 (application_name = スロット名 = ノード名、mem_logrepl.go の lrSlotName)。既定メンバー `asia1 europe1 america1` (unit の LR_MEMBERS)。
+- 1 秒ごとに pg_stat_replication を見る (streaming / reply_time 3s 以内 / sent-replay 差 64MB 未満 / replay_lag 5s 未満 / スロット lost でない)。3s 不健全で外す、2s 健全で戻す。
+- 外す: mem_logrepl_members.blocked=true (synchronous_commit=local) → walsender を pg_terminate_backend → 2.5s 待つ → synchronous_standby_names から外して reload。
+- 戻す: 追加 → reload → sync_state が quorum/sync を確認 → blocked=false。起動時は全員 blocked → 2.5s → 集合を空にしてから開始。
+- conf は `conf.d/zz-zlogrepl.conf` (zz-sync.conf より後に読まれる。synchronous_commit は触らない)。pg-sync-watchdog とは同じ GUC を奪い合うので unit で Conflicts。止めるときは `echo off > /etc/postgresql/16/main/pg-logrepl.mode` (全員 blocked + 集合を空)。
+- deploy (asia2):
+  ```
+  sudo install -m 755 scripts/pg-logrepl-watchdog.sh /usr/local/bin/pg-logrepl-watchdog
+  sudo install -m 644 etc/pg/pg-logrepl-watchdog.service /etc/systemd/system/
+  sudo systemctl disable --now pg-sync-watchdog   # 併用不可
+  sudo systemctl daemon-reload && sudo systemctl enable --now pg-logrepl-watchdog
+  journalctl -u pg-logrepl-watchdog -f
+  ```
+- 注意: 物理スタンバイが同名 (asia1 等) の application_name / スロットで残っていると誤判定する (物理スタンバイは撤去済みの前提)。

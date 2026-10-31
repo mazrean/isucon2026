@@ -1,0 +1,20 @@
+[Unit]
+Description=PostgreSQL logical-replication (mem_logrepl) sync watchdog (isucon)
+# PG 起動前に同期対象を空にしてから PG を起動させる (起動直後に remote_apply の marker がブロックされないように)
+Before=postgresql@16-main.service
+After=network.target
+# 物理スタンバイ用の watchdog と synchronous_standby_names を奪い合うので同時に動かさない
+Conflicts=pg-sync-watchdog.service
+
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+Environment=LR_MEMBERS="asia1 europe1 america1"
+ExecStartPre=/usr/local/bin/pg-logrepl-watchdog reset
+ExecStart=/usr/local/bin/pg-logrepl-watchdog run
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

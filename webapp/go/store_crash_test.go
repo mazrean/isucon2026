@@ -20,6 +20,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // TestStoreHelperServer は子プロセスとして store サーバーを起動する (STORE_HELPER_ADDR があるときだけ)。
@@ -36,7 +38,7 @@ func TestStoreHelperServer(t *testing.T) {
 
 func startStoreHelper(t *testing.T, addr string) *exec.Cmd {
 	cmd := exec.Command(os.Args[0], "-test.run=^TestStoreHelperServer$")
-	cmd.Env = append(os.Environ(), "STORE_HELPER_ADDR="+addr, "ISUREAL_MEM_PEERS=")
+	cmd.Env = append(append(os.Environ(), "STORE_HELPER_ADDR="+addr, "ISUREAL_MEM_PEERS="), storeHelperEnv...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
@@ -65,7 +67,45 @@ func freeAddr(t *testing.T) string {
 	return l.Addr().String()
 }
 
-func TestStoreCrash(t *testing.T) {
+var storeHelperEnv []string
+
+// TestStoreCrashWAL: ISUREAL_STORE_WAL + AWAIT_PG=0 + 書き戻しを遅らせて、WAL の fsync 後・PG の書き戻し前に kill -9。
+// 応答済みの書き込みは、再起動時の WAL の流し直しで PG に入っていること。
+func TestStoreCrashWAL(t *testing.T) {
+	dir := t.TempDir()
+	storeHelperEnv = []string{"ISUREAL_STORE_WAL=" + dir, "ISUREAL_STORE_AWAIT_PG=0", "ISUREAL_STORE_WB_DELAY_MS=3000"}
+	defer func() { storeHelperEnv = nil }()
+	storeCrashBody(t, func(comments [][2]string) {
+		db, err := sqlx.Open("pgx", ConfigFromEnv().DatabaseDSN())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close()
+		missing := 0
+		for _, c := range comments {
+			var n int
+			if err := db.Get(&n, `SELECT count(*) FROM comments WHERE id = $1`, c[1]); err != nil {
+				t.Fatal(err)
+			}
+			if n == 0 {
+				missing++
+			}
+		}
+		st, _ := os.Stat(walPath(dir))
+		var sz int64
+		if st != nil {
+			sz = st.Size()
+		}
+		t.Logf("before restart: acked comments not yet in PG = %d / %d, wal bytes = %d", missing, len(comments), sz)
+		if missing == 0 {
+			t.Errorf("test did not exercise the WAL (every acked comment already in PG)")
+		}
+	})
+}
+
+func TestStoreCrash(t *testing.T) { storeCrashBody(t, nil) }
+
+func storeCrashBody(t *testing.T, afterKill func(comments [][2]string)) {
 	addr := freeAddr(t)
 	base := "http://" + addr
 	p1 := startStoreHelper(t, addr)
@@ -241,6 +281,9 @@ func TestStoreCrash(t *testing.T) {
 	_, _ = p1.Process.Wait()
 	close(stop)
 	wg.Wait()
+	if afterKill != nil {
+		afterKill(ackedComments)
+	}
 
 	p2 := startStoreHelper(t, addr)
 	defer func() { _ = p2.Process.Kill() }()

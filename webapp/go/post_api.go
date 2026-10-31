@@ -143,7 +143,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 			commitTried, committed = true, true
 			if !externalImage(c, userID) {
-				replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
+				replicateImageVis(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""), input.Visibility)
 			}
 			return c.JSON(http.StatusCreated, newPostResponse(post, user))
 		}
@@ -226,7 +226,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		committed = true
 		if !external {
-			replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
+			replicateImageVis(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""), input.Visibility)
 		}
 		return c.JSON(http.StatusCreated, newPostResponse(post, user))
 	}
@@ -367,7 +367,7 @@ func updatePostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		defer tx.Rollback()
 		var lockedUserID string
-		if err := tx.GetContext(ctx, &lockedUserID, `SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID); err != nil {
+		if err := tx.GetContext(ctx, &lockedUserID, lockUserRowSQL(`SELECT id FROM users WHERE id = $1`, userAdvPost), userID); err != nil {
 			return err
 		}
 		post, err := getPost(ctx, tx, input.PostID)
@@ -435,7 +435,7 @@ func deletePostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		defer tx.Rollback()
 		var lockedUserID string
-		if err := tx.GetContext(ctx, &lockedUserID, `SELECT id FROM users WHERE id = $1 FOR NO KEY UPDATE`, userID); err != nil {
+		if err := tx.GetContext(ctx, &lockedUserID, lockUserRowSQL(`SELECT id FROM users WHERE id = $1`, userAdvPost), userID); err != nil {
 			return err
 		}
 		post, err := getPost(ctx, tx, input.PostID)

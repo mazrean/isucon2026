@@ -657,6 +657,7 @@ func (r *memLogRepl) updateReady() {
 	if r.insync.Load() && r.applied.Load() >= r.target.Load() {
 		if !r.m.ready.Load() {
 			r.m.ready.Store(true)
+			go memPrebuildLoaded(r.m)
 			slog.Info("mem-logrepl: ready", "slot", r.slot, "lsn", pglogrepl.LSN(r.applied.Load()))
 		}
 	}
@@ -886,6 +887,7 @@ func lrLoad(ctx context.Context, q sqlx.QueryerContext) (*memData, error) {
 			minDate = &v
 		}
 	}
+	minDate = memFullMinDate(d, d.hotLoadFrom(ctx, q, minDate)) // MEM_FULL wins over ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go)
 	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow

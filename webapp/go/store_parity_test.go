@@ -31,8 +31,11 @@ func TestStoreWriteParity(t *testing.T) {
 	cfgS := ConfigFromEnv()
 	cfgO := ConfigFromEnv()
 	cfgO.DBName = "isureal_orig"
+	if v := os.Getenv("STORE_PARITY_ORIG_DB"); v != "" { // 他の担当と DB を共有しないとき
+		cfgO.DBName = v
+	}
 	cmd := exec.Command("../sql/init.sh")
-	cmd.Env = append(os.Environ(), "ISUREAL_DB_NAME=isureal_orig")
+	cmd.Env = append(os.Environ(), "ISUREAL_DB_NAME="+cfgO.DBName)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("init orig: %v %s", err, out)
 	}

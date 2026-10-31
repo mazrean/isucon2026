@@ -1,0 +1,45 @@
+
+������ *首���� 2�����ج�:首���ǭB������̹HĞ�<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008���Ğ"Ğ*�
+実行終了�time=2026-10-31T07:06:27.764Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T07:06:28.905Z level=INFO msg="user moved" user=rotor_5062 from=asia to=america
+time=2026-10-31T07:06:30.952Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T07:06:33.760Z level=INFO msg="america 1 日目: 7 人"
+time=2026-10-31T07:06:36.829Z level=INFO msg="asia 2 日目: 47 人"
+time=2026-10-31T07:06:39.846Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T07:06:42.763Z level=INFO msg="america 2 日目: 16 人"
+time=2026-10-31T07:06:45.769Z level=INFO msg="asia 3 日目: 135 人"
+time=2026-10-31T07:06:48.770Z level=INFO msg="europe 3 日目: 52 人"
+time=2026-10-31T07:06:51.767Z level=INFO msg="america 3 日目: 46 人"
+time=2026-10-31T07:06:52.636Z level=INFO msg="user moved" user=kuka6214 from=europe to=asia
+time=2026-10-31T07:06:54.011Z level=INFO msg="user moved" user=vinmia-6304 from=europe to=america
+time=2026-10-31T07:06:54.763Z level=INFO msg="asia 4 日目: 389 人"
+time=2026-10-31T07:06:55.464Z level=INFO msg="user moved" user=kuka6214 from=asia to=europe
+time=2026-10-31T07:06:55.537Z level=INFO msg="user moved" user=noamuwa_6689 from=asia to=america
+time=2026-10-31T07:06:56.693Z level=INFO msg="user moved" user=noamuwa_6689 from=america to=asia
+time=2026-10-31T07:06:57.537Z level=INFO msg="user moved" user=nean.6043 from=europe to=asia
+time=2026-10-31T07:06:57.835Z level=INFO msg="europe 4 日目: 131 人"
+time=2026-10-31T07:06:58.937Z level=INFO msg="user moved" user=anivyfu.6943 from=asia to=europe
+time=2026-10-31T07:06:59.267Z level=INFO msg="user moved" user=yaul.6920 from=asia to=europe
+time=2026-10-31T07:06:59.655Z level=INFO msg="user moved" user=rotor_5062 from=america to=europe
+time=2026-10-31T07:07:00.904Z level=INFO msg="user moved" user=mehemia-8298 from=asia to=america
+time=2026-10-31T07:07:01.061Z level=INFO msg="america 4 日目: 131 人"
+time=2026-10-31T07:07:02.100Z level=INFO msg="user moved" user=benmasa-8451 from=europe to=asia
+time=2026-10-31T07:07:03.654Z level=INFO msg="user moved" user=yabenya-8611 from=europe to=asia
+time=2026-10-31T07:07:03.774Z level=INFO msg="asia 5 日目: 799 人"
+time=2026-10-31T07:07:04.410Z level=INFO msg="user moved" user=vinmia-6304 from=america to=europe
+time=2026-10-31T07:07:06.786Z level=INFO msg="europe 5 日目: 337 人"
+time=2026-10-31T07:07:09.763Z level=INFO msg="america 5 日目: 320 人"
+time=2026-10-31T07:07:18.798Z level=INFO msg="europe 最終日（グランプリ）: 336 人"
+time=2026-10-31T07:07:18.817Z level=INFO msg="america 最終日（グランプリ）: 319 人"
+time=2026-10-31T07:07:18.838Z level=INFO msg="asia 最終日（グランプリ）: 798 人"
+time=2026-10-31T07:07:27.834Z level=INFO msg="グランプリ: アジア 642 人, ヨーロッパ 284 人, アメリカ 275 人"
+{
+  "pass": true,
+  "score": 184132,
+  "messages": [
+    "sate12611: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+ ���������(���������2������̹��
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

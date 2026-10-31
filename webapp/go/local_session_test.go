@@ -87,7 +87,7 @@ func TestLocalSessionSQL(t *testing.T) {
 		t.Fatal("quote accepted")
 	}
 	q, ok := localLoginSQL("0b3c-uuid", "abcdef", "sid", "thash")
-	if !ok || strings.Count(q, ";") != 2 || !strings.Contains(q, "FOR NO KEY UPDATE") ||
+	if !ok || strings.Count(q, ";") != 2 || !strings.Contains(q, map[bool]string{false: "FOR NO KEY UPDATE", true: "FOR KEY SHARE"}[userLockSplit]) ||
 		!strings.Contains(q, "reason = 'replaced'") || !strings.Contains(q, "status = 'active'") {
 		t.Fatalf("login sql: %s", q)
 	}

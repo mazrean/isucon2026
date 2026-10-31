@@ -113,6 +113,15 @@ func (c *memRespCache) get(k memRespKey) []byte {
 	return nil
 }
 
+// has: an entry usable now is stored for k (no hit / miss counted).
+func (c *memRespCache) has(k memRespKey) bool {
+	b := memURLBucket()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e := c.entries[k]
+	return e != nil && e.bucket == b
+}
+
 // staleAux returns the aux of an entry built in an earlier URL bucket (still
 // valid: any change to its tags removes it). Call after begin().
 func (c *memRespCache) staleAux(k memRespKey) any {
@@ -330,8 +339,9 @@ func serveMemories(h *HandlerContext, c *echo.Context, userID string, start, end
 		if b := rc.get(key); b != nil {
 			return c.JSONBlob(http.StatusOK, b)
 		}
+		h.Mem.memPrebuildTouch(userID)
 		fill = rc.begin()
-		if r, ok := fetchOrigin(c); ok {
+		if r, ok := fetchOriginDeadline(c, memOriginDeadline); ok {
 			if r.tags != nil {
 				rc.put(key, fill, r.body, r.tags)
 			}

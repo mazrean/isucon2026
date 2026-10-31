@@ -97,7 +97,11 @@ func NewServer(config *Config) *echo.Echo {
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
 	e.Use(FwdPriorityMiddleware(handlerContext))
+	if storeEnabled && memEnabled && storeWALDir != "" {
+		storeWALRecover(traceDSN(config.DatabaseDSN(), "storewal")) // pump のロード前に WAL の未適用分を PG へ
+	}
 	setupMem(handlerContext, e)
+	memPrebuildSetup(handlerContext)
 	registerLocalImg(e, handlerContext)
 	setupStore(handlerContext)
 	registerLocalSession(e, handlerContext)

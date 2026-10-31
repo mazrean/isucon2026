@@ -22,15 +22,20 @@ func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 			h.Store.mu.Lock()
 			defer h.Store.mu.Unlock()
 			h.Store.syncPG()
+			h.Store.walBeforeInit()
 		}
 		localImgPurgePeers(c.Request().Context())
 		asiaLocalImgPurge()
+		imgFriendPushResume()
 		imgCachePurgePeers(c.Request().Context())
 		cmd := exec.Command("../sql/init.sh")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			return err
+		}
+		if h.Store != nil {
+			h.Store.walAfterInit(c.Request().Context())
 		}
 		if h.memPump != nil {
 			h.memPump.resetAfterInitialize(c.Request().Context())

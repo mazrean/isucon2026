@@ -89,6 +89,16 @@ func registerHandler(h *HandlerContext) echo.HandlerFunc {
 		secretKey := uuid.NewString()
 		hash := sha256.Sum256([]byte(secretKey))
 		ctx := c.Request().Context()
+		if loginBatchOn {
+			user, created, err := registerBatch(ctx, h.DB, uuid.NewString(), input.Username, hex.EncodeToString(hash[:]), input.DisplayName, input.Region)
+			if err != nil {
+				return err
+			}
+			if !created {
+				return NewAPIError(http.StatusConflict, "username_taken")
+			}
+			return c.JSON(http.StatusCreated, registerResponse{SecretKey: secretKey, User: newSessionUserResponse(user)})
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err
@@ -141,13 +151,23 @@ func loginHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 		}
 		ctx := c.Request().Context()
+		if loginBatchOn {
+			user, session, err := loginBatch(ctx, h.DB, input.Username, input.SecretKey)
+			if errors.Is(err, errLoginInvalid) {
+				return NewAPIError(http.StatusUnauthorized, "invalid_credentials")
+			}
+			if err != nil {
+				return err
+			}
+			return c.JSON(http.StatusOK, loginResponse{Token: session.Token, User: newSessionUserResponse(user)})
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err
 		}
 		defer tx.Rollback()
 		var user User
-		err = tx.GetContext(ctx, &user, `SELECT id, username, secret_key_hash, display_name, bio, profile_image_id, region, account_type, status FROM users WHERE username = $1 FOR NO KEY UPDATE`, input.Username)
+		err = tx.GetContext(ctx, &user, lockUserRowSQL(`SELECT id, username, secret_key_hash, display_name, bio, profile_image_id, region, account_type, status FROM users WHERE username = $1`, userAdvSession), input.Username)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusUnauthorized, "invalid_credentials")
 		}
@@ -182,6 +202,12 @@ func logoutHandler(h *HandlerContext) echo.HandlerFunc {
 			if ok, err := h.Store.logout(c, session); ok {
 				return err
 			}
+		}
+		if loginBatchOn {
+			if err := logoutBatch(c.Request().Context(), h.DB, session.UserID, session.TokenHash); err != nil {
+				return err
+			}
+			return c.NoContent(http.StatusNoContent)
 		}
 		if err := InvalidateLoginSession(h.DB, session.UserID, session.TokenHash); err != nil {
 			return err

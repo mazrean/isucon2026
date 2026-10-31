@@ -109,6 +109,8 @@ type memData struct {
 	hotKnown bool
 	// rc: Memories / export response cache (mem_respcache.go), dropped with this memData
 	rc memRespCache
+	// pb: ISUREAL_MEMORIES_PREBUILD state for this load (mem_memories_prebuild.go)
+	pb memPrebuildState
 }
 
 type memSearchEnt struct{ off, ulen, dlen uint32 }
@@ -132,6 +134,8 @@ type memStore struct {
 	leaseUntil atomic.Int64 // unix nano
 
 	w memWM // ISUREAL_MEM_WATERMARK (peer のみ使う)
+
+	gp atomic.Pointer[gpSnap] // ISUREAL_GP_FAIR: GP の判定のキャッシュ (gp_fair.go)
 
 	marks sessMarks // ISUREAL_LOCAL_SESSION: 地域内で無効化中のユーザー (local_session.go)
 }

@@ -210,6 +210,34 @@ END: 2026-10-31 18:00 JST
 | 18156 | - | 158983 | 新既定 (PGCPU=0、KEEP_IDLE=0、OOM 対策) + POST_BATCH + FRIEND_BATCH + ASIA_LOCALIMG_FAST + IPBAN_ASYNC。d5 は asia 1007 / eu 370 / am 344 (3 地域とも過去最多)。GP 483/186/292 (eu の GP が 50% に崩れた)。503 あり、OOM なし → 4 つを既定に。eu の GP を切り分け |
 | 18394 | - | 141355 | 新既定 + DROP_DUP_IDX=1 (重複インデックス削除、戻していない)。asia 18/52/154/442/1038、eu 7/15/42/114/263、am 6/11/?/76/177、GP 306/258/173。eu/am が d2 から低い。asia1 の bw_out_allowance_exceeded がこの回で +667 (3836→4503) → 次は ASIA_LOCALIMG_FAST=0 で送信上限の仮説を見る |
 | 18619 | - | **165858** | 新既定 + ASIA_LOCALIMG_FAST=0 (インデックスは走行中は削除のまま、走行後に復元)。asia 18/52/152/436/977、eu 334 / am 232、GP 664/310/217 (asia の GP 68%)。asia1 bw_out +384 → LOCALIMG_FAST を既定 0 に |
+| 18975 | - | 148426 | 165858 の構成 (インデックスあり) + GP_FAIR=1 (FWD_LEAD 1000ms)。asia 18/46/130/374/960、eu 355 / am 294、GP 208/336/277 → eu/am の GP は 95% に上がり、asia の GP は 22% に崩れた。差し引きで負け。FWD_LEAD を縮めて再試行 |
+| 19256 | - | 153175 | 新既定 + GP_FAIR=1 (FWD_LEAD 200、判定の誤りで無効のはず) + MEMORIES_PREBUILD=1 + ORIGIN_DEADLINE 1500。asia 18/49/142/408/920、eu 345 / am 357 (am 最多)、GP 603/132/144 → eu/am の GP が 40% に崩れた。asia1 の prebuild が GP の時刻 (05:49) にも走っていて、originDeadline の打ち切りが 491 件 |
+| 19508 | - | **167878** | bare 既定 (18619 の構成、インデックスあり)。asia 18/52/151/428/1062、eu 20/56/151/380、am 16/56/148/311 (eu/am とも d5 は最多級)、GP 699/211/155 → 過去最高。インデックスは残す (確定)。残りは eu/am の GP (56% / 50%) |
+| 19708 | - | 157303 | bare + GP_FAIR=1 (修正版、ゲートは効いた、FWD_LEAD 1000)。asia 1046 / eu 349 / am 251、GP 342/341/242 → eu/am は 98% / 96% に上がり、asia は 33% に落ちた。GP の通過の合計は 925 (19508 は 1065) で負け |
+| 19953 | - | 156554 | bare + GP_FAIR=1 (FWD_LEAD 300) + MEM_PUSH_STATS=1。asia 932 / eu 327 / am 286 (d5、人数は揺れで低め)、GP 606/229/255 (合計 1090、19508 の 1065 を少し上回る) |
+| 20203 | - | 145506 | bare + VM=1 + ASIA2_GOMEM=900MiB:100 + LOGIN_BATCH=1。asia 970 / eu 347 / am 333、GP 375/321/286 (asia の GP 39%)。3 つ同時なので切り分けられない。不採用、1 つずつ試す |
+| 20463 | - | 165725 | bare + LOGIN_BATCH=1 だけ。asia 981 / eu 366 / am 293、GP 469/295/277 (合計 1041)。19508 (167,878) とほぼ同じ。20203 の崩れは LOGIN_BATCH ではない (VM か GOMEM)。LOGIN_BATCH は害なし、既定にするかはもう 1 本で決める |
+| 20730 | - | 163611 | bare + MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32 + MEM_PUSH_STATS=1。asia 875 / eu 262 / am 320、GP 683/191/283 (合計 1157、過去最多)。d4 の人数が低め (331/136/127) |
+| 20956 | - | 167525 | bare + IMG_FRIEND_PUSH=1 + _REV=1。asia 1046 / eu 327 / am 301、GP 579/311/271 (合計 1161)。d1→d2 は asia 2.78。先置き: asia1 sent 388 / 150MB、dropped 618 (キュー溢れ)。受け側 recv/hit: eu 247/25、am 187/14、asia1 856/88。害なし、19508 と同点圏。採用候補 |
+| 21263 | - | 151491 | bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1、PUSH_STATS off。asia 1043 / eu 357 / am 272、GP 593/294/250 (1137)。人数は 20956 と同じなのに -16k。新しい APPLY_CHUNK を疑う。次は APPLY_CHUNK 抜き |
+| 21553 | - | 155995 | bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + IMG_FRIEND_PUSH=1 + _REV=1 (APPLY_CHUNK なし)。asia 1040 / eu 365 / am 327、GP 367/332/321 (1020、asia 35%)。APPLY_CHUNK は無罪 (分析: fallback eu 349→196, am 159→2)。WM_EARLY は asia の GP を揺らす (78%→35%)。最終候補は WM_EARLY なしへ |
+| 21833 | - | **170531** | **新最高**。bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし。asia 1013 / eu 323 / am 331、GP 674/263/265 (1202、過去最多)。先置き: asia1 sent 1549 / 553MB、eu/am から各 1300〜1600 件。これを既定にする |
+| 22111 | - | 161903 | bare (新既定: APPLY_CHUNK=200 + IMG_FRIEND_PUSH 一式) の再現 1 本目。asia 1077 / eu 333 / am 325、GP 503/165/306 (974、eu 50%)。pass。揺れの範囲 (21833 は 170,531) |
+| 22736 | - | 163382 | bare (新既定 + STOP_AFTER_GP=1) の再現 2 本目。asia 1035 / eu 328 / am 335、GP 433/281/237 (951)。pass。新既定 3 本: 170.5 / 161.9 / 163.4 (平均 165.3k) |
+| 22980 | - | 166276 | 新既定 + LOGIN_BATCH=1。asia 1051 / eu 366 / am 243。pass。揺れの範囲 (新既定は平均 165.3k)。不採用でも可 |
+| 23341 | - | **180766** | **新最高**。新既定 + STORE=1 (AWAIT_PG=1、WAL なし)。asia 1105 / eu 321 / am 255。write-behind op dropped 0。asia の書き込みの律速 (users 行のロック) を STORE が外す。STORE を最終候補の本命に |
+| 23734 | - | 168944 | 退避先 (新既定 bare)、4 台同時の再起動の後に、デプロイなしで 1 本。asia 926 / eu 356 / am 331、GP 526/305/200。pass。画像の正本のスナップショットは一致 (PG 側の照合はこの回は SQL 誤りで未実施) |
+| 24013 | - | 166685 | 新既定 + STORE=1 の再現 2 本目。asia 934 / eu 416 / am 271、GP 529/103/…(eu 25%)。pass、dropped 0。STORE の 2 本: 180.8 / 166.7 (平均 173.7k、bare は 165k) |
+| 24289 | - | **188124** | **新最高**。新既定 + STORE=1 + USER_LOCK_SPLIT=1。asia 1042 / eu 376 / am 297、GP 586/246/226 (1058)。pass |
+| 24558 | - | 181989 | 新既定 + STORE=1 + FWD_POST_SLOTS=128。asia 704 / eu 353 / am 320、GP 489/302/210。pass。asia d5 が少ないのに 18.2 万。LOCK_SPLIT と重ねる候補 |
+| 25001 | - | 175990 | **STORE=1 + USER_LOCK_SPLIT=1 の再起動試験 pass**: 4 台同時の再起動、PG (posts/comments/friendships/login_sessions/friend_requests) と画像の正本のスナップショット一致、final-check OK。その後デプロイなしで 1 本 pass。asia 827 / eu 335 / am 369、GP 362/168/283 |
+| 25309 | - | 184337 | STORE=1 + USER_LOCK_SPLIT=1 + POST_TIMING=1 (計測)。asia 986 / eu 342 / am 281、GP 640/327/198。GP の投稿の段: localimg_sync p50 2.49s / p90 3.87s (最大)、apply p50 83ms、pgflush p50 85ms、jpeg p90 350ms、ack µs。律速は asia の画像の正本の syncfs → 次は ASIA_LOCALIMG_FSYNC=1 |
+| 25603 | - | 148725 | 新既定 + ASIA_LOCALIMG_FSYNC=1 (+POST_TIMING)。asia 999 / eu 253 / am **119**、GP 682/240/118。localimg_sync の GP p90 は 3.0s → 0.24s、asia の GP は過去最多。ただ am の d5 が 119 に崩れた (原因を調査中) |
+| 25833 | - | **FAIL** | NGX_REQBUF_OFF=1。post-validation で画像 403 + POST の通信失敗 (use of closed connection)。不採用 |
+| 26073 | - | **FAIL** | STORE_WAL。初期データの検証で GET /api/memories が 401 invalid_session: asia1 の Memories の miss を asia2 (MEMORIES_CACHE_ORIGIN) が PG で計算し、まだ PG に無いセッションを無効と判定。STORE_WAL のときは MEMORIES_CACHE_ORIGIN を空にするガードを足した |
+| 26281 | - | 184132 | 新既定 + ASIA_LOCALIMG_FSYNC=gp。GP 642/284/275 (計 1201、STORE 系で最多)、am の崩れなし。gp を既定にした |
+| 26530 | - | **199880** | 新既定 (FSYNC はまだ旧既定の syncfs) + NGX_BODYBUF=512k。d5 1177/390/362、GP 723/192/196。**新最高**。BODYBUF を既定に |
+| 26843 | - | 121444 | STORE_WAL 再挑戦 (ORIGIN 空、peer barrier)。pass だが d5 749/208/187、GP 328/177/170 と大きく下がる。重い読みが asia1 に戻った損と barrier の待ちが WAL の利得を上回る。不採用 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -306,3 +334,34 @@ END: 2026-10-31 18:00 JST
 - 14:40 asia1 の bw_out_allowance_exceeded は起動から累計 3836 (asia2 は 2)。ASIA_LOCALIMG_FAST で、asia1 が eu/am へ asia の画像を直接送るので、送信の上限に当たっている疑い (18156 の eu の GP 50%)。次の回の前後の差分で確かめる。
 - 18394 で DROP_DUP_IDX は効果なし (asia の GP 投稿 p50 4.04→5.19)。インデックスは次のベンチの合間に作り直す: CREATE INDEX CONCURRENTLY posting_windows_active / posts_author_id (001-schema.sql / 010-indexes.sql と同じ定義)。
 - インデックスの方針 (14:45): 元のスキーマどおり 2 つとも残す (DROP_DUP_IDX 既定 0、asia2 で作り直し済み)。18619 (165,858) は削除したままの回だったが、18394 の悪化の要因と切り分けられないので、安全側 (元の状態) に揃える。最終候補の 2 本はインデックスありで流す。
+- 訂正 (14:52): 18975 の GP_FAIR はゲートが一度も効いていなかった (GP の判定の誤り)。だから 18619 (165,858) → 18975 (148,426) の差は、GP_FAIR ではない。両者で違うのはインデックスの有無 (18619 は削除したまま、18975 は復元済み) とばらつき。インデックスの方針は、次の 2 本の結果を見て決め直す。
+- 19256 の読み: MEMORIES_PREBUILD は不採用。asia1 の prebuild の queue が GP にかけて 3807→11473 に増え、ORIGIN_DEADLINE の打ち切りも 0→486 に増えた。GP の直後に asia1 の完了数は 1339→56/秒に落ち、eu/am のフィードが最大 9s 止まった。入れるとしたら、d5 の前に止める形に限る。
+
+### 最終の走行の基準 (15:07 追記)
+- 最終スコアは最後の走行の点 (L459)。2 本の確認で、2 本目が 1 本目より低くても、2 本目が最終になる。
+- 17:30 以降に最終候補で 16 万台の pass が出たら、それ以上は流さない。低かったときだけ、時間があればもう 1 本流す。
+- 最後のベンチは 17:40 までに結果まで取り終える。17:40 以降は新しいベンチを積まない。
+- 追試の 75% 規定: 最高 167,878 の 75% は約 12.6 万。同じ系統の最近の回は 14.5〜16.8 万なので、点の揺れの余裕はある。ただし FAIL は 0 点 (16951 の OOM、13:20 のディスク満杯)。だから最終候補は、点の上振れより FAIL の芽が無いことで選ぶ。final-check.sh で確かめるのは、asia2 の空きメモリ、ディスク、PG の再起動の秒数、計測系 (pprof・DBTRACE・PUSH_STATS) が off であること。
+
+### WM_EARLY 一式は不採用 (15:28)
+- WM_EARLY 一式なし: 19508 167,878 / 98.0k、20463 165,725 / 93.8k、20956 167,525 / 93.4k。
+- WM_EARLY 一式あり: 20730 163,611 / 92.4k、21553 155,995 / 88.5k、21263 151,491 / 86.7k。
+- 数字は「点 / 要求の総数 (3 拠点の nginx の行数)」。一式は MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32。
+- 一式ありの 3 回は、どれもなしの 3 回より低い (平均で約 −1 万)。GP の合計は少し増えるが、通常時の処理量を削る。3 つのノブは分けて試していないので、どれが原因かは分からない。最終では 3 つとも 0 にする。
+
+### ユーザー指示「asia2 のメモリ + WAL」(15:25 受領) の扱い
+- 解釈: 書き込みの正本は、既存の STORE エンジン (asia1 = pump のメモリ) のまま。そこに fsync するローカル WAL を足し、PG (asia2) を応答の待ちから外す (純粋な write-behind)。
+- 正本を asia2 に移さない理由: asia2 はメモリが逼迫している (OOM の FAIL が 1 回、OOMScoreAdjust=500)。それに、ルーターは asia の書き込みを asia1 に送る。17:00 までに安定させられない。
+- フラグ: ISUREAL_STORE_WAL (既定 off)。PG を読む経路には pgApplied の待ちを入れる (RYW、slack 0)。担当は 2 つで、期限は 16:15。
+- 採用の基準: pass、整合性のメッセージ 0、点が ≥ 約 165k、Memories の最大が悪化しない、asia2 の空きメモリが減らない。満たさなければ off のまま。STORE=1 だけの回は 2 回負けている (13083、15806)。
+
+### PG 撤去の版を最終に使う条件 (15:38)
+- 退避先: 今の新既定 (bare。3 本平均 165k、全 pass)。新しい経路は全部フラグの後ろ (既定 off) のまま作る。凍結時点で、退避先を必ず再現できる状態に保つ。
+- PG 撤去の版 (STORE + STORE_WAL / MEM_FULL / COLD_ORIGIN) を最終に使うのは、17:30 までに次の 3 つを満たしたときだけ。
+  - (a) 全台を再起動 (asia2 → asia1 → eu → am) した後に、再起動前の投稿・画像・セッション・友達関係が全部残っている。
+  - (b) initialize で初期状態に戻る。
+  - (c) 同じ版で、公式ベンチ 2 本が pass。
+- 満たせなければ、迷わず退避先で最後の 2 本を流す。点が上がっても、再起動の回復の試験を通していない版は出さない (追試は 75% 以下か FAIL で再実行、3 回目で失格)。
+
+### ユーザー指示 (15:59)
+「安定性を気にしていられる点数ではないので、スコア上昇の導入・検証を最優先で回して」。ベンチは点を上げる変更の検証を最優先に回す。上がったノブは、すぐに deploy.sh の既定へ足していく (積み上げ式)。

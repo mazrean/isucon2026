@@ -27,7 +27,7 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 	var after []func()
 	timed := postTimingOn && name == "createPost"
 	applyStart := time.Now()
-	seq, err := e.write(func(t *storeTx) error {
+	seq, ack, err := e.write(func(t *storeTx) error {
 		var err error
 		respond, err = fn(t)
 		after = t.after
@@ -53,10 +53,10 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 			postTimingAdd("pgflush", time.Since(fs))
 		}
 		as := time.Now()
-		e.commitWait(c, seq)
+		e.commitWait(c, seq, ack)
 		postTimingAdd("ack", time.Since(as))
 	} else {
-		e.commitWait(c, seq)
+		e.commitWait(c, seq, ack)
 	}
 	if err != nil {
 		return true, err
@@ -193,7 +193,7 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		resp := newPostResponse(d.posts[postID].full(), u.User)
 		if !external {
 			regions := d.pushRegionsForPost(userID, input.Visibility, "")
-			t.after = append(t.after, func() { replicateImageTo(imageID, userID, "image/jpeg", imageData, regions) })
+			t.after = append(t.after, func() { replicateImageVis(imageID, userID, "image/jpeg", imageData, regions, input.Visibility) })
 		}
 		committed = true
 		return func() error {

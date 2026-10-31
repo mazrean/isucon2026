@@ -50,6 +50,9 @@ type memPushRequest struct {
 	PT int64 `json:"pt,omitempty"`
 	PS int64 `json:"ps,omitempty"`
 	PA int64 `json:"pa,omitempty"`
+	// SS (STORE の PG 読みの待ちが有効なときだけ): ps.mu の下で読んだ storeCurrentSeq。Seq までのバッチに
+	// store の seq SS までの変更がすべて含まれる (store は publish の後で seq を進める)。MEM_FULL の冷たい読み (mem_full.go) が使う。
+	SS int64 `json:"ss,omitempty"`
 }
 
 // peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
@@ -187,6 +190,9 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 	}
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
 	req.PT, req.PS, req.PA = storePGSample()
+	if last == ps.seq && storePGActiveAsia() {
+		req.SS = storeCurrentSeqFn()
+	}
 	if last == ps.seq {
 		req.WM = ps.wm // ps.wm は ps.seq に対して有効
 	}
@@ -254,8 +260,39 @@ func (ps *memPeers) heartbeatLoop() {
 //   - いずれでもなければ lastGrantAt + memLease + memClockSkew を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
 func (ps *memPeers) waitAcked() {
 	ps.mu.Lock()
-	defer ps.mu.Unlock()
 	target, epoch := ps.seq, ps.epoch
+	ps.mu.Unlock()
+	ps.waitAckedFor(memAckTarget{epoch: epoch, seq: target, ok: true})
+}
+
+// memAckTarget: 書き込みが待つべき (epoch, seq)。ISUREAL_MEM_ACK_OWN では publish 直後 (cycleMu 保持中) の値。
+type memAckTarget struct {
+	epoch string
+	seq   int64
+	ok    bool
+}
+
+// ISUREAL_MEM_ACK_OWN=1 (既定 0): STORE の書き込みは、自分の publish 直後の (epoch, seq) の ack だけを待ち、
+// PG の flush 待ちと並行に進める (後から publish された無関係な更新の ack を待たない)。
+// 正しさ: peer は seq を順に適用する (欠番は pull) ので、ack >= 自分の seq ならそれ以前の全バッチ
+// (この書き込みが読んだ状態すべて) を適用済み。epoch の切り替え・切断の扱いは waitAcked と同じ。
+var memAckOwn = os.Getenv("ISUREAL_MEM_ACK_OWN") == "1"
+
+// current: 今の (epoch, seq)。
+func (ps *memPeers) current() memAckTarget {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	return memAckTarget{epoch: ps.epoch, seq: ps.seq, ok: true}
+}
+
+// waitAckedFor: (epoch, seq) までを全 peer が反映する (または peer が確実に not-ready になる) まで待つ。
+func (ps *memPeers) waitAckedFor(at memAckTarget) {
+	if memSyncVisible {
+		defer memSyncStats.since(time.Now())
+	}
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	target, epoch := at.seq, at.epoch
 	var timer *time.Timer
 	defer func() {
 		if timer != nil {
@@ -273,7 +310,7 @@ func (ps *memPeers) waitAcked() {
 		var wakeAt time.Time
 		ok := true
 		for _, peer := range ps.peers {
-			if memWatermark && peer.wmMode {
+			if memWatermark && peer.wmMode && !memSyncVisible {
 				continue // peer の読みが watermark を待つ
 			}
 			if ps.epoch == epoch && peer.acked >= target {
@@ -439,6 +476,7 @@ type memDump struct {
 	RealMojis   []memRealMojiRow      `json:"realmojis"`
 	WM          int64                 `json:"wm,omitempty"`      // Seq に対して有効な watermark
 	WMMode      bool                  `json:"wmMode,omitempty"`  // pump が ack を待たずに返す (peer は watermark を待つ)
+	SyncVisible bool                  `json:"sv,omitempty"`      // ISUREAL_MEM_SYNC_VISIBLE: pump は wm モードの peer の ack も待つ
 	HotFrom     string                `json:"hotFrom,omitempty"` // memData.hotFrom (DateOnly); 無ければ不明
 }
 
@@ -550,6 +588,7 @@ func registerMemPumpRoutes(e *echo.Echo, p *memPump) {
 		p.peers.mu.Lock()
 		dump.Epoch, dump.Seq = p.peers.epoch, p.peers.seq
 		dump.WM, dump.WMMode = p.peers.wm, memWatermark
+		dump.SyncVisible = memSyncVisible
 		p.peers.mu.Unlock()
 		p.peers.markWMMode(c.Request().RemoteAddr, c.QueryParam("wm") == "1")
 		p.cycleMu.Unlock()
@@ -602,6 +641,9 @@ type memReceiver struct {
 	seqCond *sync.Cond
 	// まだバッチが届いていない seq の watermark (mu 下)
 	wmPending []memWMMsg
+	// MEM_FULL の冷たい読みの待ち (mem_full.go): 適用済みの pump の seq (-1 = 未同期) と store の seq
+	appliedPump, appliedStore atomic.Int64
+	coldNotify                memNotify
 }
 
 func newMemReceiver(m *memStore) *memReceiver {
@@ -619,6 +661,8 @@ func (r *memReceiver) invalidate() uint64 {
 	r.epoch = ""
 	r.wmPending = nil
 	r.m.w.set(0)
+	r.appliedPump.Store(-1)
+	r.appliedStore.Store(0)
 	r.gen++
 	g := r.gen
 	r.mu.Unlock()
@@ -662,7 +706,13 @@ func (r *memReceiver) resyncLoop() {
 
 func (r *memReceiver) resyncOnce(g uint64) error {
 	start := time.Now()
-	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark], 40*time.Second)
+	if memFull && !r.m.ready.Load() {
+		// 全期間の memData (~0.9GB) を 2 つ同時に持たない: 作り直す前に古いものを捨てる (not-ready の間は誰も読まない)
+		r.m.mu.Lock()
+		r.m.d = newMemData()
+		r.m.mu.Unlock()
+	}
+	resp, cancel, err := memGet(r.pumpAddr, "/internal/mem/dump?wm="+map[bool]string{true: "1", false: "0"}[memWatermark || memFull], 40*time.Second)
 	if err != nil {
 		return err
 	}
@@ -680,6 +730,11 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	if err != nil {
 		return err
 	}
+	if memFull {
+		if err := memLoadCold(d); err != nil {
+			return err
+		}
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.gen != g {
@@ -689,11 +744,16 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.d = d
 	r.m.mu.Unlock()
 	r.epoch, r.seq = dump.Epoch, dump.Seq
+	r.setApplied()
 	r.wmPending = nil
 	r.m.w.pumpWM.Store(memWatermark && dump.WMMode)
+	r.m.w.pumpSync.Store(memSyncVisible && dump.SyncVisible)
+	r.m.w.knownSeq = 0                 // epoch が変わると seq の系列が変わる
+	r.m.w.syncSeen(dump.Seq, dump.Seq) // dump の Seq まで反映済み
 	r.m.w.set(dump.WM)
 	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
 	r.m.ready.Store(true)
+	go memPrebuildLoaded(r.m)
 	slog.Info("mem: synced from pump", "seq", dump.Seq, "users", len(d.users), "posts", len(d.posts), "elapsed", time.Since(start))
 	return nil
 }
@@ -794,6 +854,7 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 			return false
 		}
 		r.seq = b.Seq
+		r.setApplied()
 	}
 	if req.Seq > r.seq {
 		if st != nil {
@@ -808,6 +869,11 @@ func (r *memReceiver) pushT(req memPushRequest, st *memPushTiming) bool {
 			go r.invalidate()
 			return false
 		}
+	}
+	r.m.w.syncSeen(req.Seq, r.seq)
+	if req.SS > 0 && r.seq >= req.Seq && req.SS > r.appliedStore.Load() {
+		r.appliedStore.Store(req.SS)
+		r.coldNotify.wake()
 	}
 	if !req.Probe {
 		r.m.extendLeaseFrom(req.SentAt)
@@ -874,6 +940,7 @@ func (r *memReceiver) fillGap(epoch string, to int64) error {
 			return err
 		}
 		r.seq = mb.Seq
+		r.setApplied()
 		r.seqCond.Broadcast()
 	}
 	if r.seq < to {

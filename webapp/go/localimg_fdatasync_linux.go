@@ -18,5 +18,3 @@ func fdatasyncPath(p string) error {
 	}
 	return nil
 }
-
-func fdatasyncFile(f *os.File) error { return syscall.Fdatasync(int(f.Fd())) }

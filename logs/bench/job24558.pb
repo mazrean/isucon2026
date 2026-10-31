@@ -1,0 +1,38 @@
+
+����� *������2��������:�������B��������H��<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008����"�*�
+実行終了�time=2026-10-31T06:48:24.024Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T06:48:27.200Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T06:48:30.018Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T06:48:33.046Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T06:48:36.279Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T06:48:36.656Z level=INFO msg="user moved" user=samusol.5347 from=asia to=america
+time=2026-10-31T06:48:39.022Z level=INFO msg="america 2 日目: 19 人"
+time=2026-10-31T06:48:42.026Z level=INFO msg="asia 3 日目: 145 人"
+time=2026-10-31T06:48:44.303Z level=INFO msg="user moved" user=martsuan_5660 from=asia to=europe
+time=2026-10-31T06:48:45.049Z level=INFO msg="europe 3 日目: 54 人"
+time=2026-10-31T06:48:48.038Z level=INFO msg="america 3 日目: 51 人"
+time=2026-10-31T06:48:51.026Z level=INFO msg="asia 4 日目: 419 人"
+time=2026-10-31T06:48:54.058Z level=INFO msg="europe 4 日目: 149 人"
+time=2026-10-31T06:48:56.750Z level=INFO msg="user moved" user=hahira.7333 from=asia to=europe
+time=2026-10-31T06:48:57.125Z level=INFO msg="america 4 日目: 138 人"
+time=2026-10-31T06:48:58.637Z level=INFO msg="user moved" user=leomo_8770 from=europe to=asia
+time=2026-10-31T06:49:00.015Z level=INFO msg="user moved" user=noarais-7214 from=asia to=europe
+time=2026-10-31T06:49:00.063Z level=INFO msg="asia 5 日目: 704 人"
+time=2026-10-31T06:49:03.053Z level=INFO msg="europe 5 日目: 353 人"
+time=2026-10-31T06:49:03.311Z level=INFO msg="user moved" user=tosol9728 from=america to=europe
+time=2026-10-31T06:49:06.070Z level=INFO msg="america 5 日目: 320 人"
+time=2026-10-31T06:49:15.212Z level=INFO msg="europe 最終日（グランプリ）: 353 人"
+time=2026-10-31T06:49:15.368Z level=INFO msg="america 最終日（グランプリ）: 319 人"
+time=2026-10-31T06:49:15.420Z level=INFO msg="asia 最終日（グランプリ）: 703 人"
+time=2026-10-31T06:49:24.082Z level=INFO msg="グランプリ: アジア 489 人, ヨーロッパ 302 人, アメリカ 210 人"
+{
+  "pass": true,
+  "score": 181989,
+  "messages": [
+    "herinu7917: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "maxdanmax_14233: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+ ���������(���������2����������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

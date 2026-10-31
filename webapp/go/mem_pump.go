@@ -85,6 +85,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		h.Mem = m
 		h.memPump = p
 		memCurrentPump = p
+		gpMem.Store(m)
 		if err := ensureMemSchema(h.DB); err != nil {
 			slog.Error("mem: schema setup failed; mem disabled", "error", err)
 			h.Mem, h.memPump = nil, nil
@@ -117,6 +118,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		m := &memStore{d: newMemData(), useLease: true}
 		h.Mem = m
 		memCurrentPeerStore = m
+		memLocalRegion = h.Config.Region
 		if memWatermark {
 			e.Use(memReadWait(m))
 		}
@@ -124,7 +126,14 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		if coldOrigin != "" {
 			e.Use(coldMiddleware(true)) // cold_origin.go
 		}
-		registerMemPeerRoutes(e, newMemReceiver(m))
+		if memFull {
+			memFullDB = h.DB
+		}
+		rcv := newMemReceiver(m)
+		if memFull {
+			e.Use(memColdWaitMiddleware(rcv))
+		}
+		registerMemPeerRoutes(e, rcv)
 	}
 }
 
@@ -389,6 +398,7 @@ func (p *memPump) reload() error {
 		return fmt.Errorf("mem: invalidated during reload")
 	}
 	p.m.ready.Store(true)
+	go memPrebuildLoaded(p.m)
 	slog.Info("mem: loaded", "users", len(d.users), "posts", len(d.posts), "windows", len(d.windows), "elapsed", time.Since(start))
 	return nil
 }
@@ -469,6 +479,7 @@ func loadMemFromDB(ctx context.Context, db *sqlx.DB) (*memData, string, error) {
 			minDate = &v
 		}
 	}
+	minDate = memFullMinDate(d, d.hotLoadFrom(ctx, db, minDate)) // MEM_FULL wins over ISUREAL_MEM_HOT_EXTRA_DAYS (mem_hot_extend.go)
 	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow
@@ -566,7 +577,8 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 // session (RegionMiddleware), and moving region is itself a write whose full
 // barrier first waits for every earlier change, these sessions included.
 func localOnlyWrite(req *http.Request) bool {
-	if !localOnlyWriteOn || req.Header.Get(forwardedRegionHeader) != "" {
+	// ISUREAL_MEM_SYNC_VISIBLE: login は古いセッションを無効化する (「見えてはいけない」側) ので同期にする。
+	if memSyncVisible || !localOnlyWriteOn || req.Header.Get(forwardedRegionHeader) != "" {
 		return false
 	}
 	switch req.URL.Path {

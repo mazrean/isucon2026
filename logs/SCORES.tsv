@@ -64,3 +64,31 @@
 14:37	79ec73a	job=18156 state=4 pass=true スコア=158983 種別エラー数=map[]	新既定 (PGCPU=0、KEEP_IDLE=0、OOM 対策) + POST_BATCH + FRIEND_BATCH (行ロック中の往復 0) + ASIA_LOCALIMG_FAST (eu/am が asia 画像を asia1 から直接) + IPBAN_ASYNC
 14:40	619f89b	job=18394 state=4 pass=true スコア=141355 種別エラー数=map[]	新既定 (POST/FRIEND_BATCH、LOCALIMG_FAST、IPBAN_ASYNC) + DROP_DUP_IDX=1 (重複インデックス 2 つを削除し、投稿 tx を fast-path 16 個以内に)。18156 の再現性も見る
 14:43	ad0d760	job=18619 state=4 pass=true スコア=165858 種別エラー数=map[]	新既定 (インデックス削除済み) で ASIA_LOCALIMG_FAST=0 (asia1 の送信上限 bw_out の仮説を切り分け)
+14:47	4e86192	job=18975 state=4 pass=true スコア=148426 種別エラー数=map[]	新既定 (165858 の構成、インデックス復元済み) + GP_FAIR=1 (GP 中の投稿を締め切り順、eu/am は 1s 先行)
+14:50	cdb06ec	job=19256 state=4 pass=true スコア=153175 種別エラー数=map[]	新既定 + GP_FAIR=1 (FWD_LEAD 200ms に縮める) + MEMORIES_PREBUILD=1 + MEMORIES_ORIGIN_DEADLINE_MS=1500 (検証役の過去月 Memories、今月の外れの締め切り)
+14:52	409cf81	job=19508 state=4 pass=true スコア=167878 種別エラー数=map[]	bare 既定 (18619 の構成、インデックスあり) — 最終候補の基準 1 本目
+14:55	29e9648	job=19708 state=4 pass=true スコア=157303 種別エラー数=map[]	bare 既定 + GP_FAIR=1 (9defa59、GP の判定を修正、SLOTS 52、FWD_LEAD 1000)
+14:58	402ab79	job=19953 state=4 pass=true スコア=156554 種別エラー数=map[]	bare + GP_FAIR=1 (FWD_LEAD 300ms) + MEM_PUSH_STATS=1 (GP 中の pump の push の計測)
+15:01	34fe7dc	job=20203 state=4 pass=true スコア=145506 種別エラー数=map[]	bare 既定 + VM=1 (asia1/asia2 の vm の watermark・compaction・dirty) + ASIA2_GOMEM=900MiB:100 + LOGIN_BATCH=1 (login/logout/register を 1 往復)
+15:05	4e34776	job=20463 state=4 pass=true スコア=165725 種別エラー数=map[]	bare + LOGIN_BATCH=1 だけ
+15:07	4303c59	job=20730 state=4 pass=true スコア=163611 種別エラー数=map[]	bare + MEM_WM_EARLY=1 + MEM_PUSH_INFLIGHT=8 + MEM_IDLE_CONNS=32 + MEM_PUSH_STATS=1 (eu/am の WM の待ち: push の枠 4 の順番待ちを解消、反映の前に配信)
+15:11	a5d63a0	job=20956 state=4 pass=true スコア=167525 種別エラー数=map[]	bare + IMG_FRIEND_PUSH=1 + IMG_FRIEND_PUSH_REV=1 (画像の事前転送: 作者の友達のいる地域へ、送信が空いている間だけ、GP 中は停止。逆向きも)
+15:13	6971401	job=21263 state=4 pass=true スコア=151491 種別エラー数=map[]	bare + WM_EARLY 一式 (INFLIGHT 8, IDLE_CONNS 32) + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1、PUSH_STATS off (最終候補の組み合わせ)
+15:17	7d55bc7	job=21553 state=4 pass=true スコア=155995 種別エラー数=map[]	bare + WM_EARLY 一式 (INFLIGHT 8, IDLE 32) + IMG_FRIEND_PUSH=1 + _REV=1、APPLY_CHUNK なし、PUSH_STATS off
+15:20	328da3c	job=21833 state=4 pass=true スコア=170531 種別エラー数=map[]	bare + MEM_APPLY_CHUNK=200 + IMG_FRIEND_PUSH=1 + _REV=1 + _FRESH=1 + _WINDOW_MB=50 (RECV_MB 128)、WM_EARLY なし (最終候補)
+15:23	f9639fb	job=22111 state=4 pass=true スコア=161903 種別エラー数=map[]	bare (新既定: APPLY_CHUNK=200 + IMG_FRIEND_PUSH 一式) の再現 1 本目
+15:30	0163b32	job=22736 state=4 pass=true スコア=163382 種別エラー数=map[]	bare (新既定 + IMG_FRIEND_PUSH_STOP_AFTER_GP=1) の再現 2 本目
+15:34	bc0d428	job=22980 state=4 pass=true スコア=166276 種別エラー数=map[]	新既定 + LOGIN_BATCH=1 (台本の律速 3 位 login を 1 往復化)
+15:38	e482103	job=23341 state=4 pass=true スコア=180766 種別エラー数=map[]	新既定 + STORE=1 (AWAIT_PG=1、WAL なし。WAL の土台の確認)
+15:42	a4180fe	job=23734 state=4 pass=true スコア=168944 種別エラー数=map[]	退避先 (新既定 bare) 全台同時再起動の後の 1 本
+15:45	88bd86e	job=24013 state=4 pass=true スコア=166685 種別エラー数=map[]	新既定 + STORE=1 の再現 2 本目
+15:47	9cb553c	job=24289 state=4 pass=true スコア=188124 種別エラー数=map[]	新既定 + STORE=1 + USER_LOCK_SPLIT=1
+15:50	2e9df7e	job=24558 state=4 pass=true スコア=181989 種別エラー数=map[]	新既定 + STORE=1 + FWD_POST_SLOTS=128
+15:55	0ed6ada	job=25001 state=4 pass=true スコア=175990 種別エラー数=map[]	STORE=1 + USER_LOCK_SPLIT=1、4 台同時の再起動の後に、デプロイなしで 1 本
+15:58	7f1c1d9	job=25309 state=4 pass=true スコア=184337 種別エラー数=map[]	STORE=1 + USER_LOCK_SPLIT=1 + POST_TIMING=1 (投稿の段ごとの計測、最終には使わない)
+16:01	b4be5de	job=25603 state=4 pass=true スコア=148725 種別エラー数=map[]	新既定 (STORE+SPLIT) + ASIA_LOCALIMG_FSYNC=1 (+POST_TIMING 計測)
+16:04	c311ac3	job=25833 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT) + NGX_REQBUF_OFF=1
+16:04	c311ac3	job=26073 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL=/home/isucon/storewal
+16:08	fa8a55f	job=26281 state=4 pass=true スコア=184132 種別エラー数=map[]	新既定 (STORE+SPLIT) + ASIA_LOCALIMG_FSYNC=gp
+16:12	15651ce	job=26530 state=4 pass=true スコア=199880 種別エラー数=map[]	新既定 (STORE+SPLIT) + NGX_BODYBUF=512k
+16:14	7b08446	job=26843 state=4 pass=true スコア=121444 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL (再挑戦: MEMORIES_CACHE_ORIGIN 空、peer にも WAL の barrier)

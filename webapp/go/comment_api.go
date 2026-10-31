@@ -57,7 +57,13 @@ func createCommentHandler(h *HandlerContext) echo.HandlerFunc {
 		defer tx.Rollback()
 		for _, id := range slices.Compact([]string{min(actor, post.AuthorID), max(actor, post.AuthorID)}) {
 			var lockedID string
-			if err := tx.GetContext(ctx, &lockedID, `SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE`, id); err != nil {
+			if err := tx.GetContext(ctx, &lockedID, lockUserRowSQL(`SELECT id FROM users WHERE id=$1`, userAdvNone), id); err != nil {
+				return err
+			}
+		}
+		if userLockSplit {
+			// 2 人の行 (min → max) の KEY SHARE の後に、組の advisory (beginRelationshipTx と同じキー)。
+			if _, err := tx.ExecContext(ctx, pairAdvisorySQL, pairKey(actor, post.AuthorID)); err != nil {
 				return err
 			}
 		}
@@ -159,7 +165,8 @@ func deleteCommentHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		defer tx.Rollback()
 		var lockedID string
-		if err := tx.GetContext(ctx, &lockedID, `SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE`, actor); err != nil {
+		// split: KEY SHARE だけ (退会とは排他)。二重削除は comments の行の FOR UPDATE が直列にする。
+		if err := tx.GetContext(ctx, &lockedID, lockUserRowSQL(`SELECT id FROM users WHERE id=$1`, userAdvNone), actor); err != nil {
 			return err
 		}
 		var record struct {

@@ -32,6 +32,7 @@ for h in "${HOSTS[@]}"; do
       setenv() { grep -q "^$1=" /home/isucon/env.sh && sed -i "s|^$1=.*|$1=$2|" /home/isucon/env.sh || echo "$1=$2" >> /home/isucon/env.sh; }
       setenv ISUREAL_DB_READ_HOST '"${READ_HOST:-192.168.4.10}"'
       setenv ISUREAL_NODE_NAME '"$h"'
+      setenv ISUREAL_PPROF_ADDR 127.0.0.1:6060
       sudo nginx -t -q
       sudo install -D -m 644 /tmp/20-stop.conf /etc/systemd/system/isureal-go.service.d/20-stop.conf && sudo systemctl daemon-reload
       install -m 755 /tmp/isureal.new /home/isucon/webapp/go/isureal

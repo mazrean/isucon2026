@@ -91,6 +91,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 			return
 		}
 		e.Use(memWriteBarrier(p))
+		setupStorePGBarrier(e, false)
 		if asiaPostCapN > 0 {
 			e.Use(asiaPostCapMiddleware(h)) // barrier の内側 (gp_postcap.go)
 		}
@@ -109,6 +110,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		if memWatermark {
 			e.Use(memReadWait(m))
 		}
+		setupStorePGBarrier(e, true)
 		registerMemPeerRoutes(e, newMemReceiver(m))
 	}
 }

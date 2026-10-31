@@ -46,6 +46,10 @@ type memPushRequest struct {
 	Probe bool `json:"p,omitempty"`
 	// watermark (ISUREAL_MEM_WATERMARK): Seq までのバッチに、この時刻より前に応答が返ったコミットがすべて含まれる。
 	WM int64 `json:"w,omitempty"`
+	// ISUREAL_STORE_WAL: asia1 の標本 (時刻, その後に読んだ store の seq, PG に反映済みの seq)。store_pgbarrier.go
+	PT int64 `json:"pt,omitempty"`
+	PS int64 `json:"ps,omitempty"`
+	PA int64 `json:"pa,omitempty"`
 }
 
 // peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
@@ -182,6 +186,7 @@ func (ps *memPeers) kick(peer *memPeer, beat bool) {
 		memPushStats.recordQueue(now.Sub(batches[0].at))
 	}
 	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
+	req.PT, req.PS, req.PA = storePGSample()
 	if last == ps.seq {
 		req.WM = ps.wm // ps.wm は ps.seq に対して有効
 	}
@@ -906,6 +911,7 @@ func registerMemPeerRoutes(e *echo.Echo, r *memReceiver) {
 			go r.invalidate()
 			return c.NoContent(http.StatusBadRequest)
 		}
+		storePGPeer.update(req.PT, req.PS, req.PA)
 		ok := r.pushTimed(req, recv)
 		if ok {
 			r.wmAfterPush(req)
@@ -920,6 +926,7 @@ func registerMemPeerRoutes(e *echo.Echo, r *memReceiver) {
 		if err := json.NewDecoder(c.Request().Body).Decode(&msg); err != nil {
 			return c.NoContent(http.StatusBadRequest)
 		}
+		storePGPeer.update(msg.PT, msg.PS, msg.PA)
 		r.wmMsg(msg)
 		return c.NoContent(http.StatusOK)
 	})

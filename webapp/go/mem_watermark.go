@@ -303,6 +303,9 @@ type memWMMsg struct {
 	Epoch string `json:"e"`
 	Seq   int64  `json:"q"`
 	WM    int64  `json:"w"`
+	PT    int64  `json:"pt,omitempty"` // ISUREAL_STORE_WAL の標本 (store_pgbarrier.go)
+	PS    int64  `json:"ps,omitempty"`
+	PA    int64  `json:"pa,omitempty"`
 }
 
 const memWMInflight = 8 // peer ごとの並列数 (RTT 100ms / 周期 20ms ≒ 5)
@@ -315,6 +318,7 @@ func (ps *memPeers) setWM(wm int64) {
 		ps.wm = wm
 	}
 	msg := memWMMsg{Epoch: ps.epoch, Seq: ps.seq, WM: ps.wm}
+	msg.PT, msg.PS, msg.PA = storePGSample()
 	for _, peer := range ps.peers {
 		if !peer.wmMode || peer.wmInflight >= memWMInflightLimit() {
 			continue

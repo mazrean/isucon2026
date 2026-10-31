@@ -49,3 +49,4 @@
 13:39	aece7d6	job=13426 state=4 pass=true スコア=147756 種別エラー数=map[]	MEMORIES_CACHE=1 + HEAVY_TARGET=127.0.0.1 (asia の重い読みを asia1 のキャッシュで) + SSE connectedAt 修正 on 既定
 13:42	9c584a7	job=13667 state=4 pass=true スコア=139684 種別エラー数=map[]	既定 (MEMORIES_CACHE=1、重い読みは asia2) + 画像 INSERT 専用プール (5aaecc5) + login 往復 7→4 (c26b4c0) + ASIA_LOCALIMG=1
 13:45	67c8678	job=13916 state=4 pass=true スコア=67391 種別エラー数=map[]	LOGREPL=1
+13:48	6e589d6	job=14134 state=4 pass=true スコア=146362 種別エラー数=map[]	既定 (MEMORIES_CACHE=1、往復削減 3 つ、ASIA_LOCALIMG=0、LOGREPL=0) の確認

@@ -26,3 +26,4 @@
 12:22	6e86484	job=7706 state=4 pass=true スコア=93068 種別エラー数=map[]	revert 全投稿メモリ化、AVX-512 署名 + PREVALIDATE + STORAGE EXTERNAL + lease/barrier 修正なし(旧 mem)
 12:25	0b781f4	job=7851 state=4 pass=true スコア=111842 種別エラー数=map[]	LOCALIMG=1 (eu/am 画像を自地域保存、asia1 はメタデータのみ)
 12:27	fc4e33c	job=8010 state=4 pass=true スコア=84958 種別エラー数=map[]	FRONT=1 (asia1 の nginx 撤去、Go が :80)
+12:28	f5d3543	job=8178 state=4 pass=false スコア=0 種別エラー数=map[]	既定 (LOCALIMG=1, nginx あり) の再現確認

@@ -12,6 +12,9 @@ import (
 )
 
 const imageURLLifetime = 24 * time.Hour
+
+// imageURLNow is the clock of the signed-URL exp bucket (tests move it).
+var imageURLNow = time.Now
 const imageSignatureIterations = 1000
 
 // signed URLs are reused while they stay valid for at least this long, so the
@@ -78,7 +81,7 @@ func signedImageURL(user User, imageID string) string {
 	ck.imageID = imageID
 	// exp is floored to a shared 10-minute boundary (lifetime 23h50m-24h), so
 	// every process and host signs/verifies the same (image, exp) pair.
-	exp := time.Now().Add(imageURLLifetime).Unix()
+	exp := imageURLNow().Add(imageURLLifetime).Unix()
 	exp -= exp % int64((imageURLLifetime-imageURLReuseMargin)/time.Second)
 	signedURLCacheMu.RLock()
 	entry, ok := signedURLCache[ck]

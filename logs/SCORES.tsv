@@ -36,3 +36,4 @@
 12:57	9a4def2	job=10322 state=4 pass=true スコア=104859 種別エラー数=map[]	STORE=1 (asia1 の書き込みをメモリで検証・反映) + 窓の修正 + JPEG 委譲 asia2 のみ + JC=1
 13:00	aeb2bd5	job=10496 state=4 pass=true スコア=111122 種別エラー数=map[]	JPEG 中間 (ローカル 2 枠 Rust + asia2 2 + eu/am 各 1・300ms) + 画像 push の絞り込み (IMG_PUSH_FILTER)
 13:03	3f16959	job=10890 state=4 pass=false スコア=0 種別エラー数=map[]	LOGREPL=1 (論理レプリカでメモリ反映、asia2 watchdog) + 既定
+13:07	8d2fcbc	job=11091 state=4 pass=true スコア=104839 種別エラー数=map[]	既定 + FOR KEY SHARE (GP の窓) + asia1 CPU 削減 3 本

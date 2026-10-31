@@ -719,6 +719,7 @@ func asiaLocalImgKeep(ctx context.Context, id, owner string, data []byte) bool {
 		write = writeFileSync
 	}
 	dataPath, metaPath := asiaStore.p("data", id), asiaStore.p("meta", id)
+	fwdSlotYield(ctx) // 画像の書き込みと sync (どの FSYNC モードでも) は I/O の待ち
 	if err := write(dataPath, data); err != nil {
 		slog.Warn("asia localimg data", "error", err)
 		return false

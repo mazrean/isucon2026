@@ -27,12 +27,12 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 	var after []func()
 	timed := postTimingOn && name == "createPost"
 	applyStart := time.Now()
-	seq, ack, err := e.write(func(t *storeTx) error {
+	seq, ack, err := e.writePrio(func(t *storeTx) error {
 		var err error
 		respond, err = fn(t)
 		after = t.after
 		return err
-	})
+	}, name != "createPost")
 	if err == errStoreFallback {
 		e.count(name, 1)
 		e.syncPG()
@@ -48,6 +48,7 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 	if timed {
 		postTimingAdd("apply", time.Since(applyStart))
 		if seq != nil && storeAwaitPG {
+			fwdSlotYield(c.Request().Context())
 			fs := time.Now()
 			e.waitFlushed(seq) // commitWait と同じ待ち (先に済ませて時間を分けるだけ。commitWait の中の待ちは即座に返る)
 			postTimingAdd("pgflush", time.Since(fs))

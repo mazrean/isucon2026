@@ -121,11 +121,13 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 			StartsAt  time.Time `db:"starts_at"`
 		}
 		// FOR UPDATE だと同一リージョンの投稿がすべて直列化されるため FOR SHARE にする。
+		// ISUREAL_PW_KEYSHARE=1 (既定) は FOR KEY SHARE: ended_at はキー列ではない (部分一意索引の述語のみ) ので
+		// 窓を閉じる UPDATE (FOR NO KEY UPDATE) と衝突せず、GP の窓の開始が走行中の投稿を待たない。
 		// 投稿期間の終了 (UPDATE ended_at) は進行中の投稿のコミットを待つので整合性は変わらない。
-		err = tx.GetContext(ctx, &window, `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR SHARE`, user.Region)
+		err = tx.GetContext(ctx, &window, windowLockSQL, user.Region)
 		if errors.Is(err, sql.ErrNoRows) {
 			// 投稿期間の切り替えと競合した場合、新しいスナップショットで取り直す (元実装どおり)。
-			err = tx.GetContext(ctx, &window, `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR SHARE`, user.Region)
+			err = tx.GetContext(ctx, &window, windowLockSQL, user.Region)
 		}
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -417,3 +419,10 @@ func deletePostHandler(h *HandlerContext) echo.HandlerFunc {
 		return c.NoContent(http.StatusNoContent)
 	}
 }
+
+var windowLockSQL = func() string {
+	if os.Getenv("ISUREAL_PW_KEYSHARE") == "0" {
+		return `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR SHARE`
+	}
+	return `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR KEY SHARE`
+}()

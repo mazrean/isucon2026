@@ -131,6 +131,13 @@ func transitionFriendRequestHandler(h *HandlerContext) echo.HandlerFunc {
 		if (status == "cancelled" && actor != request.RequesterID) || (status != "cancelled" && actor != request.RecipientID) {
 			return NewAPIError(http.StatusForbidden, "relationship_action_forbidden")
 		}
+		if friendBatchOn {
+			resp, err := transitionFriendRequestBatch(ctx, h.DB, request, status)
+			if err != nil {
+				return err
+			}
+			return c.JSON(http.StatusOK, resp)
+		}
 		tx, err := beginRelationshipTx(ctx, h.DB, request.RequesterID, request.RecipientID)
 		if err != nil {
 			return err

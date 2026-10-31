@@ -79,3 +79,64 @@ func TestFriendBatchConcurrent(t *testing.T) {
 		t.Fatal("dup:", err)
 	}
 }
+
+// accept / reject / cancel を同じ申請に並行に投げても、遷移するのは 1 つだけ。accept が勝ったときだけ友達になる。
+func TestFriendTransitionBatchConcurrent(t *testing.T) {
+	db := postBatchTestDB(t)
+	ctx := context.Background()
+	statuses := []string{"accepted", "rejected", "cancelled"}
+	for round := 0; round < 6; round++ {
+		a, b := postBatchSeed(t, db, "asia"), postBatchSeed(t, db, "asia")
+		resp, err := createFriendRequestBatch(ctx, db, a, b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, err := getFriendRequest(ctx, db, resp.RelationID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		won := map[string]int{}
+		for i := 0; i < 24; i++ {
+			wg.Add(1)
+			go func(st string) {
+				defer wg.Done()
+				r, err := transitionFriendRequestBatch(ctx, db, req, st)
+				mu.Lock()
+				defer mu.Unlock()
+				if err != nil {
+					if friendBatchCode(err) != http.StatusForbidden {
+						t.Error(err)
+					}
+					return
+				}
+				won[r.Status]++
+			}(statuses[(i+round)%3])
+		}
+		wg.Wait()
+		total := won["accepted"] + won["rejected"] + won["cancelled"]
+		var f int
+		db.Get(&f, `SELECT count(*) FROM friendships WHERE user_low_id=$1 AND user_high_id=$2`, min(a, b), max(a, b))
+		if total != 1 || f != won["accepted"] {
+			t.Fatalf("round %d: won=%v friendships=%d", round, won, f)
+		}
+	}
+	// block があれば accept は 409 で、申請は pending のまま
+	a, b := postBatchSeed(t, db, "asia"), postBatchSeed(t, db, "asia")
+	resp, err := createFriendRequestBatch(ctx, db, a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, _ := getFriendRequest(ctx, db, resp.RelationID)
+	db.MustExec(`INSERT INTO block_relations (id, blocker_id, blocked_id) VALUES ($1,$2,$3)`, uuid.NewString(), a, b)
+	if _, err := transitionFriendRequestBatch(ctx, db, req, "accepted"); friendBatchCode(err) != http.StatusConflict {
+		t.Fatal("blocked accept:", err)
+	}
+	if got, _ := getFriendRequest(ctx, db, req.ID); got.Status != "pending" {
+		t.Fatal("status changed:", got.Status)
+	}
+	if r, err := transitionFriendRequestBatch(ctx, db, req, "rejected"); err != nil || r.Status != "rejected" {
+		t.Fatal("reject:", r, err)
+	}
+}

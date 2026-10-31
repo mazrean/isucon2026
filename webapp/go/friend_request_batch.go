@@ -130,3 +130,93 @@ func createFriendRequestBatch(ctx context.Context, db *sqlx.DB, actor, recipient
 	}
 	return createFriendRequestResponse{RelationID: *id, Status: *status, UpdatedAt: *updatedAt}, nil
 }
+
+// transitionFriendRequestBatch は transitionFriendRequestHandler の tx 部分 (beginRelationshipTx 以降) を
+// 同じく 1 往復で流す (ISUREAL_FRIEND_BATCH=1)。ロックは組 (requester, recipient) の行で従来どおり、判定は別の文。
+// 判定の順序も従来どおり: 2 人とも active でなければ 404、申請が pending でなければ 403、承認で block があれば 409。
+// 条件を満たしたときだけ、承認なら friendships を入れ、申請の status を変える。
+const friendTransitionBatchSQL = `
+WITH ok AS (
+  SELECT count(*) = 2 AS ok FROM users WHERE id IN ($6::varchar, $7::varchar) AND status = 'active'
+), f AS (
+  SELECT f.id, f.status,
+    EXISTS(SELECT 1 FROM block_relations b WHERE (b.blocker_id=f.requester_id AND b.blocked_id=f.recipient_id) OR (b.blocker_id=f.recipient_id AND b.blocked_id=f.requester_id)) AS blocked
+  FROM friend_requests f WHERE f.id = $1::varchar
+), cond AS (
+  SELECT f.id FROM f, ok WHERE ok.ok AND f.status = 'pending' AND ($2::text <> 'accepted' OR NOT f.blocked)
+), fr AS (
+  INSERT INTO friendships (id, user_low_id, user_high_id, source_request_id)
+  SELECT $3::varchar, $4::varchar, $5::varchar, cond.id FROM cond WHERE $2::text = 'accepted'
+  RETURNING 1
+), upd AS (
+  UPDATE friend_requests SET status = $2::text, updated_at = clock_timestamp()
+  WHERE id = (SELECT id FROM cond)
+  RETURNING id, status, updated_at
+)
+SELECT ok.ok, f.status, f.blocked, upd.id, upd.status, upd.updated_at
+FROM ok LEFT JOIN f ON true LEFT JOIN upd ON true`
+
+func transitionFriendRequestBatch(ctx context.Context, db *sqlx.DB, request FriendRequest, status string) (transitionFriendRequestResponse, error) {
+	var resp transitionFriendRequestResponse
+	if request.RequesterID == request.RecipientID || request.RecipientID == "" {
+		return resp, NewAPIError(http.StatusBadRequest, "invalid_relationship")
+	}
+	var (
+		ok                       bool
+		curStatus, id, newStatus *string
+		blocked                  *bool
+		updatedAt                *time.Time
+	)
+	a, b := request.RequesterID, request.RecipientID
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return resp, err
+	}
+	defer conn.Close()
+	err = conn.Raw(func(dc any) error {
+		pc := dc.(*stdlib.Conn).Conn()
+		batch := &pgx.Batch{}
+		batch.Queue("BEGIN")
+		batch.Queue(relationshipLockSQL, a, b)
+		batch.Queue(friendTransitionBatchSQL, request.ID, status, uuid.NewString(), min(a, b), max(a, b), a, b)
+		batch.Queue("COMMIT")
+		br := pc.SendBatch(ctx, batch)
+		err := func() error {
+			if _, err := br.Exec(); err != nil {
+				return err
+			}
+			if _, err := br.Exec(); err != nil {
+				return err
+			}
+			if err := br.QueryRow().Scan(&ok, &curStatus, &blocked, &id, &newStatus, &updatedAt); err != nil {
+				return err
+			}
+			_, err := br.Exec()
+			return err
+		}()
+		closeErr := br.Close()
+		if err == nil {
+			err = closeErr
+		}
+		if err != nil {
+			_, _ = pc.Exec(context.WithoutCancel(ctx), "ROLLBACK")
+		}
+		return err
+	})
+	if err != nil {
+		return resp, err
+	}
+	switch {
+	case !ok:
+		return resp, NewAPIError(http.StatusNotFound, "relationship_not_found")
+	case curStatus == nil:
+		return resp, sql.ErrNoRows // 従来も申請の読み直しが ErrNoRows ならそのまま返していた
+	case *curStatus != "pending":
+		return resp, NewAPIError(http.StatusForbidden, "relationship_action_forbidden")
+	case status == "accepted" && blocked != nil && *blocked:
+		return resp, NewAPIError(http.StatusConflict, "relationship_conflict")
+	case id == nil:
+		return resp, sql.ErrNoRows
+	}
+	return transitionFriendRequestResponse{RelationID: *id, Status: *newStatus, UpdatedAt: *updatedAt}, nil
+}

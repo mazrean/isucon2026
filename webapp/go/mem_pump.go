@@ -69,6 +69,10 @@ func memRole(config *Config) string {
 
 // setupMem は ISUREAL_MEM=1 のときだけメモリモデルを準備する。失敗しても DB 経路で動く。
 func setupMem(h *HandlerContext, e *echo.Echo) {
+	if memLogReplEnabled { // mem_logrepl.go
+		setupMemLogRepl(h, e)
+		return
+	}
 	switch memRole(h.Config) {
 	case "pump":
 		m := &memStore{d: newMemData()}

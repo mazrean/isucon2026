@@ -283,8 +283,17 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 		MediaType string `db:"media_type"`
 		Data      []byte `db:"data"`
 	}
-	const q = `SELECT owner_user_id, media_type, data FROM image_objects WHERE id = $1 LIMIT 1`
-	err := db.GetContext(ctx, &row, q, id)
+	q := imageSelectAll
+	var err error
+	if imgHotID(id) {
+		// one partition; a miss (rare) retries the full query
+		err = db.GetContext(ctx, &row, imageSelectHot, id)
+		if errors.Is(err, sql.ErrNoRows) {
+			err = db.GetContext(ctx, &row, q, id)
+		}
+	} else {
+		err = db.GetContext(ctx, &row, q, id)
+	}
 	// replica が遅れている可能性に備え、見つからなければ primary で確かめる。
 	if errors.Is(err, sql.ErrNoRows) && primary != nil && primary != db {
 		err = primary.GetContext(ctx, &row, q, id)

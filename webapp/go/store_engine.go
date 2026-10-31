@@ -71,6 +71,7 @@ func setupStore(h *HandlerContext) {
 	e := &storeEngine{p: h.memPump, m: h.memPump.m, db: db}
 	e.wbCond = sync.NewCond(&e.wbMu)
 	h.Store = e
+	h.memPump.preReload = e.syncPG
 	storeCurrent = e
 	go e.flusher()
 	slog.Info("store: enabled", "await_pg", storeAwaitPG)

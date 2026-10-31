@@ -21,6 +21,7 @@ type HandlerContext struct {
 
 	Mem     *memStore // ISUREAL_MEM=1 のときだけ非 nil
 	memPump *memPump
+	Store   *storeEngine // ISUREAL_STORE=1 (asia1) のときだけ非 nil
 }
 
 // Reader は、トランザクション外の読み取り専用クエリに使う接続を返す。
@@ -68,6 +69,7 @@ func NewServer(config *Config) *echo.Echo {
 	e.Use(FwdPriorityMiddleware(handlerContext))
 	setupMem(handlerContext, e)
 	registerLocalImg(e, handlerContext)
+	setupStore(handlerContext)
 
 	e.POST("/api/initialize", initializeHandler(handlerContext))
 	e.POST("/api/auth/register", registerHandler(handlerContext))

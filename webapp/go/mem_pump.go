@@ -44,6 +44,9 @@ type memPump struct {
 	loadedGen uint64
 
 	peers *memPeers // 分散モード (nil なら集中モード)
+
+	// ISUREAL_STORE=1: PG から読み直す前に store の書き戻しを出し切る (cycleMu 保持中に呼ばれる)
+	preReload func()
 }
 
 var (
@@ -308,6 +311,9 @@ func (p *memPump) reload() error {
 	start := time.Now()
 	gen := p.wantGen.Load()
 	p.m.ready.Store(false)
+	if p.preReload != nil {
+		p.preReload()
+	}
 	d, snap, err := loadMemFromDB(ctx, p.db)
 	if err != nil {
 		return err
@@ -485,7 +491,7 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			var apiErr *APIError
 			clientErr := (bw.code >= 400 && bw.code < 500) ||
 				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
-			if !clientErr {
+			if handled, _ := c.Get(storeHandledKey).(bool); !clientErr && !handled {
 				bs := time.Now()
 				p.barrierScope(!localOnlyWrite(req))
 				memRecordBarrier(time.Since(bs))

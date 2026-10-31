@@ -38,6 +38,11 @@ func createCommentHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		ctx := c.Request().Context()
 		actor := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.createComment(c, actor, input); ok {
+				return err
+			}
+		}
 		post, err := getPost(ctx, h.Reader(), input.PostID)
 		if errors.Is(err, sql.ErrNoRows) {
 			return NewAPIError(http.StatusForbidden, "interaction_forbidden")
@@ -143,6 +148,11 @@ func deleteCommentHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		ctx := c.Request().Context()
 		actor := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.deleteComment(c, actor, input.CommentID); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err

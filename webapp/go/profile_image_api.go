@@ -29,6 +29,11 @@ func putProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.putProfileImage(c, userID, data); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err
@@ -70,6 +75,11 @@ func deleteProfileImageHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		userID := GetSession(c).UserID
+		if h.Store != nil {
+			if ok, err := h.Store.deleteProfileImage(c, userID); ok {
+				return err
+			}
+		}
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			return err

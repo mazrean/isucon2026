@@ -17,6 +17,12 @@ type initializeResponse struct {
 
 func initializeHandler(h *HandlerContext) echo.HandlerFunc {
 	return func(c *echo.Context) error {
+		if h.Store != nil {
+			// 書き込みを止め、書き戻しを PG に出し切ってからリセットする
+			h.Store.mu.Lock()
+			defer h.Store.mu.Unlock()
+			h.Store.syncPG()
+		}
 		localImgPurgePeers(c.Request().Context())
 		cmd := exec.Command("../sql/init.sh")
 		cmd.Stdout = os.Stdout

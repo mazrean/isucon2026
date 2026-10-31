@@ -37,6 +37,11 @@ func openPostingWindowHandler(h *HandlerContext) echo.HandlerFunc {
 		if input.OnTimeSeconds != nil {
 			seconds = *input.OnTimeSeconds
 		}
+		if h.Store != nil {
+			if ok, err := h.Store.openPostingWindow(c, region, localDate, seconds); ok {
+				return err
+			}
+		}
 		ctx := c.Request().Context()
 		tx, err := h.DB.BeginTxx(ctx, nil)
 		if err != nil {

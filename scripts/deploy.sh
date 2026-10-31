@@ -38,6 +38,7 @@ LOGREPL=${LOGREPL:-0}   # 1 = app hosts subscribe to PG logical replication (web
 PREVALIDATE=${PREVALIDATE:-1}   # 1 = europe1/america1 check JPEGs locally and forward a signed result to FWD_TARGET
 MEMORIES_PAR=${MEMORIES_PAR:-1}   # 1 = Memories run posts/RealMojis/comments queries at once (1 DB round trip instead of 3)
 LOCALIMG=${LOCALIMG:-1}   # 1 (needs PREVALIDATE=1) = europe1/america1 keep their users' image bytes (fsync), asia1 gets metadata only; PG gets bytes async
+STORE=${STORE:-0}   # 1 = asia1 memory-primary write path (NOTES-store.md); requires MEM=1
 FWD_GET=${FWD_GET:-0}   # 1 = also forward GET /api/ (except images, notifications) to asia1
 FWD_PRIORITY=${FWD_PRIORITY:-0}   # 1 = asia1 runs forwarded (eu/am) writes first; local writes go through a semaphore (webapp/go/priority.go)
 FRONT=${FRONT:-0}   # 1 = Go listens on :80 itself (webapp/go/frontproxy.go) and nginx is stopped+disabled
@@ -72,6 +73,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_JPEG_REMOTES '"${JPEG_REMOTES-192.168.4.10:8080/2/400,192.168.2.10:8080/8/1200,192.168.3.10:8080/8/1200}"'; else setenv ISUREAL_JPEG_REMOTES ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEM_PEERS 192.168.2.10:8080,192.168.3.10:8080; setenv ISUREAL_MEM_PUMP ""; else setenv ISUREAL_MEM_PEERS ""; setenv ISUREAL_MEM_PUMP 192.168.1.10:8080; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-192.168.2.10:8080,192.168.3.10:8080}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY '"$FWD_PRIORITY"'; else setenv ISUREAL_FWD_PRIORITY 0; fi
       setenv ISUREAL_FRONT '"$fr"'

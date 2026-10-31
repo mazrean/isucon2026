@@ -87,3 +87,5 @@
 15:55	0ed6ada	job=25001 state=4 pass=true スコア=175990 種別エラー数=map[]	STORE=1 + USER_LOCK_SPLIT=1、4 台同時の再起動の後に、デプロイなしで 1 本
 15:58	7f1c1d9	job=25309 state=4 pass=true スコア=184337 種別エラー数=map[]	STORE=1 + USER_LOCK_SPLIT=1 + POST_TIMING=1 (投稿の段ごとの計測、最終には使わない)
 16:01	b4be5de	job=25603 state=4 pass=true スコア=148725 種別エラー数=map[]	新既定 (STORE+SPLIT) + ASIA_LOCALIMG_FSYNC=1 (+POST_TIMING 計測)
+16:04	c311ac3	job=25833 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT) + NGX_REQBUF_OFF=1
+16:04	c311ac3	job=26073 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT) + STORE_WAL=/home/isucon/storewal

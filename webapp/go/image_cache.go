@@ -264,3 +264,14 @@ func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) 
 	}
 	return obj, nil
 }
+
+// put は、INSERT 直後や複製受信時に中身をメモリとディスクへ格納する。
+func (s *imageStore) put(id string, obj *imageObject) {
+	s.mem.add(id, obj)
+	if s.writes != nil && safeImageID(id) {
+		select {
+		case s.writes <- imageDiskWrite{id: id, obj: obj}:
+		default:
+		}
+	}
+}

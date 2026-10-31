@@ -153,6 +153,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+		replicateImage(imageID, userID, "image/jpeg", imageData)
 		return c.JSON(http.StatusCreated, newPostResponse(post, user))
 	}
 }

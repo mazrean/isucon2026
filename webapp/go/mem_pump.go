@@ -286,7 +286,7 @@ func (p *memPump) invalidate() {
 }
 
 func (p *memPump) reload() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	start := time.Now()
 	gen := p.wantGen.Load()

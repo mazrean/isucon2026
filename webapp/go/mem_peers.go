@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -37,15 +38,23 @@ type memPushRequest struct {
 	Epoch   string     `json:"e"`
 	Seq     int64      `json:"q"` // pump の最新連番 (heartbeat でも送る。peer はこれで欠番を検知)
 	Batches []memBatch `json:"b"`
+	// pump の送信時刻 (unix ns)。peer の lease は min(受信時刻, SentAt) + memLease まで (遅れて届いた push で延びない)。
+	SentAt int64 `json:"t"`
+	// probe: down 扱いの peer への送信。peer は反映するが lease は延ばさない (pump が lease の上界を把握するため)。
+	Probe bool `json:"p,omitempty"`
 }
 
-// peer は最後に push/heartbeat を受け取ってから memLease を過ぎたら自発的にメモリ読みをやめる (DB 経路)。
-// pump の push タイムアウト (memPushTimeout) > memLease なので、pump が ack 無しで先に進む時点で
-// その peer は必ず not-ready になっている。
+// peer の lease は「pump が送った push の送信時刻 + memLease」を超えない。
+// pump は peer ごとに lease を与えうる push の最終送信時刻 (lastGrantAt) を持ち、
+// ack の無い peer は lastGrantAt + memLease + memClockSkew を過ぎれば必ず not-ready なので待たずに進む。
+// push は peer ごとに最大 memMaxInflight 本まで並列に送る (stop-and-wait をやめて 1 RTT で ack)。
 const (
 	memLease          = 1 * time.Second
 	memPushTimeout    = 3 * time.Second
 	memHeartbeatEvery = 250 * time.Millisecond
+	memClockSkew      = 200 * time.Millisecond
+	memMaxInflight    = 4
+	memReorderWait    = 50 * time.Millisecond
 )
 
 type memPushResponse struct {
@@ -82,14 +91,13 @@ func memNewEpoch() string {
 // ---------------- pump side ----------------
 
 type memPeer struct {
-	addr    string
-	pending []memBatch
-	sending bool
-	acked   int64
-	down    bool
-	beat    bool
-	// 最後に ok ack を受けた時刻。peer の lease はこれ + memLease より前に必ず切れる。
-	lastAckAt time.Time
+	addr     string
+	pending  []memBatch
+	inflight int
+	acked    int64
+	down     bool
+	// lease を与えうる (probe でない) push の最終送信時刻。peer の lease はこれ + memLease (+時計ずれ) より前に必ず切れる。
+	lastGrantAt time.Time
 	// この epoch で invalidate (not-ready 化) の成功を確認済み
 	invalidatedEpoch string
 }
@@ -114,7 +122,7 @@ func newMemPeersFromEnv(p *memPump) *memPeers {
 	for _, a := range strings.Split(list, ",") {
 		if a = strings.TrimSpace(a); a != "" {
 			// 前プロセスが与えた lease を考慮して起動時刻で初期化 (保守的)
-			ps.peers = append(ps.peers, &memPeer{addr: a, lastAckAt: time.Now()})
+			ps.peers = append(ps.peers, &memPeer{addr: a, lastGrantAt: time.Now()})
 		}
 	}
 	return ps
@@ -132,63 +140,57 @@ func (ps *memPeers) publish(changes []memChange) {
 	}
 	for _, peer := range ps.peers {
 		peer.pending = append(peer.pending, b)
-		if !peer.sending {
-			peer.sending = true
-			go ps.sender(peer, ps.epoch)
-		}
+		ps.kick(peer, false)
 	}
 }
 
-func (ps *memPeers) sender(peer *memPeer, epoch string) {
-	for {
-		ps.mu.Lock()
-		if ps.epoch != epoch && len(peer.pending) > 0 {
-			epoch = ps.epoch // 新しい epoch の送信を引き継ぐ
-		}
-		if (len(peer.pending) == 0 && !peer.beat) || ps.epoch != epoch {
-			peer.sending = false
-			ps.mu.Unlock()
-			return
-		}
-		peer.beat = false
-		batches := peer.pending
-		peer.pending = nil
-		last := ps.seq
-		if len(batches) > 0 {
-			last = batches[len(batches)-1].Seq
-		}
-		ps.mu.Unlock()
+// kick は ps.mu 保持中に呼ぶ。未送信分 (または heartbeat) を新しい並列 push として送る。
+func (ps *memPeers) kick(peer *memPeer, beat bool) {
+	if peer.inflight >= memMaxInflight || (len(peer.pending) == 0 && !beat) {
+		return
+	}
+	batches := peer.pending
+	peer.pending = nil
+	last := ps.seq
+	if len(batches) > 0 {
+		last = batches[len(batches)-1].Seq
+	}
+	now := time.Now()
+	req := memPushRequest{Epoch: ps.epoch, Seq: last, Batches: batches, SentAt: now.UnixNano(), Probe: peer.down}
+	if !req.Probe {
+		peer.lastGrantAt = now
+	}
+	peer.inflight++
+	go ps.send(peer, req)
+}
 
-		body, err := memHTTPPost(peer.addr, "/internal/mem/push", memPushRequest{Epoch: epoch, Seq: last, Batches: batches}, memPushTimeout)
-		var resp memPushResponse
-		if err == nil {
-			err = json.Unmarshal(body, &resp)
-		}
-
-		ps.mu.Lock()
-		if ps.epoch == epoch {
-			if err != nil {
-				// 失敗した peer は待たないが、その peer の lease (最後の ok ack + memLease) が切れるまでは
-				// 書き込みレスポンスを保留する (waitAcked)。欠番は peer が次の push で検知して取り直す。
-				if !peer.down {
-					slog.Warn("mem: peer push failed; marking down", "peer", peer.addr, "error", err)
-				}
-				peer.down = true
-			} else {
-				peer.down = false
-				if resp.OK {
-					// peer は応答前に lease を延長している → lastAckAt は延長時刻の上界
-					peer.lastAckAt = time.Now()
-				}
-				// ok=false: peer は not-ready (DB 経路) なので待つ必要なし
-				if peer.acked < last {
-					peer.acked = last
-				}
+func (ps *memPeers) send(peer *memPeer, req memPushRequest) {
+	body, err := memHTTPPost(peer.addr, "/internal/mem/push", req, memPushTimeout)
+	var resp memPushResponse
+	if err == nil {
+		err = json.Unmarshal(body, &resp)
+	}
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	peer.inflight--
+	if ps.epoch == req.Epoch {
+		if err != nil {
+			// 失敗した peer は lease (lastGrantAt + memLease + memClockSkew) が切れるまで待たれる。以後は probe で様子を見る。
+			// 欠番は peer が次の push で検知して取り直す。
+			if !peer.down {
+				slog.Warn("mem: peer push failed; marking down", "peer", peer.addr, "error", err)
+			}
+			peer.down = true
+		} else {
+			peer.down = false
+			// ok=false: peer は not-ready (DB 経路) なので待つ必要なし
+			if peer.acked < req.Seq {
+				peer.acked = req.Seq
 			}
 		}
-		ps.cond.Broadcast()
-		ps.mu.Unlock()
 	}
+	ps.cond.Broadcast()
+	ps.kick(peer, false)
 }
 
 // heartbeat: 送信中でない peer に空 push を送る (lease 延長 + 欠番検知)。
@@ -201,10 +203,8 @@ func (ps *memPeers) heartbeatLoop() {
 		}
 		ps.mu.Lock()
 		for _, peer := range ps.peers {
-			if !peer.sending {
-				peer.beat = true
-				peer.sending = true
-				go ps.sender(peer, ps.epoch)
+			if peer.inflight == 0 {
+				ps.kick(peer, true)
 			}
 		}
 		ps.mu.Unlock()
@@ -215,7 +215,7 @@ func (ps *memPeers) heartbeatLoop() {
 // peer ごとの完了条件:
 //   - 同一 epoch で ack 済み (acked >= target、down でない)
 //   - epoch が変わった場合は新 epoch での invalidate 成功確認
-//   - いずれでもなければ lastAckAt + memLease を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
+//   - いずれでもなければ lastGrantAt + memLease + memClockSkew を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
 func (ps *memPeers) waitAcked() {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
@@ -231,13 +231,13 @@ func (ps *memPeers) waitAcked() {
 		var wakeAt time.Time
 		ok := true
 		for _, peer := range ps.peers {
-			if ps.epoch == epoch && !peer.down && peer.acked >= target {
+			if ps.epoch == epoch && peer.acked >= target {
 				continue
 			}
 			if ps.epoch != epoch && peer.invalidatedEpoch == ps.epoch {
 				continue
 			}
-			leaseEnd := peer.lastAckAt.Add(memLease + 50*time.Millisecond)
+			leaseEnd := peer.lastGrantAt.Add(memLease + memClockSkew)
 			if !now.Before(leaseEnd) {
 				continue
 			}
@@ -527,11 +527,14 @@ type memReceiver struct {
 	rsCond *sync.Cond
 	rsGen  uint64 // 再構築完了済みの gen
 	rsRun  bool
+	// r.seq が進んだら Broadcast (並列 push の到着順の入れ替わりを短時間待つ)
+	seqCond *sync.Cond
 }
 
 func newMemReceiver(m *memStore) *memReceiver {
 	r := &memReceiver{m: m, pumpAddr: envOrDefault("ISUREAL_MEM_PUMP", "192.168.1.10:8080")}
 	r.rsCond = sync.NewCond(&r.rsMu)
+	r.seqCond = sync.NewCond(&r.mu)
 	r.invalidate()
 	return r
 }
@@ -611,7 +614,7 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.d = d
 	r.m.mu.Unlock()
 	r.epoch, r.seq = dump.Epoch, dump.Seq
-	// lease は次の push/heartbeat の ok 応答時にだけ延長する (pump が lastAckAt で上界を把握するため)
+	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
 	r.m.ready.Store(true)
 	slog.Info("mem: synced from pump", "seq", dump.Seq, "users", len(d.users), "posts", len(d.posts), "elapsed", time.Since(start))
 	return nil
@@ -641,7 +644,29 @@ func (r *memReceiver) push(req memPushRequest) bool {
 		}
 		return false
 	}
+	// 並列 push は到着順が入れ替わりうる: 先行分が届くのを少しだけ待ってから欠番 pull に回る
+	need := req.Seq
+	if len(req.Batches) > 0 {
+		need = req.Batches[0].Seq - 1
+	}
+	if need > r.seq {
+		deadline := time.Now().Add(memReorderWait)
+		timer := time.AfterFunc(memReorderWait, func() {
+			r.mu.Lock()
+			r.seqCond.Broadcast()
+			r.mu.Unlock()
+		})
+		for need > r.seq && req.Epoch == r.epoch && r.m.ready.Load() && time.Now().Before(deadline) {
+			r.seqCond.Wait()
+		}
+		timer.Stop()
+		if !r.m.ready.Load() || req.Epoch != r.epoch {
+			r.mu.Unlock()
+			return false
+		}
+	}
 	defer r.mu.Unlock()
+	defer r.seqCond.Broadcast()
 	for _, b := range req.Batches {
 		if b.Seq <= r.seq {
 			continue
@@ -688,9 +713,20 @@ func (r *memReceiver) push(req memPushRequest) bool {
 			return false
 		}
 	}
-	r.m.extendLease()
+	if !req.Probe {
+		r.m.extendLeaseFrom(req.SentAt)
+		// 片道遅延 (時計ずれ込み) が大きいと lease が短くなる / RYW の前提が崩れるので警告 (10 秒に 1 回)
+		if d := time.Duration(time.Now().UnixNano() - req.SentAt); d > 500*time.Millisecond || d < -memClockSkew {
+			if now := time.Now().Unix(); memSkewWarnAt.Load()+10 <= now {
+				memSkewWarnAt.Store(now)
+				slog.Warn("mem: large push delay or clock skew", "delay", d)
+			}
+		}
+	}
 	return true
 }
+
+var memSkewWarnAt atomic.Int64
 
 func (r *memReceiver) pull(epoch string, from, to int64) ([]memBatch, error) {
 	resp, cancel, err := memGet(r.pumpAddr, fmt.Sprintf("/internal/mem/batches?e=%s&from=%d&to=%d", epoch, from, to), 3*time.Second)

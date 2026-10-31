@@ -91,7 +91,7 @@ for h in "${HOSTS[@]}"; do
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_STORE '"$STORE"'; else setenv ISUREAL_STORE 0; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PEERS '"${IMG_PEERS-}"'; else setenv ISUREAL_IMG_PEERS ""; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_IMG_PUSH_FILTER '"$IMG_PUSH_FILTER"'; else setenv ISUREAL_IMG_PUSH_FILTER 0; fi
-      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY_LOCAL_SLOTS '"${FWD_LOCAL_SLOTS:-64}"'; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY_LOCAL_SLOTS '"${FWD_LOCAL_SLOTS:-128}"'; fi
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_FWD_PRIORITY '"$FWD_PRIORITY"'; else setenv ISUREAL_FWD_PRIORITY 0; fi
       setenv ISUREAL_FRONT '"$fr"'
       setenv ISUREAL_FRONT_FWD '"$f"'

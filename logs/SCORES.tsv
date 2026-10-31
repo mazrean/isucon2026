@@ -40,3 +40,4 @@
 13:10	aeac274	job=11272 state=4 pass=true スコア=112194 種別エラー数=map[]	画像の push 停止 (IMG_PEERS 空、閲覧時に取り寄せ) + KEY SHARE。lease 修正後の初の push off
 13:14	ef45497	job=11493 state=4 pass=true スコア=129380 種別エラー数=map[]	push 停止 + KEY SHARE + FWD_PRIORITY=1 (転送された eu/am の書き込みを asia1 で優先)
 13:16	b721624	job=11716 state=4 pass=true スコア=139085 種別エラー数=map[]	既定 (FWD_PRIORITY=1 + push 停止 + KEY SHARE) + asia ローカル枠 64
+13:19	a2022c8	job=11877 state=4 pass=true スコア=141122 種別エラー数=map[]	既定 + asia ローカル枠 128

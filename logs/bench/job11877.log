@@ -1,0 +1,66 @@
+time=2026-10-31T04:17:25.379Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T04:17:28.552Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T04:17:31.372Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T04:17:34.482Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T04:17:35.502Z level=INFO msg="user moved" user=ulyamia.5127 from=america to=asia
+time=2026-10-31T04:17:36.212Z level=INFO msg="user moved" user=ulyamia.5127 from=asia to=america
+time=2026-10-31T04:17:37.606Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T04:17:40.368Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T04:17:43.594Z level=INFO msg="asia 3 日目: 152 人"
+time=2026-10-31T04:17:45.156Z level=INFO msg="user moved" user=rimaxke.5643 from=asia to=europe
+time=2026-10-31T04:17:46.181Z level=INFO msg="user moved" user=munote5597 from=asia to=america
+time=2026-10-31T04:17:46.391Z level=INFO msg="europe 3 日目: 51 人"
+time=2026-10-31T04:17:46.497Z level=INFO msg="user moved" user=rimaxke.5643 from=europe to=america
+time=2026-10-31T04:17:47.270Z level=INFO msg="user moved" user=munote5597 from=america to=europe
+time=2026-10-31T04:17:48.065Z level=INFO msg="user moved" user=sovinzoe_6058 from=asia to=europe
+time=2026-10-31T04:17:48.257Z level=INFO msg="user moved" user=isroben.6248 from=asia to=america
+time=2026-10-31T04:17:49.400Z level=INFO msg="america 3 日目: 46 人"
+time=2026-10-31T04:17:49.581Z level=INFO msg="user moved" user=isroben.6248 from=america to=europe
+time=2026-10-31T04:17:51.827Z level=INFO msg="user moved" user=ulyamia.5127 from=america to=asia
+time=2026-10-31T04:17:52.384Z level=INFO msg="asia 4 日目: 413 人"
+time=2026-10-31T04:17:55.615Z level=INFO msg="europe 4 日目: 137 人"
+time=2026-10-31T04:17:58.436Z level=INFO msg="america 4 日目: 120 人"
+time=2026-10-31T04:17:58.641Z level=INFO msg="user moved" user=tadanku7321 from=asia to=europe
+time=2026-10-31T04:17:59.092Z level=INFO msg="user moved" user=isroben.6248 from=europe to=asia
+time=2026-10-31T04:18:00.503Z level=INFO msg="user moved" user=evana_8385 from=europe to=america
+time=2026-10-31T04:18:01.083Z level=INFO msg="user moved" user=sovinzoe_6058 from=europe to=america
+time=2026-10-31T04:18:01.370Z level=INFO msg="user moved" user=hielnoa_8139 from=asia to=europe
+time=2026-10-31T04:18:02.019Z level=INFO msg="asia 5 日目: 877 人"
+time=2026-10-31T04:18:02.068Z level=INFO msg="user moved" user=tsuzoe9079 from=america to=europe
+time=2026-10-31T04:18:02.324Z level=INFO msg="user moved" user=munote5597 from=europe to=america
+time=2026-10-31T04:18:03.637Z level=INFO msg="user moved" user=zoenahe8714 from=europe to=asia
+time=2026-10-31T04:18:04.850Z level=INFO msg="europe 5 日目: 274 人"
+time=2026-10-31T04:18:07.845Z level=INFO msg="america 5 日目: 261 人"
+time=2026-10-31T04:18:16.452Z level=INFO msg="europe 最終日（グランプリ）: 273 人"
+time=2026-10-31T04:18:16.822Z level=INFO msg="asia 最終日（グランプリ）: 878 人"
+time=2026-10-31T04:18:16.880Z level=INFO msg="america 最終日（グランプリ）: 261 人"
+time=2026-10-31T04:18:25.377Z level=INFO msg="グランプリ: アジア 226 人, ヨーロッパ 238 人, アメリカ 249 人"
+{
+  "pass": true,
+  "score": 141122,
+  "messages": [
+    "helia_6455: 友達申請を送れません: POST /api/friend-requests: ステータスコード 502 が返りました（期待値 201、unknown）",
+    "tormaxleo_5265: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "toevael_9703: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "mutake.11063: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "sanoaki_11837: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "vindanben9744: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "chiyosu-9957: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "memax6027: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "navinso-11848: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "ishotsu_10919: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "rota_10060: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "vinleoleo.9931: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "moshika9998: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "wahe-7826: 投稿 f0a6609e-2bbb-4108-878e-0dbd44af6e67 に RealMoji を送れません: POST /api/posts/f0a6609e-2bbb-4108-878e-0dbd44af6e67/realmojis: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "sureis_9748: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "wahe-7826: プロフィール画像を変えられません: PUT /api/me/profile-image: ステータスコード 500 が返りました（期待値 204、unknown）",
+    "wahe-7826: 投稿 9fcc110f-2412-4c87-9d5b-d7abab87f901 に RealMoji を送れません: POST /api/posts/9fcc110f-2412-4c87-9d5b-d7abab87f901/realmojis: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "ivyan_10905: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "tekiyo-12523: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）",
+    "muel.10372: 投稿できません: POST /api/posts: ステータスコード 500 が返りました（期待値 201、unknown）"
+  ]
+}
+
+reason= 実行終了
+job=11877 state=4 pass=true スコア=141122 種別エラー数=map[]

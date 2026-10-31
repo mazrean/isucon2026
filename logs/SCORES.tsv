@@ -107,3 +107,4 @@
 16:53	d06470c	job=30587 state=4 pass=true スコア=178908 種別エラー数=map[]	A の既定 + FWD_LOCAL_SLOTS=256 (asia の枠待ち p50 1.79s の対策)
 16:56	3ffbec0	job=30925 state=4 pass=true スコア=173907 種別エラー数=map[]	A の既定 + FWD_POST_SLOTS=64 (投稿を別枠にして申請・承認・RealMoji を投稿の後ろに並ばせない)
 16:59	ffb86d4	job=31222 state=4 pass=true スコア=182308 種別エラー数=map[]	A の既定 + STORE_PRIO=1 (login・申請・承認を STORE の適用で先に)
+17:02	cc9f74e	job=31522 state=4 pass=true スコア=182455 種別エラー数=map[]	A の既定 + W5 (SYNC_VISIBLE+ACK_OWN+SYNC_SPLIT)

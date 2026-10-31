@@ -205,7 +205,7 @@ func (s *imageStore) diskWriter() {
 
 // get は、画像 ID の中身を返す。存在しなければ (nil, nil)。
 // 順に メモリ LRU → ディスク → DB (同時取得は 1 本にまとめる)。
-func (s *imageStore) get(ctx context.Context, db *sqlx.DB, id string) (*imageObject, error) {
+func (s *imageStore) get(ctx context.Context, db, primary *sqlx.DB, id string) (*imageObject, error) {
 	if obj, ok := s.mem.get(id); ok {
 		return obj, nil
 	}
@@ -220,7 +220,7 @@ func (s *imageStore) get(ctx context.Context, db *sqlx.DB, id string) (*imageObj
 	s.flight[id] = call
 	s.flightMu.Unlock()
 
-	call.obj, call.err = s.load(ctx, db, id)
+	call.obj, call.err = s.load(ctx, db, primary, id)
 	call.wg.Done()
 
 	s.flightMu.Lock()
@@ -229,7 +229,7 @@ func (s *imageStore) get(ctx context.Context, db *sqlx.DB, id string) (*imageObj
 	return call.obj, call.err
 }
 
-func (s *imageStore) load(ctx context.Context, db *sqlx.DB, id string) (*imageObject, error) {
+func (s *imageStore) load(ctx context.Context, db, primary *sqlx.DB, id string) (*imageObject, error) {
 	if obj := s.readDisk(id); obj != nil {
 		s.mem.add(id, obj)
 		return obj, nil
@@ -242,7 +242,12 @@ func (s *imageStore) load(ctx context.Context, db *sqlx.DB, id string) (*imageOb
 		MediaType string `db:"media_type"`
 		Data      []byte `db:"data"`
 	}
-	err := db.GetContext(ctx, &row, `SELECT owner_user_id, media_type, data FROM image_objects WHERE id = $1 LIMIT 1`, id)
+	const q = `SELECT owner_user_id, media_type, data FROM image_objects WHERE id = $1 LIMIT 1`
+	err := db.GetContext(ctx, &row, q, id)
+	// replica が遅れている可能性に備え、見つからなければ primary で確かめる。
+	if errors.Is(err, sql.ErrNoRows) && primary != nil && primary != db {
+		err = primary.GetContext(ctx, &row, q, id)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

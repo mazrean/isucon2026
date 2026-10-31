@@ -25,7 +25,7 @@ func TestImageStoreDiskRoundTrip(t *testing.T) {
 		t.Fatalf("round trip mismatch: %+v", got)
 	}
 	// ディスクから引けるので DB (nil) には触れない。
-	got2, err := s.get(context.Background(), nil, id)
+	got2, err := s.get(context.Background(), nil, nil, id)
 	if err != nil || got2 == nil || !bytes.Equal(got2.Data, obj.Data) {
 		t.Fatalf("get from disk failed: %v %+v", err, got2)
 	}

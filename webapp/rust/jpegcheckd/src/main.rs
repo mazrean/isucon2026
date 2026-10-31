@@ -20,6 +20,22 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1).map(|s| s.as_str()) {
         Some("--bench") => bench(&args[2], args.get(3).and_then(|s| s.parse().ok()).unwrap_or(2000)),
+        Some("--benchall") => {
+            // --benchall ITERS FILE...: mean ns per image over all files
+            let iters: usize = args[2].parse().expect("iters");
+            let files: Vec<Vec<u8>> = args[3..].iter().map(|f| std::fs::read(f).expect("read")).collect();
+            for d in &files {
+                std::hint::black_box(check::check(d));
+            }
+            let t = Instant::now();
+            for _ in 0..iters {
+                for d in &files {
+                    std::hint::black_box(check::check(std::hint::black_box(d)));
+                }
+            }
+            let ns = t.elapsed().as_nanos() as f64 / (iters * files.len()) as f64;
+            println!("{} files: {ns:.0} ns/image", files.len());
+        }
         Some("--check") => {
             for f in &args[2..] {
                 let data = std::fs::read(f).expect("read");

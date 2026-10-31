@@ -92,6 +92,24 @@ func TestRustEquivalence(t *testing.T) {
 	t.Logf("files=%d cases=%d ok=%d rejected=%d mismatch=%d", nfiles, cases, okCount, cases-okCount-mismatch, mismatch)
 }
 
+// BenchmarkCorpusCheck: mean ns per image of the Go fork over all real
+// images (compare with `jpegcheckd --benchall N $CORPUS/*/*.jpg`).
+func BenchmarkCorpusCheck(b *testing.B) {
+	files, _ := filepath.Glob(filepath.Join(os.Getenv("JPEGCHECK_CORPUS"), "*", "*.jpg"))
+	if len(files) == 0 {
+		b.Skip()
+	}
+	var datas [][]byte
+	for _, f := range files {
+		d, _ := os.ReadFile(f)
+		datas = append(datas, d)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got(datas[i%len(datas)])
+	}
+}
+
 func BenchmarkRustSock(b *testing.B) {
 	dir := os.Getenv("JPEGCHECK_CORPUS")
 	data, err := os.ReadFile(filepath.Join(dir, "jpg", "000.jpg"))

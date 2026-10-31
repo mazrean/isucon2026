@@ -98,6 +98,7 @@ struct Br<'a> {
     n: i32,
 }
 
+#[allow(dead_code)] // the literal lazy-refill bit layer of Go, kept as reference for Sr
 impl<'a> Br<'a> {
     #[inline(always)]
     fn byte_at(&self, i: usize) -> u8 {
@@ -623,116 +624,46 @@ impl<'a> Decoder<'a> {
         self.br.reset_bits();
         let data = self.br.data;
         let mut sr = Sr::new(data, self.br.pos);
-        let mut mcu = 0usize;
+        let mut cfg = ScanCfg {
+            n_comp,
+            comps: [(0, 0, 0, 0, 0); 4],
+            mxx,
+            width: self.width,
+            height: self.height,
+            zig_start,
+            zig_end,
+            ah,
+            progressive: self.progressive,
+        };
+        for i in 0..n_comp {
+            let ci = scan[i].0;
+            cfg.comps[i] = (ci, self.comp[ci].h, self.comp[ci].v, scan[i].1 as usize, scan[i].2 as usize);
+        }
+        let total = mxx * myy;
+        let mut st = (0usize, 0usize);
         let mut expected_rst = RST0;
-        let (mut nb_x, mut nb_y) = (0usize, 0usize);
-        let mut since_rst = 0usize;
-        let (mut bx, mut by);
-        let progressive = self.progressive;
-        let width = self.width;
-        let height = self.height;
-        for _my in 0..myy {
-            for mx in 0..mxx {
-                for i in 0..n_comp {
-                    let ci = scan[i].0;
-                    let hi = self.comp[ci].h;
-                    let vi = self.comp[ci].v;
-                    let my = _my;
-                    let (mut jx, mut jy) = (0usize, 0usize);
-                    for _j in 0..hi * vi {
-                        if n_comp != 1 {
-                            // bx = hi*mx + j%hi, by = vi*my + j/hi
-                            bx = hi * mx + jx;
-                            by = vi * my + jy;
-                            jx += 1;
-                            if jx == hi {
-                                jx = 0;
-                                jy += 1;
-                            }
-                        } else {
-                            // bx = blockCount % q, by = blockCount / q
-                            bx = nb_x;
-                            by = nb_y;
-                            nb_x += 1;
-                            if nb_x == mxx * hi {
-                                nb_x = 0;
-                                nb_y += 1;
-                            }
-                            if bx * 8 >= width || by * 8 >= height {
-                                continue;
-                            }
-                        }
-                        let bidx = by * mxx * hi + bx;
-                        let mut mask: u64 = if progressive { self.prog[ci][bidx] } else { 0 };
-
-                        if ah != 0 {
-                            let h = &self.huff[1][scan[i].2 as usize];
-                            refine(&mut sr, &mut self.eob_run, &mut mask, h, zig_start, zig_end)?;
-                        } else {
-                            let mut zig = zig_start;
-                            if zig == 0 {
-                                zig += 1;
-                                let value = sr.decode_huffman(&self.huff[0][scan[i].1 as usize])?;
-                                if value > 16 {
-                                    return Err(E::Bad);
-                                }
-                                sr.receive_extend(value)?;
-                            }
-                            if zig <= zig_end && self.eob_run > 0 {
-                                self.eob_run -= 1;
-                            } else {
-                                let huff = &self.huff[1][scan[i].2 as usize];
-                                while zig <= zig_end {
-                                    let value = sr.decode_huffman(huff)?;
-                                    let val0 = value >> 4;
-                                    let val1 = value & 0x0f;
-                                    if val1 != 0 {
-                                        zig += val0 as i32;
-                                        if zig > zig_end {
-                                            break;
-                                        }
-                                        sr.receive_extend(val1)?;
-                                        mask |= 1u64 << zig;
-                                    } else {
-                                        if val0 != 0x0f {
-                                            self.eob_run = 1u16 << val0;
-                                            if val0 != 0 {
-                                                let bits = sr.decode_bits(val0 as u32)?;
-                                                self.eob_run |= bits as u16;
-                                            }
-                                            self.eob_run = self.eob_run.wrapping_sub(1);
-                                            break;
-                                        }
-                                        zig += 0x0f;
-                                    }
-                                    zig += 1;
-                                }
-                            }
-                        }
-                        if progressive {
-                            self.prog[ci][bidx] = mask;
-                        }
-                    }
-                }
-                mcu += 1;
-                since_rst += 1;
-                if since_rst == self.ri && mcu < mxx * myy {
-                    since_rst = 0;
-                    sr.materialize(&mut self.br);
-                    let s = self.br.read_full(2)?;
-                    let (t0, t1) = (self.br.data[s], self.br.data[s + 1]);
-                    if t0 != 0xff || t1 != expected_rst {
-                        self.find_rst(expected_rst, t0, t1)?;
-                    }
-                    expected_rst += 1;
-                    if expected_rst == RST7 + 1 {
-                        expected_rst = RST0;
-                    }
-                    self.br.reset_bits();
-                    sr = Sr::new(data, self.br.pos);
-                    self.eob_run = 0;
-                }
+        let mut mcu = 0usize;
+        loop {
+            // MCUs up to the next restart point (Go: mcu%ri == 0 && mcu < mxx*myy).
+            let end = if self.ri > 0 { (mcu + self.ri).min(total) } else { total };
+            run_mcus(&cfg, &self.huff, &mut self.prog, &mut sr, &mut self.eob_run, &mut st, mcu, end)?;
+            mcu = end;
+            if mcu >= total {
+                break;
             }
+            sr.materialize(&mut self.br);
+            let s = self.br.read_full(2)?;
+            let (t0, t1) = (self.br.data[s], self.br.data[s + 1]);
+            if t0 != 0xff || t1 != expected_rst {
+                self.find_rst(expected_rst, t0, t1)?;
+            }
+            expected_rst += 1;
+            if expected_rst == RST7 + 1 {
+                expected_rst = RST0;
+            }
+            self.br.reset_bits();
+            sr = Sr::new(data, self.br.pos);
+            self.eob_run = 0;
         }
         sr.materialize(&mut self.br);
         Ok(())
@@ -850,6 +781,149 @@ impl<'a> Decoder<'a> {
     }
 }
 
+struct ScanCfg {
+    n_comp: usize,
+    /// (compIndex, h, v, td, ta) per scan component
+    comps: [(usize, usize, usize, usize, usize); 4],
+    mxx: usize,
+    width: usize,
+    height: usize,
+    zig_start: i32,
+    zig_end: i32,
+    ah: u32,
+    progressive: bool,
+}
+
+/// Decodes MCUs [from, to) of a scan (Go's processSOS inner loops). The
+/// reader is copied into a local so its fields stay in registers; on error
+/// the state is irrelevant (the decode fails).
+#[inline(never)]
+fn run_mcus(
+    cfg: &ScanCfg,
+    huff: &[[Huffman; 4]; 2],
+    prog: &mut [Vec<u64>; 4],
+    srp: &mut Sr,
+    eob_run: &mut u16,
+    st: &mut (usize, usize),
+    from: usize,
+    to: usize,
+) -> R<()> {
+    let mut sr = *srp;
+    let mut eob = *eob_run;
+    let (mut nb_x, mut nb_y) = *st;
+    let mxx = cfg.mxx;
+    let mut my = from / mxx.max(1);
+    let mut mx = from - my * mxx;
+    for _ in from..to {
+        for i in 0..cfg.n_comp {
+            let (ci, hi, vi, td, ta) = cfg.comps[i];
+            let dch = &huff[0][td];
+            let ach = &huff[1][ta];
+            let (mut jx, mut jy) = (0usize, 0usize);
+            for _j in 0..hi * vi {
+                let (bx, by);
+                if cfg.n_comp != 1 {
+                    // bx = hi*mx + j%hi, by = vi*my + j/hi
+                    bx = hi * mx + jx;
+                    by = vi * my + jy;
+                    jx += 1;
+                    if jx == hi {
+                        jx = 0;
+                        jy += 1;
+                    }
+                } else {
+                    // bx = blockCount % q, by = blockCount / q
+                    bx = nb_x;
+                    by = nb_y;
+                    nb_x += 1;
+                    if nb_x == mxx * hi {
+                        nb_x = 0;
+                        nb_y += 1;
+                    }
+                    if bx * 8 >= cfg.width || by * 8 >= cfg.height {
+                        continue;
+                    }
+                }
+                if !cfg.progressive {
+                    decode_block(&mut sr, &mut eob, 0, dch, ach, 0, 63)?;
+                    continue;
+                }
+                let bidx = by * mxx * hi + bx;
+                let mut mask = prog[ci][bidx];
+                if cfg.ah != 0 {
+                    refine(&mut sr, &mut eob, &mut mask, ach, cfg.zig_start, cfg.zig_end)?;
+                } else {
+                    mask = decode_block(&mut sr, &mut eob, mask, dch, ach, cfg.zig_start, cfg.zig_end)?;
+                }
+                prog[ci][bidx] = mask;
+            }
+        }
+        mx += 1;
+        if mx == mxx {
+            mx = 0;
+            my += 1;
+        }
+    }
+    *srp = sr;
+    *eob_run = eob;
+    *st = (nb_x, nb_y);
+    Ok(())
+}
+
+/// One block of a sequential or first-pass progressive scan (ah == 0).
+#[inline(always)]
+fn decode_block(
+    sr: &mut Sr,
+    eob_run: &mut u16,
+    mut mask: u64,
+    dch: &Huffman,
+    ach: &Huffman,
+    zig_start: i32,
+    zig_end: i32,
+) -> R<u64> {
+    let mut eob = *eob_run;
+    let mut zig = zig_start;
+    if zig == 0 {
+        zig += 1;
+        let value = sr.decode_huffman(dch)?;
+        if value > 16 {
+            return Err(E::Bad);
+        }
+        sr.receive_extend(value)?;
+    }
+    if zig <= zig_end && eob > 0 {
+        eob -= 1;
+    } else {
+        while zig <= zig_end {
+            let value = sr.decode_huffman(ach)?;
+            let val0 = value >> 4;
+            let val1 = value & 0x0f;
+            if val1 != 0 {
+                zig += val0 as i32;
+                if zig > zig_end {
+                    break;
+                }
+                sr.receive_extend(val1)?;
+                mask |= 1u64 << zig;
+            } else {
+                if val0 != 0x0f {
+                    eob = 1u16 << val0;
+                    if val0 != 0 {
+                        let bits = sr.decode_bits(val0 as u32)?;
+                        eob |= bits as u16;
+                    }
+                    eob = eob.wrapping_sub(1);
+                    break;
+                }
+                zig += 0x0f;
+            }
+            zig += 1;
+        }
+    }
+    *eob_run = eob;
+    Ok(mask)
+}
+
 #[inline(always)]
 fn refine(br: &mut Sr, eob_run: &mut u16, mask: &mut u64, h: &Huffman, zig_start: i32, zig_end: i32) -> R<()> {
     if zig_start == 0 {
@@ -914,6 +988,17 @@ fn refine_non_zeroes(br: &mut Sr, mask: u64, mut zig: i32, zig_end: i32, mut nz:
     Ok(zig)
 }
 
+/// Only reached with nb >= 24: Go's 8-bit LUT missed (or the code needs
+/// more than LUT_BITS bits).
+#[inline(never)]
+fn canonical16(h: &Huffman, acc: u64) -> Option<(u8, u32)> {
+    let v = h.lut[(acc >> 56) as usize];
+    if v != 0 {
+        return Some(((v >> 8) as u8, (v & 0xff) as u32 - 1));
+    }
+    canonical(h, (acc >> 48) as u16, 16)
+}
+
 /// Go's slow path (canonical decode from bit 1) over the top `nbits` bits of
 /// `bits` (left-aligned in a u16). Returns (value, length), or None if not
 /// resolved within nbits or if Go would index out of range.
@@ -964,6 +1049,7 @@ fn build_lut10(h: &mut Huffman) {
 /// be (pure arithmetic), so Go's failures (a demanded unit lies beyond the
 /// wall: a marker or EOF) and Go's byte position at the end of the scan are
 /// reconstructed exactly.
+#[derive(Clone, Copy)]
 struct Sr<'a> {
     data: &'a [u8],
     start: usize, // raw position where this entropy-coded segment begins
@@ -1076,14 +1162,16 @@ impl<'a> Sr<'a> {
         if self.nb < 32 {
             self.refill();
             if self.nb < 24 {
-                return self.decode_huffman_exact(h);
+                let (s, r) = Self::decode_huffman_exact_by_value(*self, h);
+                *self = s;
+                return r;
             }
         }
         let e = h.lut10[(self.acc >> (64 - LUT_BITS)) as usize];
         let (v, l) = if e != 0 {
             ((e >> 8) as u8, (e & 0xff) as u32)
         } else {
-            match self.canonical16(h) {
+            match canonical16(h, self.acc) {
                 Some(r) => r,
                 None => return Err(E::Bad),
             }
@@ -1097,20 +1185,16 @@ impl<'a> Sr<'a> {
         Ok(v)
     }
 
-    #[inline(never)]
-    fn canonical16(&self, h: &Huffman) -> Option<(u8, u32)> {
-        // Only reached with nb >= 24: Go's LUT missed (or needs > 10 bits).
-        let v = h.lut[(self.acc >> 56) as usize];
-        if v != 0 {
-            return Some(((v >> 8) as u8, (v & 0xff) as u32 - 1));
-        }
-        canonical(h, (self.acc >> 48) as u16, 16)
-    }
-
-    /// Literal emulation of Go's decodeHuffman near the wall (all remaining
-    /// units are loaded, so a unit is available iff n_go + 8 <= nb).
+    /// Cold path; works on a copy so the caller's reader never has its
+    /// address taken (keeps the hot fields in registers).
     #[cold]
     #[inline(never)]
+    fn decode_huffman_exact_by_value(mut s: Sr<'a>, h: &Huffman) -> (Sr<'a>, R<u8>) {
+        let r = s.decode_huffman_exact(h);
+        (s, r)
+    }
+
+    #[inline(always)]
     fn decode_huffman_exact(&mut self, h: &Huffman) -> R<u8> {
         let mut lut_ok = true;
         if self.n_go < 8 {
@@ -1178,7 +1262,7 @@ impl<'a> Sr<'a> {
 }
 
 pub fn check(data: &[u8]) -> Verdict {
-    let mut d = (Decoder {
+    let mut d = Decoder {
         br: Br { data, pos: 0, n_unreadable: 0, a: 0, n: 0 },
         width: 0,
         height: 0,
@@ -1199,7 +1283,7 @@ pub fn check(data: &[u8]) -> Verdict {
             [Huffman::new(), Huffman::new(), Huffman::new(), Huffman::new()],
             [Huffman::new(), Huffman::new(), Huffman::new(), Huffman::new()],
         ],
-    });
+    };
     match d.decode() {
         Ok((w, h)) => Verdict::Ok(w, h),
         Err(E::Bad) => Verdict::Bad,

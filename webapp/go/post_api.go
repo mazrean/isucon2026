@@ -107,6 +107,10 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		// FOR UPDATE だと同一リージョンの投稿がすべて直列化されるため FOR SHARE にする。
 		// 投稿期間の終了 (UPDATE ended_at) は進行中の投稿のコミットを待つので整合性は変わらない。
 		err = tx.GetContext(ctx, &window, `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR SHARE`, user.Region)
+		if errors.Is(err, sql.ErrNoRows) {
+			// 投稿期間の切り替えと競合した場合、新しいスナップショットで取り直す (元実装どおり)。
+			err = tx.GetContext(ctx, &window, `SELECT id, local_date, starts_at FROM posting_windows WHERE region = $1 AND ended_at IS NULL FOR SHARE`, user.Region)
+		}
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return NewAPIError(http.StatusConflict, "post_slot_unavailable")

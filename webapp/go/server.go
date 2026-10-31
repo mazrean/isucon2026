@@ -41,7 +41,7 @@ func NewServer(config *Config) *echo.Echo {
 		panic("failed to open database: " + err.Error())
 	}
 	// 既定の MaxIdleConns=2 だと 100ms 先の primary へ頻繁に再接続するため、プールを保持する。
-	configurePool(db, 30)
+	configurePool(db, config.DBMaxOpen)
 	err = db.Ping()
 	if err != nil {
 		panic("failed to ping database: " + err.Error())

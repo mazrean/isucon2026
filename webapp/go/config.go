@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -16,6 +17,7 @@ type Config struct {
 	LogLevel   string
 	ReadHost   string
 	NodeName   string
+	DBMaxOpen  int
 }
 
 func ConfigFromEnv() *Config {
@@ -29,6 +31,7 @@ func ConfigFromEnv() *Config {
 		LogLevel:   envOrDefault("ISUREAL_LOG_LEVEL", "debug"),
 		ReadHost:   os.Getenv("ISUREAL_DB_READ_HOST"),
 		NodeName:   os.Getenv("ISUREAL_NODE_NAME"),
+		DBMaxOpen:  envIntOrDefault("ISUREAL_DB_MAX_OPEN", 30),
 	}
 }
 
@@ -53,6 +56,13 @@ func (c *Config) databaseDSNForHost(host string) string {
 
 func envOrDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func envIntOrDefault(key string, defaultValue int) int {
+	if value, err := strconv.Atoi(os.Getenv(key)); err == nil && value > 0 {
 		return value
 	}
 	return defaultValue

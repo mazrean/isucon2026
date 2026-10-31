@@ -244,3 +244,22 @@ END: 2026-10-31 18:00 JST
 - 悪い回は、窓の開始 +2s から投稿の列が伸び続ける (処理が到着に追いつかない)。GC・checkpoint・ディスクの破棄とは重ならない。
 - 悪い回ほど jpegcheck の local への落ち (asia1 で自前検証) が多い (良い回 24〜41 / 10s、悪い回 130〜145)。→ JPEG の遠隔検証の容量が投稿の速さを決めている疑い。
 - ea1ffec (組ごとの advisory lock + FOR SHARE) は d3 から投稿を詰まらせた (15134 の d3 投稿の 1 秒超 77%、13426 は 0%) → revert (83887ae)。
+
+## 最終の段取り (14:05 作成、ドライバーが実行)
+`scripts/final-check.sh` は読み取りのみ (再起動・lock・ポータル操作なし)。最終行が `OK ...` か `NG: 理由; ...` (NG なら exit 1)。`WARN` は判断材料で、失敗ではない。
+1. **凍結 16:30**。以降はコード・設定の変更とデプロイをしない。やるのは再起動、確認、ベンチだけ。
+2. **既定を固める** (16:30 まで)。最終候補を **引数も環境変数も無しの bare `scripts/deploy.sh`** で再現できるよう、採用するノブを deploy.sh の既定に上げて commit。bare の現状の既定は MEM=1 MEM_WM=1 FWD=1 (宛先 asia1) PREVALIDATE=1 LOCALIMG=1 MEMORIES_PAR/MEM/CACHE=1 FWD_PRIORITY=1 LOCAL_ONLY_WRITE=1 MEM_REORDER_WAIT_MS=50 PGSSL=allow で、残りは 0 か空 (**JC=0**、JPEG_LOCAL_SLOTS=1、STORE/LOCAL_SESSION/LOGREPL/FRONT/PACE/CWND/ASIA_LOCALIMG/IMG_*=0)。14:02 時点の env.sh は JPEG_LOCAL_SLOTS=2 と jpegcheckd 稼働 (JC=1) で、bare の既定と違う。採用するなら既定に上げること。
+   - pprof: deploy.sh は `ISUREAL_PPROF_ADDR=127.0.0.1:6060` を無条件に書く (127.0.0.1 だけで待ち受け)。final-check は WARN を出す。消すなら 16:30 までに deploy.sh を直す。残すならそう決めて、ここに書く。
+   - ログ: `ISUREAL_LOG_LEVEL` は未設定で、既定は debug。ただし action log が出すのは guard 用の行と 5xx だけ。nginx の access_log (timed buffer=64k) は有効のまま。
+   - 固めたら `scripts/batch.sh "final candidate"` で 1 回デプロイし、ベンチまで流す。
+3. **全台の再起動を 1 台ずつ** (env.lock を取ってから)。順番は asia2 (PG) → asia1 → europe1 → america1。各台で次を行う。
+   ```
+   old=$(ssh asia2 cat /proc/sys/kernel/random/boot_id); ssh asia2 sudo reboot
+   until n=$(ssh -o ConnectTimeout=5 asia2 cat /proc/sys/kernel/random/boot_id 2>/dev/null) && [ -n "$n" ] && [ "$n" != "$old" ]; do sleep 5; done
+   ```
+   新しい boot_id を確認してから次の台へ進む。FRONT=1 を採用した場合は、asia1 の :80 が Go から応答することを必ず確認 (上の FRONT の節)。
+4. **`scripts/final-check.sh`** を実行し、最終行が OK であることを確認する。boot_id が 4 台とも 3. の前と違うこと。asia2 の `pending_restart=` が空であること。サービス (isureal-go / nginx / postgresql) の active と enabled。slots=0、sync_standby=[]、watchdog 停止、mq qdisc、/24 の initcwnd 経路が無いこと。df。
+5. **ブラウザの確認** (Playwright)。`scripts/e2e-check.sh` で初期実装との差分を見る。E2E はデータを書くので、**ベンチと同時に流さない** (10:58 の FAIL)。lock を取って、ベンチの前に済ませる。
+6. **公式ベンチを同じ版で 2 回、両方 pass**。`scripts/portal-bench.sh run` (または lock を取って同じ手順)。間にデプロイも変更もしない。pass=false なら原因を直す。ただし 16:30 以降は変更できないので、直前の pass 版に戻すかどうかだけを判断する。**最終スコアは最後の走行**で決まる。
+7. **最後の走行の後**に、4 台の df と `scripts/final-check.sh` をもう一度。OK であることと、ディスクに余裕があることを確認する。一時的な FW ルール (fw-local.sh で開けたもの) が残っていないことも見る。final-check は logs/fw-local.log で閉じていない OPEN を NG にする。
+8. **18:00 までにやめる**。最後の pass の後はベンチもデプロイも再起動もしない。終了間際の走行は、FAIL すると最終スコアが失われる。

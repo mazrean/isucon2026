@@ -95,3 +95,4 @@
 16:17	63dd555	job=27110 state=4 pass=false スコア=0 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + NOTE=1
 16:20	179a4bb	job=27389 state=4 pass=true スコア=173589 種別エラー数=map[]	新既定 (STORE+SPLIT+FSYNC=gp+BODYBUF=512k) + MEM_SYNC_VISIBLE=1
 16:24	020d5a3	job=27636 state=4 pass=true スコア=184824 種別エラー数=map[]	26530 構成 + MEM_HOT_EXTRA_DAYS=30
+16:28	07aac13	job=28200 state=4 pass=true スコア=192638 種別エラー数=map[]	既定 (画像 403 修正込み) + MEM_SYNC_VISIBLE=1 MEM_ACK_OWN=1

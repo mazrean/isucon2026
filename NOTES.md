@@ -241,6 +241,7 @@ END: 2026-10-31 18:00 JST
 | 27110 | - | **FAIL** | 既定 (FSYNC=gp + BODYBUF=512k)。post-validation で asia の画像 (…a0a0a0) が 403。25833 と同じ型。BODYBUF 単独 (26530) と gp 単独 (26281) は pass。既定の FSYNC を 0 に戻した (= 26530 の構成) |
 | 27389 | - | 173589 | 既定 (FSYNC=gp+BODYBUF) + MEM_SYNC_VISIBLE=1。pass。d5 954/410/305、GP 516/344/154。eu の d5 と GP は最多、asia は下がる (ack 待ち +1 RTT)。総合は 26530 を下回るので不採用 |
 | 27636 | - | 184824 | 26530 構成 + MEM_HOT_EXTRA_DAYS=30。pass。26530 (199,880) を下回る。asia2 の available は 287MB まで低下。30 日では月初を含まず、過去月の大半を覆わない (Codex の集計)。不採用 |
+| 28200 | - | 192638 | 既定 (403 修正込み) + MEM_SYNC_VISIBLE=1 MEM_ACK_OWN=1。pass、投稿の失敗 0。GP 628/375/321 (計 1324、過去最多)、eu/am の d5 411/368 (最多)、WM 待ち p50 1ms。asia d4 が 344 と序盤で揺れた。既定に採用 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

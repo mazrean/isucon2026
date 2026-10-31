@@ -55,6 +55,11 @@ func FwdPriorityMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 	return p.middleware(func(c *echo.Context) bool { return requestRegion(h, c) != h.Config.Region })
 }
 
+// fwdPriorityLocalExempt: ローカル枠を取らずに通すローカル書き込み。
+// asia ローカルの投稿は画像の INSERT を画像専用プール (h.Img) で待つので、枠を握ったままそこで並ぶと
+// 枠 128 が投稿で埋まり、友達申請・login が枠待ち (最大 2 秒) になっていた。投稿の同時数は h.Img が抑える。
+var fwdPriorityLocalExempt = func(*http.Request) bool { return false }
+
 func fwdPriorityTarget(req *http.Request) bool {
 	switch req.Method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions:
@@ -79,7 +84,7 @@ func (p *fwdPriority) middleware(isForwarded func(*echo.Context) bool) echo.Midd
 				p.record(&p.fwdDur, time.Since(start))
 				return err
 			}
-			if p.inflight.Load() == 0 && start.UnixNano()-p.lastFwd.Load() > int64(p.idle) {
+			if (p.inflight.Load() == 0 && start.UnixNano()-p.lastFwd.Load() > int64(p.idle)) || fwdPriorityLocalExempt(c.Request()) {
 				p.mu.Lock()
 				p.bypass++
 				p.mu.Unlock()

@@ -1,6 +1,7 @@
 package isureal
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/jmoiron/sqlx"
@@ -23,6 +24,8 @@ type HandlerContext struct {
 	// 投稿の画像 INSERT は TOAST の relation extension lock 待ちで数十〜数百 ms 接続を握るため、
 	// DB (60 本) から外して、友達申請・login など短い書き込みの接続待ちを無くす。nil なら DB を使う。
 	Img *sqlx.DB
+	// ImgRead: 画像の GET (image_objects の SELECT) 用。INSERT と同じプールだと GET が INSERT の接続を奪う。
+	ImgRead *sqlx.DB
 
 	Notifications *notificationHub
 
@@ -78,6 +81,14 @@ func NewServer(config *Config) *echo.Echo {
 		imgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
 		configurePool(imgDB, n)
 		handlerContext.Img = imgDB
+		fwdPriorityLocalExempt = func(req *http.Request) bool {
+			return req.Method == http.MethodPost && req.URL.Path == "/api/posts"
+		}
+	}
+	if n := envIntOrDefault("ISUREAL_DB_IMG_READ_OPEN", 16); n > 0 && handlerContext.Img != nil {
+		imgReadDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+		configurePool(imgReadDB, n)
+		handlerContext.ImgRead = imgReadDB
 	}
 	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))

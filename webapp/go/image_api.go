@@ -78,14 +78,14 @@ func getImageHandler(h *HandlerContext) echo.HandlerFunc {
 	}
 }
 
-// imageDBs: images.get の (reader, primary)。primary 向けは画像専用プール (h.Img) に回す。
+// imageDBs: images.get の (reader, primary)。primary 向けは画像の読み取り専用プール (h.ImgRead) に回す。
 func (h *HandlerContext) imageDBs() (*sqlx.DB, *sqlx.DB) {
 	r, p := h.Reader(), h.DB
-	if h.Img != nil {
+	if h.ImgRead != nil {
 		if r == h.DB {
-			r = h.Img
+			r = h.ImgRead
 		}
-		p = h.Img
+		p = h.ImgRead
 	}
 	return r, p
 }

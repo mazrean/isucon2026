@@ -1,0 +1,33 @@
+time=2026-10-31T02:19:49.077Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:19:52.031Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:19:55.136Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T02:19:58.221Z level=INFO msg="asia 2 日目: 45 人"
+time=2026-10-31T02:20:01.057Z level=INFO msg="europe 2 日目: 14 人"
+time=2026-10-31T02:20:03.977Z level=INFO msg="america 2 日目: 14 人"
+time=2026-10-31T02:20:05.811Z level=INFO msg="user moved" user=nukatsu_5330 from=asia to=europe
+time=2026-10-31T02:20:07.084Z level=INFO msg="asia 3 日目: 121 人"
+time=2026-10-31T02:20:10.259Z level=INFO msg="europe 3 日目: 35 人"
+time=2026-10-31T02:20:12.562Z level=INFO msg="user moved" user=kaben.5603 from=asia to=europe
+time=2026-10-31T02:20:12.613Z level=INFO msg="user moved" user=liako_5425 from=america to=asia
+time=2026-10-31T02:20:13.405Z level=INFO msg="america 3 日目: 35 人"
+time=2026-10-31T02:20:15.339Z level=INFO msg="user moved" user=liako_5425 from=asia to=america
+time=2026-10-31T02:20:16.024Z level=INFO msg="asia 4 日目: 318 人"
+time=2026-10-31T02:20:19.448Z level=INFO msg="europe 4 日目: 56 人"
+time=2026-10-31T02:20:19.501Z level=INFO msg="user moved" user=nukatsu_5330 from=europe to=asia
+time=2026-10-31T02:20:22.146Z level=INFO msg="america 4 日目: 36 人"
+time=2026-10-31T02:20:24.955Z level=INFO msg="user moved" user=kaben.5603 from=europe to=asia
+time=2026-10-31T02:20:25.268Z level=INFO msg="asia 5 日目: 320 人"
+time=2026-10-31T02:20:31.162Z level=INFO msg="europe 5 日目: 54 人"
+time=2026-10-31T02:20:33.374Z level=INFO msg="america 5 日目: 36 人"
+time=2026-10-31T02:20:40.406Z level=INFO msg="america 最終日（グランプリ）: 35 人"
+time=2026-10-31T02:20:40.546Z level=INFO msg="asia 最終日（グランプリ）: 319 人"
+time=2026-10-31T02:20:40.664Z level=INFO msg="europe 最終日（グランプリ）: 53 人"
+time=2026-10-31T02:20:48.767Z level=INFO msg="グランプリ: アジア 0 人, ヨーロッパ 0 人, アメリカ 1 人"
+{
+  "pass": true,
+  "score": 38047,
+  "messages": []
+}
+
+reason= 実行終了
+job=3469 state=4 pass=true スコア=38047 種別エラー数=map[]

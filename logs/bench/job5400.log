@@ -1,0 +1,108 @@
+time=2026-10-31T02:48:06.371Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:48:09.468Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:48:12.458Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T02:48:15.782Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T02:48:18.460Z level=INFO msg="europe 2 日目: 14 人"
+time=2026-10-31T02:48:21.415Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T02:48:21.663Z level=INFO msg="user moved" user=mumiamar-5293 from=asia to=america
+time=2026-10-31T02:48:24.484Z level=INFO msg="asia 3 日目: 134 人"
+time=2026-10-31T02:48:27.349Z level=INFO msg="europe 3 日目: 37 人"
+time=2026-10-31T02:48:30.110Z level=INFO msg="user moved" user=neka5771 from=asia to=europe
+time=2026-10-31T02:48:30.528Z level=INFO msg="america 3 日目: 39 人"
+time=2026-10-31T02:48:31.646Z level=INFO msg="user moved" user=hishiis5860 from=asia to=europe
+time=2026-10-31T02:48:33.422Z level=INFO msg="asia 4 日目: 357 人"
+time=2026-10-31T02:48:36.500Z level=INFO msg="europe 4 日目: 71 人"
+time=2026-10-31T02:48:40.443Z level=INFO msg="america 4 日目: 70 人"
+time=2026-10-31T02:48:42.008Z level=INFO msg="user moved" user=nata_7142 from=asia to=europe
+time=2026-10-31T02:48:43.129Z level=INFO msg="asia 5 日目: 676 人"
+time=2026-10-31T02:48:46.825Z level=INFO msg="user moved" user=neka5771 from=europe to=asia
+time=2026-10-31T02:48:47.068Z level=INFO msg="europe 5 日目: 71 人"
+time=2026-10-31T02:48:49.165Z level=INFO msg="america 5 日目: 70 人"
+time=2026-10-31T02:48:57.850Z level=INFO msg="asia 最終日（グランプリ）: 677 人"
+time=2026-10-31T02:48:57.853Z level=INFO msg="america 最終日（グランプリ）: 69 人"
+time=2026-10-31T02:48:57.887Z level=INFO msg="europe 最終日（グランプリ）: 71 人"
+time=2026-10-31T02:49:06.175Z level=INFO msg="グランプリ: アジア 441 人, ヨーロッパ 41 人, アメリカ 46 人"
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "走行後の整合性チェックに失敗しました: vinshiho_9513: Memories を取得できません: GET /api/memories?month=2026-10: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "evaru.7368: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "neevatsu-10273: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "ulto-10070: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "naya.5550: Memories を取得できません: GET /api/memories?month=2026-10: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "leomiru_5972: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "sobenchi.5086: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "tareyo_6213: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "fuwa.6200: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "liata.6119: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "hina_nakamura_38: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "karulia5186: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "tasu5165: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "hikiru-5660: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "elias_hoffmann_1411: 履歴を読めません: GET /api/images/3adc38ae-b6bb-4ea2-b2cd-1171b4a1746b?exp=1793500800\u0026sig=GOMdyJoD3GZQ-YYrJF1rF7p8aUQUEjfoHebTPr3-pyU: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "fuwa.6200: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "leomiru_5972: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "sophie_evans_2479: 履歴を読めません: GET /api/memories/2026-09-26: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "suyael.6174: Memories を取得できません: GET /api/memories?month=2026-11: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "aoi_yamamoto_4696: 履歴を読めません: GET /api/memories/2025-12-10: ステータスコード 500 が返りました（期待値 200、failed to get session: failed to connect to `user=isureal database=isureal`:",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t127.0.0.1:5432 (127.0.0.1): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "shichiko6288: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "seta-5134: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "romaxko6345: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "mimarha.6573: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）",
+    "kuelsa_5515: 通知を購読できません: GET /api/notifications: ステータスコード 500 が返りました（期待値 200、failed to connect to `user=isureal database=isureal`:",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)",
+    "\t192.168.4.10:5432 (192.168.4.10): server error: FATAL: sorry, too many clients already (SQLSTATE 53300)）"
+  ]
+}
+
+reason= 走行後の整合性チェックに失敗しました
+job=5400 state=4 pass=false スコア=0 種別エラー数=map[]

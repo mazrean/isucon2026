@@ -1,0 +1,31 @@
+time=2026-10-31T02:44:58.253Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T02:45:01.197Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T02:45:04.008Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T02:45:06.907Z level=INFO msg="asia 2 日目: 48 人"
+time=2026-10-31T02:45:10.013Z level=INFO msg="europe 2 日目: 13 人"
+time=2026-10-31T02:45:13.180Z level=INFO msg="america 2 日目: 13 人"
+time=2026-10-31T02:45:16.159Z level=INFO msg="asia 3 日目: 129 人"
+time=2026-10-31T02:45:19.044Z level=INFO msg="europe 3 日目: 32 人"
+time=2026-10-31T02:45:22.227Z level=INFO msg="america 3 日目: 27 人"
+time=2026-10-31T02:45:25.071Z level=INFO msg="asia 4 日目: 282 人"
+time=2026-10-31T02:45:28.448Z level=INFO msg="europe 4 日目: 47 人"
+time=2026-10-31T02:45:31.293Z level=INFO msg="america 4 日目: 40 人"
+time=2026-10-31T02:45:34.653Z level=INFO msg="user moved" user=hine6118 from=europe to=asia
+time=2026-10-31T02:45:34.896Z level=INFO msg="user moved" user=nunoaya_5945 from=asia to=europe
+time=2026-10-31T02:45:35.918Z level=INFO msg="asia 5 日目: 439 人"
+time=2026-10-31T02:45:35.919Z level=INFO msg="user moved" user=benyusu.7160 from=asia to=europe
+time=2026-10-31T02:45:37.085Z level=INFO msg="user moved" user=numia_7196 from=asia to=europe
+time=2026-10-31T02:45:37.918Z level=INFO msg="europe 5 日目: 49 人"
+time=2026-10-31T02:45:41.018Z level=INFO msg="america 5 日目: 40 人"
+time=2026-10-31T02:45:49.344Z level=INFO msg="asia 最終日（グランプリ）: 437 人"
+time=2026-10-31T02:45:49.344Z level=INFO msg="america 最終日（グランプリ）: 39 人"
+time=2026-10-31T02:45:49.738Z level=INFO msg="europe 最終日（グランプリ）: 48 人"
+time=2026-10-31T02:45:57.748Z level=INFO msg="グランプリ: アジア 418 人, ヨーロッパ 43 人, アメリカ 34 人"
+{
+  "pass": true,
+  "score": 69730,
+  "messages": []
+}
+
+reason= 実行終了
+job=5168 state=4 pass=true スコア=69730 種別エラー数=map[]

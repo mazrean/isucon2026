@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -21,20 +23,20 @@ import (
 // the image is checked locally, so results never depend on a remote.
 
 type jpegRemote struct {
-	addr     string
-	cap      int32
-	timeout  time.Duration
-	inflight atomic.Int32
+	addr    string
+	timeout time.Duration
+	slots   chan struct{}
 }
 
 var (
 	jpegRemotes      = parseJPEGRemotes(os.Getenv("ISUREAL_JPEG_REMOTES"))
+	jpegLocalSlots   = make(chan struct{}, 1) // asia1's own CPU is the scarce one
 	jpegRemoteClient = &http.Client{
 		Transport: &http.Transport{MaxIdleConnsPerHost: 64, IdleConnTimeout: 300 * time.Second},
 	}
 )
 
-// "addr[/cap[/timeoutMs]],..." e.g. "192.168.4.10:8080/2/300,192.168.2.10:8080/2/600"
+// "addr[/cap[/timeoutMs]],..." e.g. "192.168.4.10:8080/2/300,192.168.2.10:8080/8/900"
 func parseJPEGRemotes(s string) []*jpegRemote {
 	var out []*jpegRemote
 	for _, f := range strings.Split(s, ",") {
@@ -43,10 +45,11 @@ func parseJPEGRemotes(s string) []*jpegRemote {
 			continue
 		}
 		parts := strings.Split(f, "/")
-		r := &jpegRemote{addr: parts[0], cap: 2, timeout: 300 * time.Millisecond}
+		capacity := 2
+		r := &jpegRemote{addr: parts[0], timeout: 300 * time.Millisecond}
 		if len(parts) > 1 {
-			if _, err := fmt.Sscanf(parts[1], "%d", &r.cap); err != nil || r.cap <= 0 {
-				r.cap = 2
+			if _, err := fmt.Sscanf(parts[1], "%d", &capacity); err != nil || capacity <= 0 {
+				capacity = 2
 			}
 		}
 		if len(parts) > 2 {
@@ -55,26 +58,73 @@ func parseJPEGRemotes(s string) []*jpegRemote {
 				r.timeout = time.Duration(ms) * time.Millisecond
 			}
 		}
+		r.slots = make(chan struct{}, capacity)
 		out = append(out, r)
 	}
 	return out
 }
 
-func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
-	for _, r := range jpegRemotes {
-		if r.inflight.Add(1) > r.cap {
-			r.inflight.Add(-1)
-			continue
+var jpegStats struct{ remoteOK, remoteErr, local atomic.Int64 }
+
+func init() {
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			ok, bad, loc := jpegStats.remoteOK.Swap(0), jpegStats.remoteErr.Swap(0), jpegStats.local.Swap(0)
+			if ok+bad+loc > 0 {
+				slog.Info("jpegcheck", "remote_ok", ok, "remote_err", bad, "local", loc)
+			}
 		}
-		w, h, ok, err := r.check(ctx, data)
-		r.inflight.Add(-1)
-		if err == nil {
-			return w, h, ok
-		}
-		break
-	}
+	}()
+}
+
+func checkJPEGLocal(data []byte) (w, h int, ok bool) {
+	jpegStats.local.Add(1)
 	w, h, err := jpegcheck.Check(bytes.NewReader(data))
 	return w, h, err == nil
+}
+
+// checkJPEG takes the first free slot: remotes in preference order, then the
+// single local slot; when everything is busy it waits for whichever frees up
+// first. A failed remote call is redone locally, so the result never depends
+// on a remote.
+func checkJPEG(ctx context.Context, data []byte) (w, h int, ok bool) {
+	if len(jpegRemotes) == 0 {
+		return checkJPEGLocal(data)
+	}
+	for _, r := range jpegRemotes {
+		select {
+		case r.slots <- struct{}{}:
+			return r.run(ctx, data)
+		default:
+		}
+	}
+	cases := make([]reflect.SelectCase, 0, len(jpegRemotes)+2)
+	for _, r := range jpegRemotes {
+		cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(r.slots), Send: reflect.ValueOf(struct{}{})})
+	}
+	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(jpegLocalSlots), Send: reflect.ValueOf(struct{}{})})
+	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ctx.Done())})
+	chosen, _, _ := reflect.Select(cases)
+	switch {
+	case chosen < len(jpegRemotes):
+		return jpegRemotes[chosen].run(ctx, data)
+	case chosen == len(jpegRemotes):
+		defer func() { <-jpegLocalSlots }()
+		return checkJPEGLocal(data)
+	default: // client gone; the result is not used
+		return checkJPEGLocal(data)
+	}
+}
+
+func (r *jpegRemote) run(ctx context.Context, data []byte) (w, h int, ok bool) {
+	w, h, ok, err := r.check(ctx, data)
+	<-r.slots
+	if err != nil {
+		jpegStats.remoteErr.Add(1)
+		return checkJPEGLocal(data)
+	}
+	jpegStats.remoteOK.Add(1)
+	return w, h, ok
 }
 
 func (r *jpegRemote) check(ctx context.Context, data []byte) (w, h int, ok bool, err error) {

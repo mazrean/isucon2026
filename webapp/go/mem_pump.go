@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -25,6 +26,8 @@ type memPump struct {
 	db *sqlx.DB
 
 	snap string // 最後に反映済みのスナップショット (pg_snapshot text)
+
+	pollFailures int // 連続した poll 失敗 (cycleMu 下)
 
 	pmu       sync.Mutex
 	cond      *sync.Cond
@@ -72,7 +75,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 	switch memRole(h.Config) {
 	case "pump":
 		m := &memStore{d: newMemData()}
-		p := &memPump{m: m, db: h.DB}
+		p := &memPump{m: m, db: h.BG}
 		p.cond = sync.NewCond(&p.pmu)
 		p.peers = newMemPeersFromEnv(p)
 		h.Mem = m
@@ -128,7 +131,11 @@ func ensureMemSchema(db *sqlx.DB) error {
 }
 
 // barrier は、呼び出し後に開始したサイクルの完了を待つ。
-func (p *memPump) barrier() {
+func (p *memPump) barrier() { p.barrierScope(true) }
+
+// barrierScope(false) は自ホストのメモリへの反映だけを待つ (peer の ack は待たない)。
+// 後続の全体バリアは現在の連番までの ack を待つので、取りこぼしは起きない。
+func (p *memPump) barrierScope(peers bool) {
 	p.pmu.Lock()
 	want := p.started + 1
 	if p.requested < want {
@@ -142,7 +149,7 @@ func (p *memPump) barrier() {
 		p.cond.Wait()
 	}
 	p.pmu.Unlock()
-	if p.peers != nil {
+	if peers && p.peers != nil {
 		p.peers.waitAcked()
 	}
 }
@@ -159,7 +166,11 @@ func (p *memPump) loop() {
 		g := p.started
 		p.pmu.Unlock()
 
-		p.cycle()
+		if !p.cycle() {
+			// nothing was applied or published: keep barrier waiters blocked and retry
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
 
 		p.pmu.Lock()
 		p.done = g
@@ -176,19 +187,33 @@ func (p *memPump) ticker() {
 	}
 }
 
-func (p *memPump) cycle() {
+// cycle reports whether every change committed before it started is now applied
+// locally and handed to the peers; barrier waiters are released only then.
+func (p *memPump) cycle() bool {
 	p.cycleMu.Lock()
 	defer p.cycleMu.Unlock()
 	if !p.m.ready.Load() || p.loadedGen != p.wantGen.Load() {
 		if err := p.reload(); err != nil {
 			slog.Error("mem: reload failed", "error", err)
+			return false
 		}
-		return
+		return true
 	}
+	// a failed poll leaves p.snap unchanged, so retrying is safe; only reload
+	// (seconds, blocks every write) when polling keeps failing.
 	if err := p.poll(); err != nil {
+		p.pollFailures++
+		if p.pollFailures < 3 {
+			slog.Warn("mem: poll failed; retrying", "error", err, "failures", p.pollFailures)
+			return false
+		}
 		slog.Error("mem: poll failed; reloading", "error", err)
+		p.pollFailures = 0
 		p.invalidate()
+		return false
 	}
+	p.pollFailures = 0
+	return true
 }
 
 type memPollRow struct {
@@ -445,7 +470,14 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			c.SetResponse(bw)
 			err := next(c)
 			c.SetResponse(orig)
-			p.barrier()
+			// a 4xx means the handler rolled back (no handler commits and then
+			// returns 4xx), so there is nothing new for later reads to observe.
+			var apiErr *APIError
+			clientErr := (bw.code >= 400 && bw.code < 500) ||
+				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
+			if !clientErr {
+				p.barrierScope(!localOnlyWrite(req))
+			}
 			if bw.code != 0 {
 				orig.WriteHeader(bw.code)
 				_, _ = orig.Write(bw.buf.Bytes())
@@ -535,4 +567,19 @@ func loadMemHotRows(ctx context.Context, db *sqlx.DB) (*memHotRows, error) {
 		return nil, err
 	}
 	return rs, nil
+}
+
+// localOnlyWrite: login/logout of a user of this host's own region (not forwarded
+// by a peer). Only this host reads that user's sessions: other regions reject the
+// session (RegionMiddleware), and moving region is itself a write whose full
+// barrier first waits for every earlier change, these sessions included.
+func localOnlyWrite(req *http.Request) bool {
+	if req.Header.Get(forwardedRegionHeader) != "" {
+		return false
+	}
+	switch req.URL.Path {
+	case "/api/auth/login", "/api/auth/logout":
+		return true
+	}
+	return false
 }

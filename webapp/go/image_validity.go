@@ -54,8 +54,9 @@ func imageReader(h *HandlerContext) *sqlx.DB {
 		if err != nil {
 			return
 		}
-		db.SetMaxOpenConns(40)
-		db.SetMaxIdleConns(40)
+		n := envIntOrDefault("ISUREAL_IMGV_MAX_OPEN", 10)
+		db.SetMaxOpenConns(n)
+		db.SetMaxIdleConns(n)
 		if err := db.Ping(); err != nil {
 			db.Close()
 			return

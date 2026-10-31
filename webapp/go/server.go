@@ -15,6 +15,7 @@ type HandlerContext struct {
 	reads  *readRouter
 	Config *Config
 	IPBans *IPBanList
+	BG     *sqlx.DB // small pool for background pollers
 
 	Notifications *notificationHub
 
@@ -56,7 +57,12 @@ func NewServer(config *Config) *echo.Echo {
 		Config: config,
 		IPBans: &IPBanList{},
 	}
-	handlerContext.Notifications = newNotificationHub(handlerContext.Reader)
+	// background pollers (SSE hub, mem pump) get their own small pool so a burst
+	// of writes holding every request connection cannot starve them.
+	bgDB := sqlx.MustOpen("pgx", config.DatabaseDSN())
+	configurePool(bgDB, 4)
+	handlerContext.BG = bgDB
+	handlerContext.Notifications = newNotificationHub(func() *sqlx.DB { return bgDB })
 	e.Use(IPBanMiddleware(handlerContext))
 	setupMem(handlerContext, e)
 

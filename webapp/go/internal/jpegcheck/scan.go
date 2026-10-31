@@ -11,8 +11,8 @@ import (
 // makeImg allocates and initializes the destination image.
 func (d *decoder) makeImg(mxx, myy int) {
 	if d.nComp == 1 {
-		m := image.NewGray(image.Rect(0, 0, 8*mxx, 8*myy))
-		d.img1 = m.SubImage(image.Rect(0, 0, d.width, d.height)).(*image.Gray)
+		// jpegcheck: pixels are never written, so no buffer is allocated.
+		d.img1 = &image.Gray{Rect: image.Rect(0, 0, d.width, d.height)}
 		return
 	}
 
@@ -46,13 +46,10 @@ func (d *decoder) makeImg(mxx, myy int) {
 		}
 	}
 
-	m := image.NewYCbCr(image.Rect(0, 0, 8*d.maxH*mxx, 8*d.maxV*myy), subsampleRatio)
-	d.img3 = m.SubImage(image.Rect(0, 0, d.width, d.height)).(*image.YCbCr)
+	d.img3 = &image.YCbCr{Rect: image.Rect(0, 0, d.width, d.height), SubsampleRatio: subsampleRatio}
 
 	if d.nComp == 4 {
-		h3, v3 := d.comp[3].h, d.comp[3].v
-		d.blackPix = make([]byte, 8*h3*mxx*8*v3*myy)
-		d.blackStride = 8 * h3 * mxx
+		d.blackPix = []byte{} // non-nil marks the 4-component path, as in image/jpeg
 	}
 }
 

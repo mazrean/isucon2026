@@ -146,3 +146,25 @@ END: 2026-10-31 18:00 JST
   4. asia1 2vCPU への書き込み集中 (既に isureal 180% CPU を観測)
   5. グランプリの一斉投稿スパイク
 - 打ち手: 分散インメモリ (フィード索引で O(友達数)) / 画像の全リージョン push 複製 / posting-window O(1) / asia1 CPU プロファイルでホットスポット除去 / (将来) asia1 書き込みのグループコミット
+
+## リーダーボード (11:30 ポータル時刻)
+- 1 Typing Bears 506241 / 2 Dorayaki 158066 / 3 pixiv 105161 / 4 sotozaki 93107 / 5 ちゃん 62337 … 自チーム 20 位 41584。
+- Typing Bears だけ桁違い (2 位の 3.2 倍)。仮説: 上限なしの加点 (エクスポート 20、Memories 月 3 / 日 2 / 前回 1、過去画像 2、検索 2、友達申請 2…) を高速に回して積んでいる。閲覧系 (フィード等) には 1 窓上限がある (マニュアル「スコアの計算」)。
+- 注意: スコア表の時刻のうち 11:10 以降の行は推定がずれている (実時刻はベンチログの job 番号順)。
+
+## スコア追記 (11:20 以降、job 順)
+| job | commit | score | 内容 |
+|---|---|---|---|
+| 3241 | 8d41ed4 | 39703 | 分散インメモリ MEM=1 + GET ローカル + jpegcheck。asia 317。GP 全滅 |
+| 3469 | 同 | 38047 | 再現 + GP プローブ: asia1 CPU 張り付き、JPEG 50% |
+| 3724 | 6973095 | 38515 | JPEG を asia2 へ (cap2)。GP 全滅: mem poll がプール枯渇でタイムアウト → 全リロード 4.5s |
+| 3997 | 6a62af1 | 41584 | bg プール + poll 再試行。too many clients 発生 (全ホスト 80) |
+| 4395 | 11cfa30 | **48422** | JPEG オフロード 3 台 + 画素バッファ無し + ホスト別プール。5 日目 362/62/41、GP 8/4/0 |
+| 4513 | 1cd1f59 | 49892 | GOMEMLIMIT 2600 / GOGC 400。GP asia 51 |
+| 4692 | 2b1c03c | **68277** | JPEG オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200。GP 322/54/44。asia1 CPU: HMAC 35% / Memories 19% / export 15% / JPEG 14% |
+| 4952 | f55196e | **70862** | 4xx はバリアを飛ばす。GP 376/55/33 |
+| 5168 | 6cb20bc | 69730 | A/B: 画像 push 停止 → 差なし (eu/am 減, asia 増)。push は維持 |
+| 5400 | 1f0a1d1 | 0 FAIL | PGO + v3 + Memories/export を asia2 へ。asia 5 日目 676 人 / GP 441。走行後の整合性で too many clients (asia2 プール既定 80 + 画像判定 40×4) |
+| 5642 | e2a74ab | 69709 | プール是正 + login バリア自ホスト + PG 400。asia2 が CPU 100% で Memories 平均 3.3s (タイムアウト多数) |
+| 5893 | cf55c32 | 0 FAIL | heavy 分担 + JPEG を eu/am のみ + push off。eu/am が 23〜31 人に低下 (JPEG の転送で回線を圧迫)。整合性違反 1 件: america のユーザーの friends フィードに、5.6s 後に削除された asia の投稿 (friends_of_friends) が見えた。原因は調査中 |
+| 6145 | cb15c96 | 0 FAIL | JPEG 配分を戻した。asia 5 日目 557。friends フィードで見えてはいけない投稿が 7 件 (読み手は america、削除されていない friends 投稿)。再発 → 潜在の競合を調査中 |

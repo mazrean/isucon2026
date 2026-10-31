@@ -180,6 +180,8 @@ type storeTx struct {
 	changes []memChange
 	ops     []storeOp
 	after   []func() // コミット後 (ロック外・バリア待ちの前) に実行
+	// ISUREAL_MEM_SYNC_SPLIT: この書き込みは peer の ack を待たずに返してよい (本人しか使えない新しいトークンだけ)
+	noAck bool
 }
 
 func storeNow() time.Time { return time.Now().Truncate(time.Microsecond).In(time.Local) }
@@ -322,6 +324,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 	e.ensureIndex(m.d)
 	errs := make([]error, len(batch))
 	work := make([]bool, len(batch))
+	noAck := make([]bool, len(batch))
 	var changes []memChange
 	var ops []storeOp
 	partial := false
@@ -344,6 +347,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 		}
 		if len(t.changes) > 0 || len(t.ops) > 0 {
 			work[i] = true
+			noAck[i] = t.noAck
 			changes = append(changes, t.changes...)
 			ops = append(ops, t.ops...)
 		}
@@ -386,6 +390,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 			if work[i] {
 				res.seqs = seqs
 				res.ack = ack
+				res.ack.skip = noAck[i]
 			}
 			r.done <- res
 		}
@@ -463,6 +468,13 @@ func (e *storeEngine) syncPG() {
 func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs, ack memAckTarget) {
 	c.Set(storeHandledKey, true)
 	if seqs == nil {
+		return
+	}
+	if memSyncSplit && ack.skip {
+		// 新しいトークンだけの書き込み: PG は待つが、peer の ack は待たない (mem_sync_visible.go)
+		if storeAwaitPG || len(seqs) > len(e.lanes) {
+			e.waitFlushed(seqs)
+		}
 		return
 	}
 	var acked chan struct{}

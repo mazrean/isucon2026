@@ -198,9 +198,10 @@ func runSyncInvariant(t *testing.T, mode string, dur time.Duration) (violations,
 		resp    []int64 // 応答時刻 (昇順)
 		respMax []int64 // resp[:i+1] の seq の最大
 		// 再ログイン: 旧トークンの無効化が応答した時刻
-		tokMu   sync.Mutex
-		curTok  = "tok-eu"
-		oldToks = map[string]int64{}
+		tokMu    sync.Mutex
+		curTok   = "tok-eu"
+		freshTok string
+		oldToks  = map[string]int64{}
 	)
 	type batch struct {
 		seq            int64
@@ -224,7 +225,9 @@ func runSyncInvariant(t *testing.T, mode string, dur time.Duration) (violations,
 			}
 			if b.newTok != "" {
 				m.mu.Lock()
-				delete(m.d.sessions, svHash(b.oldTok))
+				if b.oldTok != "" {
+					delete(m.d.sessions, svHash(b.oldTok))
+				}
 				m.d.sessions[svHash(b.newTok)] = memSession{UserID: "u-eu"}
 				m.mu.Unlock()
 			}
@@ -277,10 +280,24 @@ func runSyncInvariant(t *testing.T, mode string, dur time.Duration) (violations,
 					b.oldTok, b.newTok = curTok, fmt.Sprintf("tok-eu-%d", b.seq)
 					tokMu.Unlock()
 				}
+				// 旧セッションの無い login (本人しか知らない新トークン): SYNC_SPLIT では ack を待たない
+				fresh := !relogin && w == 1 && i%20 == 19
+				if fresh {
+					b.newTok = fmt.Sprintf("fresh-%d", b.seq)
+				}
 				q <- b
 				pumpMu.Unlock()
-				// waitAcked 相当: ack (適用) か lease 切れまで待つ
-				if mode != "noack" {
+				skipAck := mode == "noack" ||
+					(fresh && (mode == "split" || mode == "splitbad")) ||
+					(relogin && mode == "splitbad") // 負: 旧セッションの無効化まで ack を省く
+				if fresh && skipAck {
+					tokMu.Lock()
+					freshTok = b.newTok // 本人だけが知る。応答後すぐに eu で使う (user moved)
+					tokMu.Unlock()
+					time.Sleep(time.Duration(rand.IntN(300)) * time.Microsecond)
+					continue // 他の閲覧者に見えるべきものは無い (resp に入れない)
+				}
+				if !skipAck {
 					for applied.Load() < b.seq {
 						pumpMu.Lock()
 						leaseEnd := lastGrant.Add(memLease + memClockSkew)
@@ -328,9 +345,13 @@ func runSyncInvariant(t *testing.T, mode string, dur time.Duration) (violations,
 					useOld = o
 					break
 				}
+				ft := freshTok
 				tokMu.Unlock()
 				if useOld != "" && rand.IntN(2) == 0 {
 					tok = useOld
+				}
+				if ft != "" && rand.IntN(4) == 0 {
+					tok = ft // メモリにまだ無いかもしれないトークン: 住人と判定されず wm 待ちに回ること
 				}
 				tr := time.Now().UnixNano()
 				var served bool
@@ -416,5 +437,43 @@ func TestMemSyncVisibleInvariantDetectsNoGate(t *testing.T) {
 	}
 	if v, _ := runSyncInvariant(t, "nogate", 2*time.Second); v == 0 {
 		t.Fatal("readers ignoring lease/caughtUp must produce violations")
+	}
+}
+
+// SYNC_SPLIT: 旧セッションの無い login は ack を省いても違反 0。新しいトークンは、eu のメモリに入るまで待たない読みに使われない。
+func TestMemSyncSplitInvariant(t *testing.T) {
+	if testing.Short() {
+		t.Skip("long")
+	}
+	v, s := runSyncInvariant(t, "split", 2*time.Second)
+	if v != 0 {
+		t.Fatalf("violations=%d (skipped reads %d)", v, s)
+	}
+	if s < 100 {
+		t.Fatalf("too few unwaited reads: %d", s)
+	}
+}
+
+// 負: 旧セッションの無効化 (replaced) まで ack を省くと、旧トークンが eu で通る違反を検出する。
+func TestMemSyncSplitDetectsReplacedNoAck(t *testing.T) {
+	if testing.Short() {
+		t.Skip("long")
+	}
+	if v, _ := runSyncInvariant(t, "splitbad", 2*time.Second); v == 0 {
+		t.Fatal("skipping ack for session invalidation must produce violations")
+	}
+}
+
+// 未知のトークン (asia で ack なしの login 直後に eu へ来た要求) は住人と判定せず、wm 待ちに回る (すぐ 401 にしない)。
+func TestMemSyncSplitUnknownTokenWaits(t *testing.T) {
+	withSyncVisible(t)
+	m := svStore()
+	if m.syncResident(svReq("fresh-unknown"), "eu") {
+		t.Fatal("unknown token must not skip the wm wait")
+	}
+	// 住人判定を経ていない要求の ctx (skip 印なし) は wm が届くまでガードを通らない = DB 経路 / 待ち
+	plain := context.WithValue(context.Background(), memWMTargetKey{}, time.Now().Add(time.Hour).UnixNano())
+	if m.onCtx(plain) {
+		t.Fatal("unknown-token request must not read memory before wm")
 	}
 }

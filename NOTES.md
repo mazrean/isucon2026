@@ -245,6 +245,7 @@ END: 2026-10-31 18:00 JST
 | 28421 | - | **FAIL** | 既定 + MEM_FULL=1 COLD_ORIGIN=asia2 MEMORIES_CACHE_ORIGIN 空 PG_SB_MB=256。走行後の整合性チェックで GET /api/memories?month=2026-10 がタイムアウト。asia の GP は 794 (最多) だが eu 63 / am 127 に崩れる。asia2 の available は最低 1009MB で OOM ではない。不採用 |
 | 28603 | - | 166020 | 既定 + FWD_YIELD=16 STORE_PRIO=1 ASIA_LOCALIMG_FSYNC=1。pass。d5 1018/403/301 なのに asia の GP が 273 (27%) に崩れる (締め切り前の 499 が 82)。不採用 |
 | 28890 | - | 178813 | 既定 (SYNC_VISIBLE+ACK_OWN+PG_SB 512) + MEMCACHE_FINE=1。pass。グランプリ: アジア 556 人, ヨーロッパ 278 人, アメリカ 279 人 |
+| 29164 | - | 179410 | 今の既定そのまま (SYNC_VISIBLE+ACK_OWN+BODYBUF+PG_SB 512+403 修正)。pass。d5 1072/419/328、GP 475/247/255 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

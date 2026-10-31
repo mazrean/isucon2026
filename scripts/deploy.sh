@@ -98,6 +98,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_MEM_WM_HB '"$MEM_WM_HB"'
       setenv ISUREAL_MEM_WM_EARLY '"$MEM_WM_EARLY"'
       setenv ISUREAL_MEM_APPLY_CHUNK '"$MEM_APPLY_CHUNK"'
+      if [ "'"$h"'" = asia2 ]; then setenv ISUREAL_COLD_ORIGIN ''; else setenv ISUREAL_COLD_ORIGIN '"${COLD_ORIGIN:-}"'; fi   # e.g. 192.168.4.10:8080: PG fallbacks of public GETs go to asia2 (cold_origin.go)
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_ASIA_POST_CAP '"$ASIA_POST_CAP"'; else setenv ISUREAL_ASIA_POST_CAP 0; fi
       setenv ISUREAL_ASIA_POST_CAP_WAIT_MS '"${ASIA_POST_CAP_WAIT_MS:-3000}"'
       setenv ISUREAL_ASIA_POST_CAP_LAG_MS '"${ASIA_POST_CAP_LAG_MS:-0}"'

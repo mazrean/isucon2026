@@ -43,7 +43,7 @@ var (
 
 // traceDSN: フラグ on のとき、tracer 付きの接続設定を stdlib に登録して、その名前を返す (sql.Open("pgx", name) で使う)。
 func traceDSN(dsn, pool string) string {
-	if !dbTraceOn && !storeWALOn {
+	if !dbTraceOn && !storeWALOn && coldOrigin == "" {
 		return dsn
 	}
 	cfg, err := pgx.ParseConfig(dsn)
@@ -66,6 +66,9 @@ func dbTraceSQLKey(sql string) string {
 }
 
 func (t *dbTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	if coldOrigin != "" && t.pool != "store" && coldOnPG(ctx) {
+		return ctx // ISUREAL_COLD_ORIGIN: この要求は asia2 へ転送する (ctx は取り消し済み。cold_origin.go)
+	}
 	if storeWALOn && t.pool != "store" {
 		pgBarrierWait(ctx) // ISUREAL_STORE_WAL: 到着時刻までの書き込みが PG に入るまで待つ (store_pgbarrier.go)
 	}

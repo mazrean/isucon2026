@@ -368,6 +368,9 @@ func (r *memReceiver) wmMsg(msg memWMMsg) {
 	if !r.m.ready.Load() || r.epoch == "" || msg.Epoch != r.epoch || msg.WM <= 0 {
 		return
 	}
+	if coldOrigin != "" {
+		coldPumpWM.update(msg.WM, msg.Seq, 0) // ISUREAL_COLD_ORIGIN: (W, seq) の組
+	}
 	if r.seq >= msg.Seq {
 		r.m.w.advance(msg.WM)
 		return
@@ -384,6 +387,9 @@ func (r *memReceiver) wmAfterPush(req memPushRequest) {
 	defer r.mu.Unlock()
 	if !r.m.ready.Load() || r.epoch == "" || req.Epoch != r.epoch {
 		return
+	}
+	if coldOrigin != "" && req.WM > 0 {
+		coldPumpWM.update(req.WM, req.Seq, 0)
 	}
 	if req.WM > 0 && r.seq >= req.Seq {
 		r.m.w.advance(req.WM)

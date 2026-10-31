@@ -92,6 +92,12 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		}
 		e.Use(memWriteBarrier(p))
 		setupStorePGBarrier(e, false)
+		if coldOrigin != "" {
+			if ps := p.peers; ps != nil {
+				coldPumpSeqFn = func() int64 { ps.mu.Lock(); defer ps.mu.Unlock(); return ps.seq }
+			}
+			e.Use(coldMiddleware(false)) // cold_origin.go
+		}
 		if asiaPostCapN > 0 {
 			e.Use(asiaPostCapMiddleware(h)) // barrier の内側 (gp_postcap.go)
 		}
@@ -111,6 +117,9 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 			e.Use(memReadWait(m))
 		}
 		setupStorePGBarrier(e, true)
+		if coldOrigin != "" {
+			e.Use(coldMiddleware(true)) // cold_origin.go
+		}
 		registerMemPeerRoutes(e, newMemReceiver(m))
 	}
 }

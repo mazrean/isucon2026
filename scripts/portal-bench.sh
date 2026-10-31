@@ -20,7 +20,7 @@ poll() {
 case ${1:-run} in
 run)
   mkdir -p /tmp/isucon
-  if [[ -z ${LOCK_HELD:-} ]]; then exec 9>/tmp/isucon/env.lock; flock -w 900 9 || { echo "env busy" >&2; exit 75; }; echo "$(date +%T) OFFICIAL bench $(git rev-parse --short HEAD)" >| /tmp/isucon/env.lock.owner; fi
+  if [[ -z ${LOCK_HELD:-} ]]; then exec 9>>/tmp/isucon/env.lock; flock -w 900 9 || { echo "env busy" >&2; exit 75; }; echo "$(date +%T) OFFICIAL bench $(git rev-parse --short HEAD)" >| /tmp/isucon/env.lock.owner; fi
   id=$($F POST /api/contestant/benchmark_jobs "$ENQ_B64" | python3 -I scripts/pbraw.py | awk '/^  1: /{print $2; exit}')
   [[ -n $id ]] || { echo "enqueue failed (already queued?)" >&2; exit 11; }
   echo "enqueued job $id" >&2

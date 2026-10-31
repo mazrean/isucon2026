@@ -1,0 +1,32 @@
+time=2026-10-31T01:49:38.383Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T01:49:40.413Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T01:49:42.978Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T01:49:48.306Z level=INFO msg="asia 2 日目: 18 人"
+time=2026-10-31T01:49:49.029Z level=INFO msg="europe 2 日目: 7 人"
+time=2026-10-31T01:49:51.970Z level=INFO msg="america 2 日目: 6 人"
+time=2026-10-31T01:49:56.383Z level=INFO msg="asia 3 日目: 18 人"
+time=2026-10-31T01:49:58.160Z level=INFO msg="europe 3 日目: 8 人"
+time=2026-10-31T01:50:01.003Z level=INFO msg="america 3 日目: 7 人"
+time=2026-10-31T01:50:05.937Z level=INFO msg="asia 4 日目: 18 人"
+time=2026-10-31T01:50:06.953Z level=INFO msg="europe 4 日目: 11 人"
+time=2026-10-31T01:50:10.046Z level=INFO msg="america 4 日目: 10 人"
+time=2026-10-31T01:50:13.981Z level=INFO msg="asia 5 日目: 18 人"
+time=2026-10-31T01:50:16.021Z level=INFO msg="europe 5 日目: 17 人"
+time=2026-10-31T01:50:18.973Z level=INFO msg="america 5 日目: 15 人"
+time=2026-10-31T01:50:24.862Z level=INFO msg="グランプリ: アジア 0 人, ヨーロッパ 0 人, アメリカ 0 人"
+{
+  "pass": false,
+  "score": 0,
+  "messages": [
+    "整合性の違反: tsusa_5196: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました",
+    "tsusa_5196: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました",
+    "maben-5192: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました",
+    "tsusa_5196: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました",
+    "muleo5115: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました",
+    "benri-5085: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました",
+    "maben-5192: フィード public: 存在しない投稿 499fd8ec-2d88-41d0-810d-2af6d8ebfa58 が返りました"
+  ]
+}
+
+reason= 整合性の違反
+job=1723 state=4 pass=false スコア=0 種別エラー数=map[]

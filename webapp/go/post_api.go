@@ -141,7 +141,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 			}
 			commitTried, committed = true, true
 			if !externalImage(c, userID) {
-				replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
+				replicateImageVis(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""), input.Visibility)
 			}
 			return c.JSON(http.StatusCreated, newPostResponse(post, user))
 		}
@@ -224,7 +224,7 @@ func createPostHandler(h *HandlerContext) echo.HandlerFunc {
 		}
 		committed = true
 		if !external {
-			replicateImageTo(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""))
+			replicateImageVis(imageID, userID, "image/jpeg", imageData, memPushRegionsForPost(h.Mem, userID, input.Visibility, ""), input.Visibility)
 		}
 		return c.JSON(http.StatusCreated, newPostResponse(post, user))
 	}

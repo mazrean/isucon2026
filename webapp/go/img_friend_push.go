@@ -38,10 +38,18 @@ var (
 	imgFriendPushQueue   = envIntOrDefault("ISUREAL_IMG_FRIEND_PUSH_QUEUE", 512)
 	imgFriendPushMaxByte = int64(envIntOrDefault("ISUREAL_IMG_FRIEND_PUSH_QUEUE_MB", 96)) << 20
 	imgFriendPushIface   = os.Getenv("ISUREAL_IMG_FRIEND_PUSH_IF")
+	// ISUREAL_IMG_FRIEND_PUSH_REV=1: europe1/america1 also push their LOCALIMG
+	// images (to asia1 and to each other) by the same rule.
+	imgFriendPushRev = os.Getenv("ISUREAL_IMG_FRIEND_PUSH_REV") == "1"
+	// receivers without an image disk cache (asia1, ISUREAL_IMAGE_CACHE_DIR=-)
+	// keep pushed images in this separate LRU, so they never grow the main one.
+	imgFriendRecvLRU = newImageLRU(int64(envIntOrDefault("ISUREAL_IMG_FRIEND_PUSH_RECV_MB", 32)) << 20)
 )
 
+const imgFriendHeader = "X-Isureal-Img-Friend"
+
 var imgFriendStats struct {
-	queuedHi, queuedLo, sent, sentBytes, dropped, errs, gpWait, busyWait, recv, recvHit atomic.Int64
+	queuedHi, queuedMid, queuedLo, sent, sentBytes, dropped, errs, gpWait, busyWait, recv, recvHit atomic.Int64
 }
 
 // friendPusher is non-nil only on asia1 with the flag on.
@@ -56,7 +64,7 @@ type imgFriendJob struct {
 type imgFriendDest struct {
 	region string
 	addr   string
-	hi, lo chan imgFriendJob
+	hi, mid, lo chan imgFriendJob
 }
 
 type imgFriendPusher struct {
@@ -87,7 +95,7 @@ func newImgFriendPusher(mem *memStore, region, secret string, peers map[string]s
 			continue
 		}
 		p.dests = append(p.dests, &imgFriendDest{region: r, addr: a,
-			hi: make(chan imgFriendJob, imgFriendPushQueue), lo: make(chan imgFriendJob, imgFriendPushQueue)})
+			hi: make(chan imgFriendJob, imgFriendPushQueue), mid: make(chan imgFriendJob, imgFriendPushQueue), lo: make(chan imgFriendJob, imgFriendPushQueue)})
 	}
 	p.gate = p.defaultGate
 	return p
@@ -105,13 +113,19 @@ func (p *imgFriendPusher) start() {
 
 // startImgFriendPush is called by registerLocalImg.
 func startImgFriendPush(h *HandlerContext) {
-	if !imgFriendPushOn || h.Config.Region != "asia" || forwardSecret == "" || h.Mem == nil {
+	region := h.Config.Region
+	sender := region == "asia" || (imgFriendPushRev && localImgOn && localImgTags[region] != "")
+	if !imgFriendPushOn || !sender || forwardSecret == "" || h.Mem == nil {
 		if imgFriendPushOn {
 			go imgFriendStatsLogger() // receivers: recv / hit counters
 		}
 		return
 	}
-	friendPusher = newImgFriendPusher(h.Mem, "asia", forwardSecret, localImgOrigins)
+	peers := map[string]string{"asia": asiaLocalImgAddr}
+	for r, a := range localImgOrigins {
+		peers[r] = a
+	}
+	friendPusher = newImgFriendPusher(h.Mem, region, forwardSecret, peers)
 	friendPusher.start()
 	slog.Info("img friend push on", "dests", len(friendPusher.dests), "max_mbps", imgFriendPushMaxBps/1_000_000, "gp", imgFriendPushGP, "all", imgFriendPushAll)
 }
@@ -145,39 +159,43 @@ func (p *imgFriendPusher) friendRegionsOf(userID string) map[string]bool {
 }
 
 // enqueue never blocks (called right after the commit).
-func (p *imgFriendPusher) enqueue(id string, obj *imageObject) {
+// visibility ranks the non-friend pushes (ALL): public / fof posts (feeds) first.
+func (p *imgFriendPusher) enqueue(id string, obj *imageObject, visibility string) {
 	if p == nil || !safeImageID(id) || obj == nil || obj.Owner == "" || len(obj.Data) == 0 {
 		return
 	}
 	regions := p.friendRegionsOf(obj.Owner)
 	sig := &imgReplSigOnce{}
 	for _, d := range p.dests {
-		hi := regions[d.region]
-		if !hi && !imgFriendPushAll {
+		tier := 2
+		if regions[d.region] {
+			tier = 0
+		} else if !imgFriendPushAll {
 			continue
+		} else if visibility == "public" || visibility == "friends_of_friends" {
+			tier = 1
 		}
-		p.submit(d, imgFriendJob{id: id, obj: obj, sig: sig}, hi)
+		p.submit(d, imgFriendJob{id: id, obj: obj, sig: sig}, tier)
 	}
 }
 
-func (p *imgFriendPusher) submit(d *imgFriendDest, j imgFriendJob, hi bool) {
+func (p *imgFriendPusher) submit(d *imgFriendDest, j imgFriendJob, tier int) {
 	n := int64(len(j.obj.Data))
 	if p.queued.Add(n) > imgFriendPushMaxByte {
 		p.queued.Add(-n)
 		imgFriendStats.dropped.Add(1)
 		return
 	}
-	ch := d.lo
-	if hi {
-		ch = d.hi
+	ch, ctr := d.lo, &imgFriendStats.queuedLo
+	switch tier {
+	case 0:
+		ch, ctr = d.hi, &imgFriendStats.queuedHi
+	case 1:
+		ch, ctr = d.mid, &imgFriendStats.queuedMid
 	}
 	select {
 	case ch <- j:
-		if hi {
-			imgFriendStats.queuedHi.Add(1)
-		} else {
-			imgFriendStats.queuedLo.Add(1)
-		}
+		ctr.Add(1)
 	default:
 		p.queued.Add(-n)
 		imgFriendStats.dropped.Add(1)
@@ -186,16 +204,26 @@ func (p *imgFriendPusher) submit(d *imgFriendDest, j imgFriendJob, hi bool) {
 
 func (p *imgFriendPusher) worker(d *imgFriendDest) {
 	for {
+		// wait for an open gate first, then take the highest-priority job
+		for !p.gate(d.region) {
+			time.Sleep(100 * time.Millisecond)
+		}
 		var j imgFriendJob
 		select {
 		case j = <-d.hi:
 		default:
 			select {
 			case j = <-d.hi:
-			case j = <-d.lo:
+			case j = <-d.mid:
+			default:
+				select {
+				case j = <-d.hi:
+				case j = <-d.mid:
+				case j = <-d.lo:
+				}
 			}
 		}
-		for !p.gate(d.region) {
+		for !p.gate(d.region) { // the gate may have closed while idle
 			time.Sleep(100 * time.Millisecond)
 		}
 		p.queued.Add(-int64(len(j.obj.Data)))
@@ -239,6 +267,7 @@ func (p *imgFriendPusher) send(addr string, j imgFriendJob) error {
 	req.Header.Set(imgReplOwnerHeader, j.obj.Owner)
 	req.Header.Set(imgReplMediaTypeHeader, j.obj.MediaType)
 	req.Header.Set(imgReplSigHeader, j.sig.get(p.secret, j.id, j.obj))
+	req.Header.Set(imgFriendHeader, "1")
 	resp, err := p.client.Do(req)
 	if err != nil {
 		return err
@@ -321,6 +350,24 @@ func imgFriendRecvMark(id string) {
 	imgFriendRecvIDs.Store(id, struct{}{})
 }
 
+// imgFriendRecvPut stores a friend push on a host without an image disk cache
+// in imgFriendRecvLRU (bounded) instead of the main LRU. false = caller puts.
+func imgFriendRecvPut(s *imageStore, req *http.Request, id string, obj *imageObject) bool {
+	if !imgFriendPushOn || s.dir != "" || req.Header.Get(imgFriendHeader) != "1" {
+		return false
+	}
+	imgFriendRecvLRU.add(id, obj)
+	return true
+}
+
+// imgFriendRecvTake is consulted by imageStore.load before the disk / DB.
+func imgFriendRecvTake(id string) *imageObject {
+	if !imgFriendPushOn {
+		return nil
+	}
+	return imgFriendRecvLRU.take(id)
+}
+
 // imgFriendRecvHit counts the first request for a pushed image.
 func imgFriendRecvHit(id string) {
 	if !imgFriendPushOn || imgFriendRecvN.Load() == 0 {
@@ -335,7 +382,7 @@ func imgFriendStatsLogger() {
 	t := time.NewTicker(10 * time.Second)
 	defer t.Stop()
 	s := &imgFriendStats
-	ctrs := []*atomic.Int64{&s.queuedHi, &s.queuedLo, &s.sent, &s.sentBytes, &s.dropped, &s.errs, &s.gpWait, &s.busyWait, &s.recv, &s.recvHit}
+	ctrs := []*atomic.Int64{&s.queuedHi, &s.queuedMid, &s.queuedLo, &s.sent, &s.sentBytes, &s.dropped, &s.errs, &s.gpWait, &s.busyWait, &s.recv, &s.recvHit}
 	for range t.C {
 		v := make([]int64, len(ctrs))
 		var sum int64
@@ -350,8 +397,8 @@ func imgFriendStatsLogger() {
 		if p := friendPusher; p != nil {
 			txMbps, qBytes = p.txBps.Load()/1_000_000, p.queued.Load()
 		}
-		slog.Info("imgfriendpush", "queued_hi", v[0], "queued_lo", v[1], "sent", v[2], "sent_bytes", v[3],
-			"dropped", v[4], "err", v[5], "gp_wait_ticks", v[6], "busy_wait_ticks", v[7],
-			"recv", v[8], "recv_hit", v[9], "tx_mbps", txMbps, "queued_bytes", qBytes)
+		slog.Info("imgfriendpush", "queued_hi", v[0], "queued_mid", v[1], "queued_lo", v[2], "sent", v[3], "sent_bytes", v[4],
+			"dropped", v[5], "err", v[6], "gp_wait_ticks", v[7], "busy_wait_ticks", v[8],
+			"recv", v[9], "recv_hit", v[10], "tx_mbps", txMbps, "queued_bytes", qBytes)
 	}
 }

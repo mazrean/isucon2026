@@ -112,10 +112,16 @@ func replicateImage(id, owner, mediaType string, data []byte) {
 // replicateImageTo は、regions に含まれる地域のピアだけへ push する (nil は全ピア)。
 // 地域が分からないピアには常に push する。
 func replicateImageTo(id, owner, mediaType string, data []byte, regions map[string]bool) {
+	replicateImageVis(id, owner, mediaType, data, regions, "")
+}
+
+// replicateImageVis: visibility (of the post the image belongs to; "" = not a
+// post) only ranks the ISUREAL_IMG_FRIEND_PUSH_ALL low-priority pushes.
+func replicateImageVis(id, owner, mediaType string, data []byte, regions map[string]bool, visibility string) {
 	obj := &imageObject{Owner: owner, MediaType: mediaType, Data: data}
 	images.put(id, obj)
 	imageReplicator.enqueue(id, obj, regions)
-	friendPusher.enqueue(id, obj) // ISUREAL_IMG_FRIEND_PUSH (asia1 only; nil = off)
+	friendPusher.enqueue(id, obj, visibility) // ISUREAL_IMG_FRIEND_PUSH (nil = off)
 }
 
 func (r *imgReplicator) enqueue(id string, obj *imageObject, regions map[string]bool) {
@@ -255,7 +261,9 @@ func imageReplReceiveHandler(store *imageStore, secret string) echo.HandlerFunc 
 		if !hmac.Equal([]byte(req.Header.Get(imgReplSigHeader)), []byte(imgReplSign(secret, id, owner, mediaType, data))) {
 			return c.NoContent(http.StatusForbidden)
 		}
-		store.put(id, &imageObject{Owner: owner, MediaType: mediaType, Data: data})
+		if obj := (&imageObject{Owner: owner, MediaType: mediaType, Data: data}); !imgFriendRecvPut(store, req, id, obj) {
+			store.put(id, obj)
+		}
 		imgStats.recvN.Add(1)
 		imgFriendRecvMark(id)
 		imgStats.recvBytes.Add(int64(len(data)))

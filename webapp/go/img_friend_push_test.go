@@ -67,8 +67,8 @@ func TestFriendPushEnqueueRegions(t *testing.T) {
 		t.Fatalf("dests %d (own region must be excluded)", len(p.dests))
 	}
 	id := "0b0c5f3e-1111-4222-8333-944455556666"
-	p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("x")})
-	p.enqueue("0b0c5f3e-1111-4222-8333-944455550000", &imageObject{Owner: "unknown", MediaType: "image/jpeg", Data: []byte("x")})
+	p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("x")}, "")
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455550000", &imageObject{Owner: "unknown", MediaType: "image/jpeg", Data: []byte("x")}, "")
 	for _, d := range p.dests {
 		want := 0
 		if d.region == "europe" {
@@ -79,7 +79,7 @@ func TestFriendPushEnqueueRegions(t *testing.T) {
 		}
 	}
 	imgFriendPushAll = true
-	p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("x")})
+	p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("x")}, "")
 	for _, d := range p.dests {
 		if d.region == "america" && len(d.lo) != 1 {
 			t.Fatalf("ALL: america lo %d", len(d.lo))
@@ -109,7 +109,7 @@ func TestFriendPushSendAndReceive(t *testing.T) {
 
 	id := "0b0c5f3e-1111-4222-8333-9444555577e7"
 	data := []byte("\xff\xd8jpeg\nbytes")
-	p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: data})
+	p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: data}, "")
 	time.Sleep(300 * time.Millisecond)
 	if _, ok := store.mem.get(id); ok {
 		t.Fatal("sent while the gate was closed")
@@ -147,7 +147,7 @@ func TestFriendPushQueueBound(t *testing.T) {
 	before := imgFriendStats.dropped.Load()
 	for i := range 3 {
 		id := "0b0c5f3e-1111-4222-8333-94445555000" + string(rune('0'+i))
-		p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("123456")})
+		p.enqueue(id, &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("123456")}, "")
 	}
 	if got := imgFriendStats.dropped.Load() - before; got != 2 {
 		t.Fatalf("dropped %d, want 2", got)
@@ -171,5 +171,56 @@ func TestFriendPushGPGate(t *testing.T) {
 	p.txBps.Store(imgFriendPushMaxBps)
 	if p.defaultGate("europe") {
 		t.Fatal("busy NIC: gate should be closed")
+	}
+}
+
+func TestFriendPushTiers(t *testing.T) {
+	old := imgFriendPushAll
+	imgFriendPushAll = true
+	defer func() { imgFriendPushAll = old }()
+	p, _ := newTestFriendPusher(t, map[string]string{"europe": "e:1", "america": "a:1"})
+	obj := &imageObject{Owner: "author", MediaType: "image/jpeg", Data: []byte("x")}
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455551111", obj, "public")
+	p.enqueue("0b0c5f3e-1111-4222-8333-944455552222", obj, "friends")
+	for _, d := range p.dests {
+		switch d.region {
+		case "europe": // friend region: hi for both
+			if len(d.hi) != 2 || len(d.mid)+len(d.lo) != 0 {
+				t.Fatalf("europe %d/%d/%d", len(d.hi), len(d.mid), len(d.lo))
+			}
+		case "america": // public -> mid, friends-only -> lo
+			if len(d.hi) != 0 || len(d.mid) != 1 || len(d.lo) != 1 {
+				t.Fatalf("america %d/%d/%d", len(d.hi), len(d.mid), len(d.lo))
+			}
+		}
+	}
+}
+
+// a receiver without a disk cache keeps friend pushes in the separate LRU;
+// load() serves them and moves them to the main store.
+func TestFriendRecvNoDisk(t *testing.T) {
+	oldOn := imgFriendPushOn
+	imgFriendPushOn = true
+	defer func() { imgFriendPushOn = oldOn }()
+	store := newImageStore("-")
+	e := newImgReplTestEcho(store)
+	id := "0b0c5f3e-1111-4222-8333-944455553333"
+	data := []byte("\xff\xd8abc")
+	req := imgReplTestRequest(id, "192.168.2.10:1", imgReplTestSecret, imgReplSign(imgReplTestSecret, id, "owner-1", "image/jpeg", data), data)
+	req.Header.Set(imgFriendHeader, "1")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status %d", rec.Code)
+	}
+	if _, ok := store.mem.get(id); ok {
+		t.Fatal("friend push went to the main LRU")
+	}
+	obj, err := store.get(context.Background(), nil, nil, id)
+	if err != nil || obj == nil || string(obj.Data) != string(data) {
+		t.Fatalf("get: %v %v", obj, err)
+	}
+	if imgFriendRecvLRU.take(id) != nil {
+		t.Fatal("not moved out of the friend LRU")
 	}
 }

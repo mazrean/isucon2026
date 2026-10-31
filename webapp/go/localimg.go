@@ -376,7 +376,9 @@ func localImgModifyResponse(resp *http.Response) error {
 		slog.Error("localimg meta", "id", pend.id, "error", err)
 	}
 	if data, err := os.ReadFile(localStore.p("data", pend.id)); err == nil {
-		images.put(pend.id, &imageObject{Owner: owner, MediaType: "image/jpeg", Data: data})
+		obj := &imageObject{Owner: owner, MediaType: "image/jpeg", Data: data}
+		images.put(pend.id, obj)
+		friendPusher.enqueue(pend.id, obj, "") // ISUREAL_IMG_FRIEND_PUSH_REV (nil = off)
 	}
 	localImgStats.stored.Add(1)
 	localStore.enqueue(pend.id)

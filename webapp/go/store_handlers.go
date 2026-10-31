@@ -177,7 +177,7 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		resp := newPostResponse(d.posts[postID].full(), u.User)
 		if !external {
 			regions := d.pushRegionsForPost(userID, input.Visibility, "")
-			t.after = append(t.after, func() { replicateImageTo(imageID, userID, "image/jpeg", imageData, regions) })
+			t.after = append(t.after, func() { replicateImageVis(imageID, userID, "image/jpeg", imageData, regions, input.Visibility) })
 		}
 		committed = true
 		return func() error {

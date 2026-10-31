@@ -432,7 +432,7 @@ func newImageID(ctx context.Context) string {
 	if asiaLocalImgOn {
 		return newAsiaLocalImageID()
 	}
-	return uuid.NewString()
+	return newHotImageID(uuid.NewString())
 }
 
 // externalImage reports whether the bytes live at the origin; it then tells

@@ -170,3 +170,8 @@ END: 2026-10-31 18:00 JST
 | 7184 | 8b2d632 | 0 FAIL | 統合版: initialize 504。起動時ロード 37s + initialize が peer の全量ダンプ (15〜17s × 数回) を待った → 待たないよう修正 |
 | 7382 | 7c40de3 | 9478 | 統合版 (全投稿メモリ化): ベンチ中に 62.5 万件の全量ダンプが 4 回 (15〜33s)、回線と CPU を占有して人数が 1 日目から増えず → 全投稿メモリ化を revert。署名 (AVX-512) だけ残す |
 | 7706 | 6e86484 | **93068** | 全投稿メモリ化を revert + AVX-512 署名 + PREVALIDATE + STORAGE EXTERNAL + sync commit off。asia 5 日目 663、eu 89、am 74、GP 466/67/50。フィードの誤り 0 |
+
+### FRONT (asia1 の nginx 撤去) のロールバック
+- `FRONT=0 scripts/batch.sh ...` か `FRONT=0 scripts/deploy.sh` で再デプロイ → deploy が nginx を enable して start/reload する。
+- 手動: asia1 で `sed -i 's/^ISUREAL_FRONT=1/ISUREAL_FRONT=0/' /home/isucon/env.sh && sudo systemctl restart isureal-go && sudo systemctl enable --now nginx`
+- 再起動耐性: nginx は disable、isureal-go は 30-front.conf (CAP_NET_BIND_SERVICE、Restart=always/1s)。最終の全台再起動テストで :80 の応答を必ず確認。

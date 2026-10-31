@@ -92,7 +92,7 @@ region_of() { case $1 in asia1) echo asia;; europe1) echo europe;; america1) ech
 # PG_SB_MB (default empty = file absent = shared_buffers from isucon-tuning.conf, 1GB): e.g. 512 = asia2 conf.d/zz-sb.conf
 # "shared_buffers = 512MB" (frees RAM for MEM_FULL). Runs before any app restart; PostgreSQL is restarted only when
 # pg_settings reports pending_restart, then we wait until it accepts connections (apps restart afterwards below).
-PG_SB_MB=${PG_SB_MB-}
+PG_SB_MB=${PG_SB_MB-512}
 "${SSH[@]}" asia2 'set -e
   f=/etc/postgresql/16/main/conf.d/zz-sb.conf
   if [ -n "'"$PG_SB_MB"'" ]; then echo "shared_buffers = '"$PG_SB_MB"'MB" | sudo tee $f.new >/dev/null && sudo chown postgres:postgres $f.new && sudo mv $f.new $f; elif [ -e $f ]; then sudo rm -f $f; else exit 0; fi

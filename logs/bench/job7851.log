@@ -1,0 +1,34 @@
+time=2026-10-31T03:23:16.318Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:23:19.323Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:23:22.262Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:23:25.351Z level=INFO msg="asia 2 日目: 48 人"
+time=2026-10-31T03:23:28.309Z level=INFO msg="europe 2 日目: 17 人"
+time=2026-10-31T03:23:31.214Z level=INFO msg="america 2 日目: 14 人"
+time=2026-10-31T03:23:34.307Z level=INFO msg="asia 3 日目: 131 人"
+time=2026-10-31T03:23:37.452Z level=INFO msg="europe 3 日目: 43 人"
+time=2026-10-31T03:23:40.434Z level=INFO msg="america 3 日目: 36 人"
+time=2026-10-31T03:23:43.209Z level=INFO msg="asia 4 日目: 328 人"
+time=2026-10-31T03:23:46.447Z level=INFO msg="europe 4 日目: 102 人"
+time=2026-10-31T03:23:49.169Z level=INFO msg="user moved" user=taivy-7175 from=asia to=america
+time=2026-10-31T03:23:49.577Z level=INFO msg="america 4 日目: 83 人"
+time=2026-10-31T03:23:51.041Z level=INFO msg="user moved" user=kadanko-7239 from=asia to=america
+time=2026-10-31T03:23:52.310Z level=INFO msg="asia 5 日目: 742 人"
+time=2026-10-31T03:23:52.866Z level=INFO msg="user moved" user=yuanka-6261 from=europe to=asia
+time=2026-10-31T03:23:55.077Z level=INFO msg="user moved" user=torte.7990 from=europe to=america
+time=2026-10-31T03:23:56.762Z level=INFO msg="europe 5 日目: 175 人"
+time=2026-10-31T03:23:59.118Z level=INFO msg="america 5 日目: 95 人"
+time=2026-10-31T03:24:07.546Z level=INFO msg="america 最終日（グランプリ）: 95 人"
+time=2026-10-31T03:24:07.831Z level=INFO msg="europe 最終日（グランプリ）: 175 人"
+time=2026-10-31T03:24:08.717Z level=INFO msg="asia 最終日（グランプリ）: 742 人"
+time=2026-10-31T03:24:16.049Z level=INFO msg="グランプリ: アジア 545 人, ヨーロッパ 161 人, アメリカ 84 人"
+{
+  "pass": true,
+  "score": 111842,
+  "messages": [
+    "taivy-7175: 投稿できるはずの投稿期間で投稿が拒否されました: POST /api/posts: ステータスコード 409 が返りました（期待値 201、post_slot_unavailable）",
+    "zoeheleo.5025: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）"
+  ]
+}
+
+reason= 実行終了
+job=7851 state=4 pass=true スコア=111842 種別エラー数=map[]

@@ -1,0 +1,38 @@
+time=2026-10-31T05:16:25.150Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T05:16:26.641Z level=INFO msg="user moved" user=evamia_5044 from=asia to=europe
+time=2026-10-31T05:16:28.098Z level=INFO msg="europe 1 日目: 8 人"
+time=2026-10-31T05:16:31.054Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T05:16:34.152Z level=INFO msg="asia 2 日目: 43 人"
+time=2026-10-31T05:16:35.130Z level=INFO msg="user moved" user=torku5134 from=america to=asia
+time=2026-10-31T05:16:36.202Z level=INFO msg="user moved" user=torku5134 from=asia to=america
+time=2026-10-31T05:16:37.301Z level=INFO msg="europe 2 日目: 18 人"
+time=2026-10-31T05:16:37.320Z level=INFO msg="user moved" user=rehaeva5263 from=asia to=europe
+time=2026-10-31T05:16:39.988Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T05:16:41.914Z level=INFO msg="user moved" user=evamia_5044 from=europe to=asia
+time=2026-10-31T05:16:43.161Z level=INFO msg="asia 3 日目: 117 人"
+time=2026-10-31T05:16:45.390Z level=INFO msg="user moved" user=evamia_5044 from=asia to=europe
+time=2026-10-31T05:16:45.991Z level=INFO msg="europe 3 日目: 48 人"
+time=2026-10-31T05:16:48.999Z level=INFO msg="america 3 日目: 37 人"
+time=2026-10-31T05:16:49.854Z level=INFO msg="user moved" user=rehaeva5263 from=europe to=america
+time=2026-10-31T05:16:52.019Z level=INFO msg="asia 4 日目: 319 人"
+time=2026-10-31T05:16:55.073Z level=INFO msg="europe 4 日目: 125 人"
+time=2026-10-31T05:16:55.762Z level=INFO msg="user moved" user=lianoa6654 from=asia to=europe
+time=2026-10-31T05:16:58.082Z level=INFO msg="america 4 日目: 94 人"
+time=2026-10-31T05:17:01.238Z level=INFO msg="asia 5 日目: 793 人"
+time=2026-10-31T05:17:03.767Z level=INFO msg="user moved" user=noamar-8179 from=europe to=america
+time=2026-10-31T05:17:04.175Z level=INFO msg="europe 5 日目: 259 人"
+time=2026-10-31T05:17:05.268Z level=INFO msg="user moved" user=rukeleo-8463 from=america to=asia
+time=2026-10-31T05:17:05.738Z level=INFO msg="user moved" user=yuleomo_8339 from=america to=europe
+time=2026-10-31T05:17:07.381Z level=INFO msg="america 5 日目: 184 人"
+time=2026-10-31T05:17:16.176Z level=INFO msg="europe 最終日（グランプリ）: 259 人"
+time=2026-10-31T05:17:16.534Z level=INFO msg="america 最終日（グランプリ）: 183 人"
+time=2026-10-31T05:17:16.534Z level=INFO msg="asia 最終日（グランプリ）: 793 人"
+time=2026-10-31T05:17:24.998Z level=INFO msg="グランプリ: アジア 430 人, ヨーロッパ 228 人, アメリカ 171 人"
+{
+  "pass": true,
+  "score": 113787,
+  "messages": []
+}
+
+reason= 実行終了
+job=16572 state=4 pass=true スコア=113787 種別エラー数=map[]

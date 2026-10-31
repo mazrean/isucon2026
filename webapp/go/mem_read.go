@@ -1,6 +1,7 @@
 package isureal
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
@@ -559,11 +560,24 @@ func (m *memStore) searchUsers(c *echo.Context, input searchUsersRequest) (bool,
 			return u.ID > input.BeforeID
 		})
 	}
-	for _, u := range list[start:] {
-		if !u.active() || u.ID == viewerID {
+	idx, buf := d.searchIdx, d.searchBuf
+	if len(idx) != len(list) || d.sortedDirty { // stale: use the live strings
+		idx = nil
+	}
+	q := []byte(query)
+	for i := start; i < len(list); i++ {
+		u := list[i]
+		if idx != nil {
+			e := idx[i]
+			un := buf[e.off : e.off+e.ulen]
+			dn := buf[e.off+e.ulen : e.off+e.ulen+e.dlen]
+			if !bytes.Contains(un, q) && !bytes.Contains(dn, q) {
+				continue
+			}
+		} else if !strings.Contains(u.normUsername, query) && !strings.Contains(u.normDisplay, query) {
 			continue
 		}
-		if !strings.Contains(u.normUsername, query) && !strings.Contains(u.normDisplay, query) {
+		if !u.active() || u.ID == viewerID {
 			continue
 		}
 		if vu != nil {

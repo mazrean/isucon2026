@@ -99,7 +99,13 @@ type memData struct {
 	posts       map[string]*memPost
 	sorted      []*memUser // by (username, id)
 	sortedDirty bool
+	// searchIdx[i] / searchBuf: normUsername+normDisplay of sorted[i], packed
+	// contiguously so the user search scan does not chase every *memUser.
+	searchIdx []memSearchEnt
+	searchBuf []byte
 }
+
+type memSearchEnt struct{ off, ulen, dlen uint32 }
 
 func newMemData() *memData {
 	return &memData{
@@ -277,8 +283,12 @@ func (d *memData) applyUser(r memUserRow) {
 		Bio: r.Bio, ProfileImageID: r.ProfileImageID, Region: r.Region, AccountType: r.AccountType, Status: r.Status,
 	}
 	_ = u.User.setImageKey()
-	u.normUsername = normalizeSearchText(r.Username)
-	u.normDisplay = normalizeSearchText(r.DisplayName)
+	nu, nd := normalizeSearchText(r.Username), normalizeSearchText(r.DisplayName)
+	if nu != u.normUsername || nd != u.normDisplay {
+		d.sortedDirty = true // searchIdx holds the normalized text
+	}
+	u.normUsername = nu
+	u.normDisplay = nd
 }
 
 func (d *memData) applySession(del bool, r memSessionRow) {
@@ -567,6 +577,18 @@ func (d *memData) sortedUsers() []*memUser {
 		})
 		d.sorted = list
 		d.sortedDirty = false
+		size := 0
+		for _, u := range list {
+			size += len(u.normUsername) + len(u.normDisplay)
+		}
+		buf := make([]byte, 0, size)
+		idx := make([]memSearchEnt, len(list))
+		for i, u := range list {
+			idx[i] = memSearchEnt{off: uint32(len(buf)), ulen: uint32(len(u.normUsername)), dlen: uint32(len(u.normDisplay))}
+			buf = append(buf, u.normUsername...)
+			buf = append(buf, u.normDisplay...)
+		}
+		d.searchIdx, d.searchBuf = idx, buf
 	}
 	return d.sorted
 }

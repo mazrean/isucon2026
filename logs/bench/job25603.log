@@ -1,0 +1,42 @@
+time=2026-10-31T06:59:20.957Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T06:59:24.143Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T06:59:26.961Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T06:59:30.149Z level=INFO msg="asia 2 日目: 52 人"
+time=2026-10-31T06:59:32.448Z level=INFO msg="user moved" user=taro5280 from=asia to=europe
+time=2026-10-31T06:59:33.190Z level=INFO msg="europe 2 日目: 20 人"
+time=2026-10-31T06:59:35.967Z level=INFO msg="america 2 日目: 14 人"
+time=2026-10-31T06:59:37.811Z level=INFO msg="user moved" user=nusana.5452 from=europe to=america
+time=2026-10-31T06:59:38.969Z level=INFO msg="asia 3 日目: 152 人"
+time=2026-10-31T06:59:41.052Z level=INFO msg="user moved" user=sehise_5678 from=asia to=europe
+time=2026-10-31T06:59:41.502Z level=INFO msg="user moved" user=liamo.5864 from=asia to=america
+time=2026-10-31T06:59:41.965Z level=INFO msg="europe 3 日目: 52 人"
+time=2026-10-31T06:59:44.603Z level=INFO msg="user moved" user=hivin_6288 from=europe to=asia
+time=2026-10-31T06:59:45.001Z level=INFO msg="america 3 日目: 43 人"
+time=2026-10-31T06:59:46.726Z level=INFO msg="user moved" user=nusana.5452 from=america to=asia
+time=2026-10-31T06:59:47.507Z level=INFO msg="user moved" user=chiorko_6295 from=europe to=america
+time=2026-10-31T06:59:47.958Z level=INFO msg="asia 4 日目: 439 人"
+time=2026-10-31T06:59:48.444Z level=INFO msg="user moved" user=hivin_6288 from=asia to=europe
+time=2026-10-31T06:59:50.190Z level=INFO msg="user moved" user=nusana.5452 from=asia to=europe
+time=2026-10-31T06:59:51.297Z level=INFO msg="europe 4 日目: 136 人"
+time=2026-10-31T06:59:53.705Z level=INFO msg="user moved" user=sehise_5678 from=europe to=america
+time=2026-10-31T06:59:54.057Z level=INFO msg="user moved" user=orru6968 from=asia to=america
+time=2026-10-31T06:59:54.407Z level=INFO msg="america 4 日目: 114 人"
+time=2026-10-31T06:59:55.147Z level=INFO msg="user moved" user=nowa6966 from=asia to=europe
+time=2026-10-31T06:59:57.224Z level=INFO msg="asia 5 日目: 999 人"
+time=2026-10-31T06:59:57.341Z level=INFO msg="user moved" user=monu-7347 from=asia to=america
+time=2026-10-31T07:00:00.450Z level=INFO msg="europe 5 日目: 253 人"
+time=2026-10-31T07:00:03.856Z level=INFO msg="america 5 日目: 119 人"
+time=2026-10-31T07:00:12.731Z level=INFO msg="europe 最終日（グランプリ）: 252 人"
+time=2026-10-31T07:00:12.840Z level=INFO msg="america 最終日（グランプリ）: 119 人"
+time=2026-10-31T07:00:12.840Z level=INFO msg="asia 最終日（グランプリ）: 998 人"
+time=2026-10-31T07:00:21.014Z level=INFO msg="グランプリ: アジア 682 人, ヨーロッパ 240 人, アメリカ 118 人"
+{
+  "pass": true,
+  "score": 148725,
+  "messages": [
+    "nekeru11770: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+
+reason= 実行終了
+job=25603 state=4 pass=true スコア=148725 種別エラー数=map[]

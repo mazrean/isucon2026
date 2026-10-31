@@ -1178,7 +1178,7 @@ impl<'a> Sr<'a> {
 }
 
 pub fn check(data: &[u8]) -> Verdict {
-    let mut d = Box::new(Decoder {
+    let mut d = (Decoder {
         br: Br { data, pos: 0, n_unreadable: 0, a: 0, n: 0 },
         width: 0,
         height: 0,

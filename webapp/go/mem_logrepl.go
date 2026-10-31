@@ -882,6 +882,7 @@ func lrLoad(ctx context.Context, q sqlx.QueryerContext) (*memData, error) {
 			minDate = &v
 		}
 	}
+	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow
 		if err := sqlx.SelectContext(ctx, q, &posts, `

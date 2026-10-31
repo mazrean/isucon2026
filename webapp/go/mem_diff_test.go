@@ -93,6 +93,11 @@ type mdUser struct {
 
 func TestMemDiff(t *testing.T) {
 	config := ConfigFromEnv()
+	memoriesMem = true
+	defer func() {
+		memoriesMem = false
+		t.Logf("memories from mem: %d responses, %d items", memMemoriesServed.Load(), memMemoriesItems.Load())
+	}()
 	memEnabled = false
 	sa := httptest.NewServer(NewServer(config))
 	defer sa.Close()
@@ -268,7 +273,9 @@ func TestMemDiff(t *testing.T) {
 				"/api/feeds/friends", "/api/feeds/public", "/api/feeds/following", "/api/feeds/friends-of-friends",
 				"/api/relationships/friends", "/api/relationships/following", "/api/relationships/followers",
 				"/api/relationships/incoming-requests", "/api/relationships/outgoing-requests",
-				"/api/users?q=md", "/api/users?q=a", "/api/users/" + pick().id} {
+				"/api/users?q=md", "/api/users?q=a", "/api/users/" + pick().id,
+				"/api/memories?month=2026-11", "/api/memories?month=2026-10", "/api/memories?month=2026-12",
+				"/api/memories/2026-11-01", "/api/memories/2026-11-02", "/api/memories/2026-11-03"} {
 				compare(step, u, p)
 			}
 			for i := 0; i < 3; i++ {
@@ -323,6 +330,18 @@ func TestMemDiff(t *testing.T) {
 			if len(cl.Items) >= 2 {
 				compare(step, u, fmt.Sprintf("/api/posts/%s/realmojis?beforeCreatedAt=%s&beforeId=%s", id, cl.Items[0].CreatedAt.Format(time.RFC3339Nano), cl.Items[0].ID))
 			}
+		}
+		_, mb := u.b.do("GET", "/api/memories?month=2026-11", nil, "")
+		var ml struct {
+			Items []struct {
+				ID       string    `json:"id"`
+				PostedAt time.Time `json:"postedAt"`
+			} `json:"items"`
+		}
+		_ = json.Unmarshal(mb, &ml)
+		if len(ml.Items) >= 2 {
+			it := ml.Items[0]
+			compare(step, u, fmt.Sprintf("/api/memories?month=2026-11&beforePostedAt=%s&beforeId=%s", it.PostedAt.Format(time.RFC3339Nano), it.ID))
 		}
 		compare(step, u, "/api/users?q=md&beforeUsername="+users[3].name+"&beforeId="+users[3].id)
 		_, b = u.b.do("GET", "/api/feeds/friends-of-friends", nil, "")

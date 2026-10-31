@@ -414,6 +414,7 @@ func loadMemFromDB(ctx context.Context, db *sqlx.DB) (*memData, string, error) {
 			minDate = &v
 		}
 	}
+	d.setHotFrom(minDate)
 	if minDate != nil {
 		var posts []memPostRow
 		if err := db.SelectContext(ctx, &posts, `

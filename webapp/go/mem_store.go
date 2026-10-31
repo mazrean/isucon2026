@@ -99,6 +99,10 @@ type memData struct {
 	posts       map[string]*memPost
 	sorted      []*memUser // by (username, id)
 	sortedDirty bool
+	// hotFrom: every post whose window local_date >= hotFrom is in posts
+	// (hotKnown false = unknown; readers fall back to the DB).
+	hotFrom  time.Time
+	hotKnown bool
 }
 
 func newMemData() *memData {

@@ -399,12 +399,16 @@ type memDump struct {
 	Posts       []memPostRow          `json:"posts"`
 	Comments    []memCommentRow       `json:"comments"`
 	RealMojis   []memRealMojiRow      `json:"realmojis"`
-	WM          int64                 `json:"wm,omitempty"`     // Seq に対して有効な watermark
-	WMMode      bool                  `json:"wmMode,omitempty"` // pump が ack を待たずに返す (peer は watermark を待つ)
+	WM          int64                 `json:"wm,omitempty"`      // Seq に対して有効な watermark
+	WMMode      bool                  `json:"wmMode,omitempty"`  // pump が ack を待たずに返す (peer は watermark を待つ)
+	HotFrom     string                `json:"hotFrom,omitempty"` // memData.hotFrom (DateOnly); 無ければ不明
 }
 
 func (d *memData) dump() *memDump {
 	out := &memDump{}
+	if d.hotKnown {
+		out.HotFrom = d.hotFrom.Format(time.DateOnly)
+	}
 	for _, w := range d.windows {
 		out.Windows = append(out.Windows, memWindowRow{ID: w.ID, Region: w.Region, LocalDate: w.LocalDate.Format(time.DateOnly), StartsAt: w.StartsAt, OnTimeDeadline: w.OnTimeDeadline, EndedAt: w.EndedAt})
 	}
@@ -479,6 +483,11 @@ func memDataFromDump(dump *memDump) (*memData, error) {
 	}
 	for _, r := range dump.RealMojis {
 		d.applyRealMoji(r)
+	}
+	if dump.HotFrom != "" {
+		if t, err := time.Parse(time.DateOnly, dump.HotFrom); err == nil {
+			d.hotFrom, d.hotKnown = t, true
+		}
 	}
 	d.sortedUsers()
 	return d, nil

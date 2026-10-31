@@ -206,6 +206,7 @@ END: 2026-10-31 18:00 JST
 | 16157 | - | 152807 | 新既定 + ASIA_LOCALIMG=1 (グループコミット) + asia1 の画像ディスクキャッシュ off。asia 18/52/150/423/847 (d4→d5 2.00、復活)、eu 314 / am 247、GP 509/289/244。投稿の EOF 1 件、503 → asia の伸びが戻ったので ASIA_LOCALIMG=1 + ASIA1_IMG_DISK=- を既定に |
 | 16350 | 2a541a5 | **163659** | CACHE_ORIGIN + IMGV_PEER_INDEX=1 + IMG_SENDFILE=1 (ASIA_LOCALIMG=0 の版)。asia 18/52/153/430/567、eu 341 / am 286、GP 403/320/280 → IMGV_PEER_INDEX・SENDFILE を既定に |
 | 16572 | - | 113787 | 新既定 (ASIA_LOCALIMG=1) + eu/am 一式 (PEER_IMAGE_MEM 600、EXPORT_REBUILD、EXPORT_CACHE 256、WM_HB + PULL_UNLOCKED、PREEXTEND 1500)。asia 18/43/117/319/793、eu 259 / am 184、GP 430/228/171 → eu/am が崩れた。一式は不採用、切り分けへ |
+| 16951 | 29928be | FAIL 0 | 新既定のみの基準。asia 18/49/144/412/1004 (最多)、eu 269 / am 266。走行後の整合性チェックで Memories がタイムアウト (走行中 182 件)。05:21:57 に asia2 の PG が OOM kill。疑い: DB_KEEP_IDLE (idle 接続を保持、backend 約 220) + max_wal_size 12GB → DB_KEEP_IDLE を既定 0 に |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
 

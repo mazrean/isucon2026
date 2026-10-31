@@ -60,3 +60,4 @@
 14:13	2a541a5	job=16157 state=4 pass=true スコア=152807 種別エラー数=map[]	新既定 + ASIA_LOCALIMG=1 (グループコミット) + asia1 の画像ディスクキャッシュ off (syncfs が imgcache の汚れページまで書き戻すのを防ぐ。PG から画像の bytea と WAL を外す)
 14:16	3893dfa	job=16350 state=4 pass=true スコア=163659 種別エラー数=map[]	新既定 (CACHE_ORIGIN) + IMGV_PEER_INDEX=1 + IMG_SENDFILE=1 (eu/am の画像の有効性をローカルで、sendfile)
 14:18	e4b6273	job=16572 state=4 pass=true スコア=113787 種別エラー数=map[]	新既定 (ASIA_LOCALIMG=1、asia1 ディスク off、CACHE_ORIGIN、画像 SELECT 1 区画) + eu/am 一式: IMGV_PEER_INDEX、SENDFILE、画像 LRU 600MB、EXPORT_REBUILD、EXPORT_CACHE 256MB、WM_HB + PULL_UNLOCKED、TOAST 事前拡張 1500MB
+14:22	29928be	job=16951 state=4 pass=false スコア=0 種別エラー数=map[]	新既定のみ (16350 の構成 + ASIA_LOCALIMG=1 + asia1 ディスク off + PGCPU + HOTPART + KEEP_IDLE) の基準 1 本目

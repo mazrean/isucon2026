@@ -1,0 +1,42 @@
+
+��A��� *��������2������:��������B��Ȧ�H���<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����"��*�
+実行終了�time=2026-10-31T03:30:15.072Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T03:30:18.068Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T03:30:20.920Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T03:30:24.014Z level=INFO msg="asia 2 日目: 50 人"
+time=2026-10-31T03:30:26.900Z level=INFO msg="europe 2 日目: 16 人"
+time=2026-10-31T03:30:30.030Z level=INFO msg="america 2 日目: 15 人"
+time=2026-10-31T03:30:32.998Z level=INFO msg="asia 3 日目: 135 人"
+time=2026-10-31T03:30:36.224Z level=INFO msg="europe 3 日目: 41 人"
+time=2026-10-31T03:30:39.227Z level=INFO msg="america 3 日目: 42 人"
+time=2026-10-31T03:30:39.928Z level=INFO msg="user moved" user=marmarha.5888 from=asia to=europe
+time=2026-10-31T03:30:41.921Z level=INFO msg="user moved" user=suroshi.6157 from=europe to=america
+time=2026-10-31T03:30:41.976Z level=INFO msg="asia 4 日目: 345 人"
+time=2026-10-31T03:30:44.324Z level=INFO msg="user moved" user=reri6176 from=europe to=asia
+time=2026-10-31T03:30:45.284Z level=INFO msg="europe 4 日目: 105 人"
+time=2026-10-31T03:30:47.496Z level=INFO msg="user moved" user=solshihe.6402 from=america to=asia
+time=2026-10-31T03:30:48.997Z level=INFO msg="america 4 日目: 90 人"
+time=2026-10-31T03:30:50.015Z level=INFO msg="user moved" user=anel6905 from=asia to=europe
+time=2026-10-31T03:30:50.269Z level=INFO msg="user moved" user=torni.7786 from=asia to=europe
+time=2026-10-31T03:30:50.470Z level=INFO msg="user moved" user=solshihe.6402 from=asia to=america
+time=2026-10-31T03:30:51.621Z level=INFO msg="user moved" user=tore_6981 from=asia to=europe
+time=2026-10-31T03:30:51.750Z level=INFO msg="asia 5 日目: 728 人"
+time=2026-10-31T03:30:51.752Z level=INFO msg="user moved" user=danmar_7947 from=asia to=europe
+time=2026-10-31T03:30:52.173Z level=INFO msg="user moved" user=riri_5782 from=asia to=america
+time=2026-10-31T03:30:57.173Z level=INFO msg="europe 5 日目: 206 人"
+time=2026-10-31T03:30:57.742Z level=INFO msg="america 5 日目: 92 人"
+time=2026-10-31T03:30:58.600Z level=INFO msg="user moved" user=marke-8309 from=europe to=america
+time=2026-10-31T03:31:06.634Z level=INFO msg="europe 最終日（グランプリ）: 204 人"
+time=2026-10-31T03:31:06.805Z level=INFO msg="america 最終日（グランプリ）: 92 人"
+time=2026-10-31T03:31:07.012Z level=INFO msg="asia 最終日（グランプリ）: 726 人"
+time=2026-10-31T03:31:14.800Z level=INFO msg="グランプリ: アジア 543 人, ヨーロッパ 175 人, アメリカ 85 人"
+{
+  "pass": true,
+  "score": 112338,
+  "messages": [
+    "heso.5119: 通知を購読できません: GET /api/notifications: ステータスコード 401 が返りました（期待値 200、invalid_session）"
+  ]
+}
+ ���������(���������2��Ȧ���
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

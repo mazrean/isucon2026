@@ -163,11 +163,18 @@ func TestFriendPushGPGate(t *testing.T) {
 		t.Fatal("idle, no window: gate should be open")
 	}
 	now := time.Now()
-	m.d.open["asia"] = &memWindow{PostingWindow: PostingWindow{StartsAt: now.Add(-10 * time.Second), OnTimeDeadline: now.Add(50 * time.Second)}}
+	// GP (gp_fair.go) = all three regions opened together, within gpFairActive of the start
+	for _, r := range gpRegions {
+		m.d.open[r] = &memWindow{PostingWindow: PostingWindow{StartsAt: now.Add(-2 * time.Second), OnTimeDeadline: now.Add(50 * time.Second)}}
+	}
+	m.gp.Store(nil) // gpWindowDeadline caches its snapshot for 50ms
 	if p.defaultGate("europe") {
 		t.Fatal("GP open: gate should be closed")
 	}
-	delete(m.d.open, "asia")
+	for _, r := range gpRegions {
+		delete(m.d.open, r)
+	}
+	m.gp.Store(nil)
 	p.txBps.Store(imgFriendPushMaxBps)
 	if p.defaultGate("europe") {
 		t.Fatal("busy NIC: gate should be closed")

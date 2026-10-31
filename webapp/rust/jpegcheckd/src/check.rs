@@ -1045,8 +1045,9 @@ fn build_lut10(h: &mut Huffman) {
 ///
 /// Go reads one stuffed unit (a non-0xff byte, or 0xff 0x00) whenever its
 /// bit count n is below the demand of the current operation. Here units are
-/// loaded ahead into a 64-bit accumulator; `n_go` tracks what Go's n would
-/// be (pure arithmetic), so Go's failures (a demanded unit lies beyond the
+/// loaded ahead into a 64-bit accumulator. Go's read count is
+/// R = ceil(hw/8) where hw = max over operations of (consumed + demand), so
+/// Go's n = 8R - consumed; from that, Go's failures (a demanded unit lies beyond the
 /// wall: a marker or EOF) and Go's byte position at the end of the scan are
 /// reconstructed exactly.
 #[derive(Clone, Copy)]
@@ -1057,13 +1058,14 @@ struct Sr<'a> {
     acc: u64,     // left-aligned unread bits
     nb: u32,      // number of valid bits in acc (bits beyond are zero)
     wall: bool,   // no further unit can be loaded
-    n_go: u32,    // Go's bits.n
+    lb: u32,      // bits loaded since `start` (consumed = lb - nb)
+    hw: u32,      // max(consumed + demand) over Go's demands
     soft_failed: bool,
 }
 
 impl<'a> Sr<'a> {
     fn new(data: &'a [u8], pos: usize) -> Self {
-        Sr { data, start: pos, rp: pos, acc: 0, nb: 0, wall: false, n_go: 0, soft_failed: false }
+        Sr { data, start: pos, rp: pos, acc: 0, nb: 0, wall: false, lb: 0, hw: 0, soft_failed: false }
     }
 
     #[inline(always)]
@@ -1078,6 +1080,7 @@ impl<'a> Sr<'a> {
                     let k = (64 - self.nb) / 8;
                     self.acc |= w >> self.nb;
                     self.nb += 8 * k;
+                    self.lb += 8 * k;
                     self.rp += k as usize;
                     if self.nb < 64 {
                         self.acc &= !(u64::MAX >> self.nb);
@@ -1107,27 +1110,41 @@ impl<'a> Sr<'a> {
         }
         self.acc |= (b as u64) << (56 - self.nb);
         self.nb += 8;
+        self.lb += 8;
     }
 
     #[inline(always)]
     fn consume(&mut self, l: u32) {
         self.acc <<= l;
         self.nb -= l;
-        self.n_go -= l;
+    }
+
+    #[inline(always)]
+    fn note_demand(&mut self, d: u32) {
+        let need = self.lb - self.nb + d;
+        if need > self.hw {
+            self.hw = need;
+        }
+    }
+
+    /// Go's bits.n.
+    #[inline(always)]
+    fn n_go(&self) -> u32 {
+        ((self.hw + 7) & !7) - (self.lb - self.nb)
     }
 
     /// Go: if n < d { ensureNBits(d) } (fatal on failure).
     #[inline(always)]
     fn demand(&mut self, d: u32) -> R<()> {
-        if self.n_go < d {
-            self.n_go += (d - self.n_go + 7) & !7;
-            if self.n_go > self.nb {
-                self.refill();
-                if self.n_go > self.nb {
-                    return Err(E::Bad);
-                }
+        // Go needs units up to ceil((consumed+d)/8); loaded bits are
+        // consumed+nb (a multiple of 8), so it fails iff d > nb at the wall.
+        if d > self.nb {
+            self.refill();
+            if d > self.nb {
+                return Err(E::Bad);
             }
         }
+        self.note_demand(d);
         Ok(())
     }
 
@@ -1177,10 +1194,7 @@ impl<'a> Sr<'a> {
             }
         };
         // Go demands 8 bits for the LUT, then the slow path reads on.
-        let d = if l > 8 { l } else { 8 };
-        if self.n_go < d {
-            self.n_go += (d - self.n_go + 7) & !7;
-        }
+        self.note_demand(if l > 8 { l } else { 8 });
         self.consume(l);
         Ok(v)
     }
@@ -1196,10 +1210,18 @@ impl<'a> Sr<'a> {
 
     #[inline(always)]
     fn decode_huffman_exact(&mut self, h: &Huffman) -> R<u8> {
+        let mut n_go = self.n_go();
+        let r = self.decode_huffman_exact_n(h, &mut n_go);
+        self.hw = self.lb - self.nb + n_go;
+        r
+    }
+
+    #[inline(always)]
+    fn decode_huffman_exact_n(&mut self, h: &Huffman, n_go: &mut u32) -> R<u8> {
         let mut lut_ok = true;
-        if self.n_go < 8 {
-            if self.n_go + 8 <= self.nb {
-                self.n_go += 8;
+        if *n_go < 8 {
+            if *n_go + 8 <= self.nb {
+                *n_go += 8;
             } else {
                 self.soft_failed = true;
                 lut_ok = false;
@@ -1208,22 +1230,25 @@ impl<'a> Sr<'a> {
         if lut_ok {
             let v = h.lut[(self.acc >> 56) as usize];
             if v != 0 {
-                self.consume((v & 0xff) as u32 - 1);
+                let l = (v & 0xff) as u32 - 1;
+                self.consume(l);
+                *n_go -= l;
                 return Ok((v >> 8) as u8);
             }
         }
         let mut code: i32 = 0;
         for i in 0..MAX_CODE_LENGTH {
-            if self.n_go == 0 {
+            if *n_go == 0 {
                 if 8 > self.nb {
                     return Err(E::Bad);
                 }
-                self.n_go = 8;
+                *n_go = 8;
             }
             if (self.acc >> 63) != 0 {
                 code |= 1;
             }
             self.consume(1);
+            *n_go -= 1;
             if code <= h.max_codes[i] {
                 let idx = h.vals_indices[i] + code - h.min_codes[i];
                 if !(0..256).contains(&idx) {
@@ -1243,13 +1268,14 @@ impl<'a> Sr<'a> {
 
     /// Write Go's byte-layer state (pos, nUnreadable, bits.n) into br.
     fn materialize(&self, br: &mut Br) {
-        let ahead = (self.nb - self.n_go) / 8; // units loaded but not yet read by Go
+        let n_go = self.n_go();
+        let ahead = (self.nb - n_go) / 8; // units loaded but not yet read by Go
         let mut p = self.rp;
         for _ in 0..ahead {
             p -= if self.unit_ending_at_is_2(p) { 2 } else { 1 };
         }
         br.pos = p;
-        br.n = self.n_go as i32;
+        br.n = n_go as i32;
         br.a = 0;
         br.n_unreadable = if self.soft_failed || p == self.start {
             0

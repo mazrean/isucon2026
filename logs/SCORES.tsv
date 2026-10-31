@@ -102,3 +102,4 @@
 16:38	9395256	job=29164 state=4 pass=true スコア=179410 種別エラー数=map[]	今の既定そのまま (STORE+SPLIT+SYNC_VISIBLE+ACK_OWN+BODYBUF+PG_SB 512+403 修正)
 16:41	ef78aa4	job=29455 state=4 pass=true スコア=191380 種別エラー数=map[]	A: 26530 構成 + PG_SB 512 + 403 修正 (SYNC_VISIBLE/ACK_OWN off)
 16:44	def2fd7	job=29771 state=4 pass=true スコア=189935 種別エラー数=map[]	B: 今の既定 (2 本目)
+16:47	f974a7f	job=30055 state=4 pass=true スコア=189147 種別エラー数=map[]	今の既定 + ASIA_LOCALIMG_ASYNC=1 (ユーザー承認済み)

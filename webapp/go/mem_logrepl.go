@@ -207,12 +207,13 @@ func memLogReplBarrier(db *sqlx.DB) echo.MiddlewareFunc {
 	}
 }
 
-// lrWaitApplied: xid を割り当てた空トランザクションを remote_apply で commit する。
-// 行ロックを取らないので並行する marker 同士は待ち合わない。
+// lrWaitApplied: WAL を書く (transactional な論理メッセージ) だけのトランザクションを remote_apply で commit する。
+// WAL を書かないトランザクション (xid だけ) は commit が同期待ちにならないので不可。
+// 行ロックを取らないので並行する marker 同士は待ち合わない。pgoutput は messages オプション無しなら送らない (空 tx → keepalive)。
 func lrWaitApplied(ctx context.Context, db *sqlx.DB) error {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 	defer cancel()
-	_, err := db.ExecContext(ctx, `BEGIN; SET LOCAL synchronous_commit = remote_apply; SELECT pg_current_xact_id(); COMMIT`)
+	_, err := db.ExecContext(ctx, `BEGIN; SET LOCAL synchronous_commit = remote_apply; SELECT pg_logical_emit_message(true, 'isureal_mem', ''); COMMIT`)
 	return err
 }
 

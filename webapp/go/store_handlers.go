@@ -117,7 +117,25 @@ func postRow(p *memPost) memPostRow {
 	}
 }
 
+// storePreKeepImage: ISUREAL_ASIA_LOCALIMG の画像 fsync を store の排他の外で先に済ませる
+// (排他の中で fsync すると全書き込みが直列になる)。コミットしなかったら呼び出し側が asiaLocalImgDrop する。
+// 応答 (201) は run の中でコミット後に返るので「fsync の後に 201」は保たれる。
+func storePreKeepImage(c *echo.Context, owner string, data []byte) (string, bool) {
+	ctx := c.Request().Context()
+	id := newImageID(ctx)
+	return id, asiaLocalImgKeep(ctx, id, owner, data) // 転送 (external) なら false
+}
+
+func storeDropUncommitted(imageID string, kept, committed bool) {
+	if kept && !committed {
+		asiaLocalImgDrop(imageID)
+	}
+}
+
 func (e *storeEngine) createPost(c *echo.Context, userID string, input createPostRequest, location PostLocation, imageData []byte) (bool, error) {
+	imageID, kept := storePreKeepImage(c, userID, imageData)
+	committed := false
+	defer func() { storeDropUncommitted(imageID, kept, committed) }()
 	return e.run(c, func(t *storeTx) (func() error, error) {
 		d := t.d
 		u := d.users[userID]
@@ -142,10 +160,9 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 		if active != 0 || deleted >= 2 || postedAt.Before(w.StartsAt) {
 			return nil, NewAPIError(http.StatusConflict, "post_slot_unavailable")
 		}
-		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, userID)
 		postID := uuid.NewString()
-		if !external && !asiaLocalImgKeep(c.Request().Context(), imageID, userID, imageData) {
+		if !external && !kept {
 			t.execImage(imageID, `INSERT INTO image_objects (id, owner_user_id, data, media_type, created_at) VALUES ($1, $2, $3, 'image/jpeg', $4)`, imageID, userID, imageData, postedAt)
 		}
 		t.exec(`INSERT INTO posts (id, author_id, posting_window_id, image_id, caption, visibility,
@@ -162,6 +179,7 @@ func (e *storeEngine) createPost(c *echo.Context, userID string, input createPos
 			regions := d.pushRegionsForPost(userID, input.Visibility, "")
 			t.after = append(t.after, func() { replicateImageTo(imageID, userID, "image/jpeg", imageData, regions) })
 		}
+		committed = true
 		return func() error {
 			return c.JSON(http.StatusCreated, resp)
 		}, nil
@@ -228,6 +246,9 @@ func realmojiRow(x *memRealMoji) memRealMojiRow {
 }
 
 func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input replaceRealMojiRequest, data []byte) (bool, error) {
+	imageID, kept := storePreKeepImage(c, actor, data)
+	committed := false
+	defer func() { storeDropUncommitted(imageID, kept, committed) }()
 	return e.run(c, func(t *storeTx) (func() error, error) {
 		d := t.d
 		p := d.posts[input.PostID]
@@ -261,9 +282,8 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 		if len(oldIDs) > 0 {
 			t.exec(`UPDATE realmojis SET replaced_at=$3 WHERE post_id=$1 AND reactor_id=$2 AND replaced_at IS NULL AND deleted_at IS NULL AND id = ANY($4)`, p.ID, actor, t.now, oldIDs)
 		}
-		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, actor)
-		if !external && !asiaLocalImgKeep(c.Request().Context(), imageID, actor, data) {
+		if !external && !kept {
 			t.execImage(imageID, `INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES($1,$2,$3,'image/jpeg',$4)`, imageID, actor, data, t.now)
 		}
 		id := uuid.NewString()
@@ -274,6 +294,7 @@ func (e *storeEngine) replaceRealMoji(c *echo.Context, actor string, input repla
 			regions := t.d.pushRegionsForPost(p.AuthorID, p.Visibility, actor)
 			t.after = append(t.after, func() { replicateImageTo(imageID, actor, "image/jpeg", data, regions) })
 		}
+		committed = true
 		return func() error {
 			return c.JSON(http.StatusCreated, resp)
 		}, nil

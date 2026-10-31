@@ -60,15 +60,17 @@ func (e *storeEngine) updateMe(c *echo.Context, userID string, input updateMeReq
 }
 
 func (e *storeEngine) putProfileImage(c *echo.Context, userID string, data []byte) (bool, error) {
+	imageID, kept := storePreKeepImage(c, userID, data)
+	committed := false
+	defer func() { storeDropUncommitted(imageID, kept, committed) }()
 	return e.run(c, func(t *storeTx) (func() error, error) {
 		u := t.d.users[userID]
 		if !u.active() {
 			return nil, errStoreFallback
 		}
 		old := u.ProfileImageID
-		imageID := newImageID(c.Request().Context())
 		external := externalImage(c, userID)
-		if !external && !asiaLocalImgKeep(c.Request().Context(), imageID, userID, data) {
+		if !external && !kept {
 			t.execImage(imageID, `INSERT INTO image_objects(id,owner_user_id,data,media_type,created_at) VALUES ($1,$2,$3,'image/jpeg',$4)`, imageID, userID, data, t.now)
 		}
 		t.exec(`UPDATE users SET profile_image_id=$2,updated_at=$3 WHERE id=$1`, userID, imageID, t.now)
@@ -81,6 +83,7 @@ func (e *storeEngine) putProfileImage(c *echo.Context, userID string, data []byt
 		if !external {
 			t.after = append(t.after, func() { replicateImage(imageID, userID, "image/jpeg", data) })
 		}
+		committed = true
 		return func() error {
 			return c.NoContent(http.StatusNoContent)
 		}, nil

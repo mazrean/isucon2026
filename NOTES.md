@@ -259,6 +259,7 @@ END: 2026-10-31 18:00 JST
 | 32381 | - | 0 FAIL | A の既定 + MEM_FULL v3 (9b527ac)。ロードは 17s に縮んだが、走行後の Memories 2026-10 がまたタイムアウト。eu/am の GP 96/82 に崩れる。ロードの長さが原因ではない |
 | 32602 | - | 159585 | A の既定 + STORE_WAL + BARRIER_LAZY + NOTIFY_MEM + IMG_MEM_ONLY (CACHE_ORIGIN はガードで空)。pass。d5 1218/268/236 (asia は最多)、GP 697/196/183。eu/am が落ちる。不採用 |
 | 32937 | - | 0 FAIL | A の既定 + MEM_FULL v4 (d8b8d15) + EXPORT_MEM=1、CACHE_ORIGIN=asia2 のまま。走行後の Memories 2026-10 がまたタイムアウト。4 回続けて同じ型。MEM_FULL はここで打ち切り |
+| 33229 | - | 192745 | 最終候補: A 系の既定のみ (3383bf6 = c893462 のコード)。pass、エラー種別 0。d5 1204/424/273、GP 630/137/244。最終の版に決定 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |
@@ -403,3 +404,4 @@ END: 2026-10-31 18:00 JST
   - 最終の版は、再起動試験の前に同じ構成で pass を 1 本持っていること。持っていなければ A 系。
 - (17:14) MEM_FULL v4 を最終に採る条件: 17:38 までに同じ構成で 2 本続けて pass、両方 211k 以上・エラー 0・走行後の今月の Memories の最大 < 1s。1 本だけなら A 系 (final-A-candidate)。v4 が 1 本目で条件を満たしたら、17:25 の枠で同じ構成をもう 1 本流す。
 - (17:17) MEM_FULL は 4 回続けて同じ型で FAIL (28421 / 31838 / 32381 / 32937) なので打ち切り。最終の版は A 系の印 (final-A-candidate c893462) のコードに戻した (3383bf6、webapp と scripts の差は 0)。17:17 にこの版を既定のまま 1 本流して pass を確かめる。pass なら再起動試験 → デプロイなしの最終 1 本。落ちたら def2fd7 (29771 で pass 済み) に戻す。
+- (17:19) 最終の版は 3383bf6 (A 系、33229 で pass 192,745)。17:20 に再起動試験を始める。

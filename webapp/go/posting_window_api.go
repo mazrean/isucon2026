@@ -31,7 +31,7 @@ func getCurrentPostingWindowHandler(h *HandlerContext) echo.HandlerFunc {
 			Active  int `db:"active"`
 			Deleted int `db:"deleted"`
 		}
-		err := h.DB.GetContext(c.Request().Context(), &state, `
+		err := h.Reader().GetContext(c.Request().Context(), &state, `
    SELECT w.id, w.region, w.local_date, w.starts_at, w.on_time_deadline, w.ended_at,
           count(p.id) FILTER (WHERE p.deleted_at IS NULL) AS active,
           count(p.id) FILTER (WHERE p.deleted_at IS NOT NULL) AS deleted

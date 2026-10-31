@@ -68,7 +68,7 @@ func extractClientIP(req *http.Request) string {
 func IPBanMiddleware(h *HandlerContext) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			banned, err := h.IPBans.Banned(c.Request().Context(), h.DB, c.RealIP())
+			banned, err := h.IPBans.Banned(c.Request().Context(), h.Reader(), c.RealIP())
 			if err != nil {
 				return err
 			}

@@ -82,3 +82,4 @@
 15:38	e482103	job=23341 state=4 pass=true スコア=180766 種別エラー数=map[]	新既定 + STORE=1 (AWAIT_PG=1、WAL なし。WAL の土台の確認)
 15:42	a4180fe	job=23734 state=4 pass=true スコア=168944 種別エラー数=map[]	退避先 (新既定 bare) 全台同時再起動の後の 1 本
 15:45	88bd86e	job=24013 state=4 pass=true スコア=166685 種別エラー数=map[]	新既定 + STORE=1 の再現 2 本目
+15:47	9cb553c	job=24289 state=4 pass=true スコア=188124 種別エラー数=map[]	新既定 + STORE=1 + USER_LOCK_SPLIT=1

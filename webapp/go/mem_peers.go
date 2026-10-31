@@ -259,12 +259,40 @@ func (ps *memPeers) heartbeatLoop() {
 //   - epoch が変わった場合は新 epoch での invalidate 成功確認
 //   - いずれでもなければ lastGrantAt + memLease + memClockSkew を過ぎるまで待つ (peer は lease 切れで自発的に DB 経路)
 func (ps *memPeers) waitAcked() {
+	ps.mu.Lock()
+	target, epoch := ps.seq, ps.epoch
+	ps.mu.Unlock()
+	ps.waitAckedFor(memAckTarget{epoch: epoch, seq: target, ok: true})
+}
+
+// memAckTarget: 書き込みが待つべき (epoch, seq)。ISUREAL_MEM_ACK_OWN では publish 直後 (cycleMu 保持中) の値。
+type memAckTarget struct {
+	epoch string
+	seq   int64
+	ok    bool
+}
+
+// ISUREAL_MEM_ACK_OWN=1 (既定 0): STORE の書き込みは、自分の publish 直後の (epoch, seq) の ack だけを待ち、
+// PG の flush 待ちと並行に進める (後から publish された無関係な更新の ack を待たない)。
+// 正しさ: peer は seq を順に適用する (欠番は pull) ので、ack >= 自分の seq ならそれ以前の全バッチ
+// (この書き込みが読んだ状態すべて) を適用済み。epoch の切り替え・切断の扱いは waitAcked と同じ。
+var memAckOwn = os.Getenv("ISUREAL_MEM_ACK_OWN") == "1"
+
+// current: 今の (epoch, seq)。
+func (ps *memPeers) current() memAckTarget {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	return memAckTarget{epoch: ps.epoch, seq: ps.seq, ok: true}
+}
+
+// waitAckedFor: (epoch, seq) までを全 peer が反映する (または peer が確実に not-ready になる) まで待つ。
+func (ps *memPeers) waitAckedFor(at memAckTarget) {
 	if memSyncVisible {
 		defer memSyncStats.since(time.Now())
 	}
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	target, epoch := ps.seq, ps.epoch
+	target, epoch := at.seq, at.epoch
 	var timer *time.Timer
 	defer func() {
 		if timer != nil {

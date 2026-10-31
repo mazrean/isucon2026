@@ -27,7 +27,7 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 	var after []func()
 	timed := postTimingOn && name == "createPost"
 	applyStart := time.Now()
-	seq, err := e.write(func(t *storeTx) error {
+	seq, ack, err := e.write(func(t *storeTx) error {
 		var err error
 		respond, err = fn(t)
 		after = t.after
@@ -53,10 +53,10 @@ func (e *storeEngine) run(c *echo.Context, fn func(t *storeTx) (func() error, er
 			postTimingAdd("pgflush", time.Since(fs))
 		}
 		as := time.Now()
-		e.commitWait(c, seq)
+		e.commitWait(c, seq, ack)
 		postTimingAdd("ack", time.Since(as))
 	} else {
-		e.commitWait(c, seq)
+		e.commitWait(c, seq, ack)
 	}
 	if err != nil {
 		return true, err

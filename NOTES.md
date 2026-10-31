@@ -118,6 +118,12 @@ END: 2026-10-31 18:00 JST
 - メモリに持つもの: 全ユーザー/有効セッション/関係/保留申請/全投稿期間/ホット投稿 (開いている期間の最小 local_date 以降) とその有効コメント・RealMoji。ホット外は終了済み期間のみ → DB へフォールバック。Memories/export/SSE は DB のまま。
 - ロード前・initialize 中・poll 失敗時は not-ready → 全て元の DB 経路。initialize は init.sh → TRUNCATE mem_changelog → 再ロード → peer 再構築完了待ち。
 - 分散モード: asia1 に `ISUREAL_MEM_PEERS=192.168.2.10:8080,192.168.3.10:8080`、europe1/america1 に `ISUREAL_MEM=1 ISUREAL_MEM_PUMP=192.168.1.10:8080` (ISUREAL_FWD_SECRET 共有, /internal/mem/* は 192.168.x + secret のみ)。peer は DB を読まず、pump のダンプ (gzip JSON) + 連番バッチで同期。欠番は pump のバッファから pull、epoch 変化で再構築。peer は heartbeat (250ms) が lease 1s 途絶えると自発的に DB 経路 (pump の push タイムアウト 3s > lease)。
+- 全投稿保持 (11:50〜): 初期データ含む全投稿 (約 62.5 万, 削除済み含む) + 有効コメント/RealMoji を全ホストのメモリに持つ。Memories (月/日) と export もメモリから返す。ローカル計測: pump の全量ロード 17s、peer へのダンプ (gob+gzip, ストリーム) 4s+転送、peer 構築 7s。
+- initialize は soft reset: reset.sql は初期データ行 (created_at <= initial_data_boundary) を消さず変更も戻さないので、pump は手元の cold 行を引き継ぎ小テーブル + 新規行だけ読む (1.6s)。peer も直前 epoch の最終連番まで同期済みなら cold 行を引き継ぎ、ダンプは新規行のみ (pump が prevEpoch/prevSeq と照合、不一致は全量)。
+- export zip はユーザー単位でキャッシュ (キー: ユーザーの投稿/ユーザー行の版 + 署名 exp 10 分境界)。上限 ISUREAL_MEM_EXPORT_CACHE_MB (既定 512)。超えたら全消去。
+- 画像の事前温め: `ISUREAL_IMAGE_PREWARM=1` で起動時に image_objects 全件をローカルディスクキャッシュへ (既存は stat で飛ばす、ISUREAL_IMAGE_PREWARM_MBPS 既定 8)。
+- push のパイプライン化 (12:10〜): peer ごとに未 ack の push を最大 4 本並列に送る (heartbeat は送信中でないときだけ)。publish 時に即送信するので、書き込みのバリア待ちは「自分のサイクルの poll + 1 RTT」。peer は seq 順に適用し、先行分が未着なら最大 50ms 待ってから従来どおり pump のバッファから pull (失敗なら invalidate)。
+- lease 規則: push に pump の送信時刻を載せ、peer の lease は min(受信時刻, 送信時刻) + 1s。pump は peer ごとに「lease を与えうる push の最終送信時刻」+ 1s + 時計ずれ 200ms を過ぎたら ack 無しでも先に進む (ack 受信時刻ベースより厳密: 応答待ちの push で延びた lease も上界に入る)。down の peer への送信は probe (lease を延ばさない) にして、復帰を確認してから lease を与える。前提: ホスト間の時計ずれ < 200ms (chrony)。
 - 撤去: 各テーブルの `DROP TRIGGER mem_changelog ON <tbl>`、`DROP TABLE mem_changelog`。フラグ off でもトリガーは残る (1 行 insert/変更行、負荷小)。
 - 検証: ローカル PG (primary のダンプ, 画像除く) で `go test -tags memdiff -run TestMemDiff` (DB 経路 / pump / peer の GET 応答を 1500 ステップの書き込み列で比較、差分 0)。
 ## 他チーム考察 (10:55 時点のリーダーボード)

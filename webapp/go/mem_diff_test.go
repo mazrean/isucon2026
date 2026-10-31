@@ -6,7 +6,9 @@ package isureal
 //   ISUREAL_DB_HOST=127.0.0.1 ISUREAL_DB_PORT=15433 ISUREAL_LOG_LEVEL=error go test -tags memdiff -run TestMemDiff -v .
 
 import (
+	"archive/zip"
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -103,6 +105,9 @@ func TestMemDiff(t *testing.T) {
 	os.Unsetenv("ISUREAL_MEM_PEERS")
 	os.Setenv("ISUREAL_MEM_ROLE", "peer")
 	os.Setenv("ISUREAL_MEM_PUMP", sb.Listener.Addr().String())
+	os.Setenv("ISUREAL_MEM_SIG_TARGETS", sb.Listener.Addr().String())
+	os.Setenv("ISUREAL_MEM_SIG_COUNT", "1")
+	os.Setenv("ISUREAL_MEM_SIG_INDEX", "0")
 	sc.Config.Handler = NewServer(config)
 	os.Unsetenv("ISUREAL_MEM_ROLE")
 	os.Unsetenv("ISUREAL_MEM_PUMP")
@@ -120,6 +125,15 @@ func TestMemDiff(t *testing.T) {
 		t.Fatalf("initialize: %d %s", code, body)
 	}
 	t.Logf("initialize took %v (peer ready=%v)", time.Since(initStart), memCurrentPeerStore.on())
+	// 2 回目の initialize: 同期済みの peer は初期データ行を引き継ぐ (soft reset) はず
+	for i := 0; i < 600 && !memCurrentPeerStore.on(); i++ {
+		time.Sleep(100 * time.Millisecond)
+	}
+	initStart = time.Now()
+	if code, body := pb.json("POST", "/api/initialize", map[string]any{}); code != 200 {
+		t.Fatalf("initialize: %d %s", code, body)
+	}
+	t.Logf("2nd initialize took %v (peer ready=%v)", time.Since(initStart), memCurrentPeerStore.on())
 	admin := &mdClient{t: t, base: sb.URL}
 	_, body := admin.json("POST", "/api/admin/auth/login", map[string]string{"username": "admin", "password": "password1234"})
 	var al struct {
@@ -225,7 +239,7 @@ func TestMemDiff(t *testing.T) {
 		if ca != cb || na != nb {
 			mismatches++
 			key := strings.SplitN(path, "?", 2)[0]
-			if len(key) > 20 && strings.HasPrefix(key, "/api/posts/") {
+			if len(key) >= len("/api/posts/")+36 && strings.HasPrefix(key, "/api/posts/") {
 				key = "/api/posts/X" + key[len("/api/posts/")+36:]
 			}
 			if len(key) > 20 && strings.HasPrefix(key, "/api/users/") {
@@ -248,7 +262,9 @@ func TestMemDiff(t *testing.T) {
 				"/api/feeds/friends", "/api/feeds/public", "/api/feeds/following", "/api/feeds/friends-of-friends",
 				"/api/relationships/friends", "/api/relationships/following", "/api/relationships/followers",
 				"/api/relationships/incoming-requests", "/api/relationships/outgoing-requests",
-				"/api/users?q=md", "/api/users?q=a", "/api/users/" + pick().id} {
+				"/api/users?q=md", "/api/users?q=a", "/api/users/" + pick().id,
+				"/api/memories?month=2026-11", "/api/memories?month=2026-10", "/api/memories?month=2026-03", "/api/memories?month=2025-11",
+				"/api/memories/2026-10-20", "/api/memories/2026-11-01", "/api/memories/2026-11-02"} {
 				compare(step, u, p)
 			}
 			for i := 0; i < 3; i++ {
@@ -256,6 +272,30 @@ func TestMemDiff(t *testing.T) {
 				compare(step, u, "/api/posts/"+id)
 				compare(step, u, "/api/posts/"+id+"/comments")
 				compare(step, u, "/api/posts/"+id+"/realmojis")
+			}
+		}
+		// memories pagination + export
+		for _, u := range users[:4] {
+			_, mb := u.b.do("GET", "/api/memories?month=2026-10", nil, "")
+			var ml struct {
+				Items []struct {
+					ID       string    `json:"id"`
+					PostedAt time.Time `json:"postedAt"`
+				} `json:"items"`
+			}
+			_ = json.Unmarshal(mb, &ml)
+			if len(ml.Items) >= 2 {
+				it := ml.Items[0]
+				compare(step, u, fmt.Sprintf("/api/memories?month=2026-10&beforePostedAt=%s&beforeId=%s", it.PostedAt.Format(time.RFC3339Nano), it.ID))
+			}
+			ca, ba := u.a.do("GET", "/api/me/export", nil, "")
+			cb, bb := u.b.do("GET", "/api/me/export", nil, "")
+			if step%2 == 1 {
+				cb, bb = u.c.do("GET", "/api/me/export", nil, "")
+			}
+			if ca != cb || mdZipNorm(ba) != mdZipNorm(bb) {
+				mismatches++
+				t.Errorf("step %d user %s export differs: %d vs %d", step, u.name, ca, cb)
 			}
 		}
 		// pagination on public feed
@@ -452,7 +492,34 @@ func TestMemDiff(t *testing.T) {
 		}
 	}
 	check(1501)
+	if memCurrentFarm != nil {
+		memCurrentFarm.mu.Lock()
+		t.Logf("sigfarm items=%d queued=%d prefetchDone=%d", len(memCurrentFarm.lastExp), len(memCurrentFarm.high)+len(memCurrentFarm.low), len(memCurrentFarm.prefDone))
+		memCurrentFarm.mu.Unlock()
+	}
+	signatureCacheMu.RLock()
+	t.Logf("signatureCache=%d", len(signatureCache))
+	signatureCacheMu.RUnlock()
 	t.Logf("posts=%d comments=%d realmojis=%d mismatches=%d notOn=%d", len(postIDs), len(commentIDs), len(realmojiIDs), mismatches, notOn)
+}
+
+func mdZipNorm(b []byte) string {
+	zr, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		return "notzip:" + string(b)
+	}
+	var out strings.Builder
+	for _, f := range zr.File {
+		rc, _ := f.Open()
+		data, _ := io.ReadAll(rc)
+		rc.Close()
+		if f.Name == "posts.json" {
+			out.WriteString(f.Name + "=" + mdNorm(data) + "\n")
+		} else {
+			out.WriteString(fmt.Sprintf("%s=%x\n", f.Name, sha256.Sum256(data)))
+		}
+	}
+	return out.String()
 }
 
 func trunc(b []byte) string {

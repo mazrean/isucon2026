@@ -44,7 +44,7 @@ func getMemoriesHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return NewAPIError(http.StatusBadRequest, "invalid_memory_period")
 		}
-		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, start.AddDate(0, 1, 0), input.BeforePostedAt, input.BeforeID)
+		response, err := memListMemoriesOr(h, c.Request().Context(), GetSession(c).UserID, start, start.AddDate(0, 1, 0), input.BeforePostedAt, input.BeforeID)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func getMemoriesByDateHandler(h *HandlerContext) echo.HandlerFunc {
 		if err != nil {
 			return NewAPIError(http.StatusBadRequest, "invalid_memory_period")
 		}
-		response, err := listMemories(c.Request().Context(), h.Reader(), GetSession(c).UserID, start, start.AddDate(0, 0, 1), input.BeforePostedAt, input.BeforeID)
+		response, err := memListMemoriesOr(h, c.Request().Context(), GetSession(c).UserID, start, start.AddDate(0, 0, 1), input.BeforePostedAt, input.BeforeID)
 		if err != nil {
 			return err
 		}
@@ -83,6 +83,12 @@ func listMemories(ctx context.Context, db sqlx.QueryerContext, userID string, st
 	if err != nil {
 		return response, err
 	}
+	reqs := make([]imageURLReq, 0, 2*len(posts))
+	for _, post := range posts {
+		reqs = appendImageURLReq(reqs, post.Author, post.ImageID)
+		reqs = appendUserProfileImageReq(reqs, post.Author)
+	}
+	prewarmImageURLs(reqs)
 	items := make([]memoryPostResponse, 0, len(posts))
 	for _, post := range posts {
 		items = append(items, memoryPostResponse{
@@ -121,13 +127,6 @@ func loadMemoryInteractions(ctx context.Context, db sqlx.QueryerContext, items [
 	if err != nil {
 		return err
 	}
-	for _, reaction := range reactions {
-		item := itemByPostID[reaction.PostID]
-		if len(item.RealMojis) < 50 {
-			item.RealMojis = append(item.RealMojis, newRealMojiResponse(reaction.RealMoji, reaction.Reactor))
-		}
-	}
-
 	query, args, err = sqlx.In(`AND c.post_id IN (?) ORDER BY c.created_at, c.id`, postIDs)
 	if err != nil {
 		return err
@@ -135,6 +134,31 @@ func loadMemoryInteractions(ctx context.Context, db sqlx.QueryerContext, items [
 	comments, err := selectCommentsWithAuthor(ctx, db, sqlx.Rebind(sqlx.DOLLAR, query), args...)
 	if err != nil {
 		return err
+	}
+	// sign every URL the loops below will emit (same 50-per-post caps) as one batch.
+	reqs := make([]imageURLReq, 0, 2*len(reactions)+len(comments))
+	counts := make(map[string]int, len(items))
+	for _, reaction := range reactions {
+		if counts[reaction.PostID] < 50 {
+			counts[reaction.PostID]++
+			reqs = appendImageURLReq(reqs, reaction.Reactor, reaction.ImageID)
+			reqs = appendUserProfileImageReq(reqs, reaction.Reactor)
+		}
+	}
+	clear(counts)
+	for _, comment := range comments {
+		if counts[comment.PostID] < 50 {
+			counts[comment.PostID]++
+			reqs = appendUserProfileImageReq(reqs, comment.Author)
+		}
+	}
+	prewarmImageURLs(reqs)
+
+	for _, reaction := range reactions {
+		item := itemByPostID[reaction.PostID]
+		if len(item.RealMojis) < 50 {
+			item.RealMojis = append(item.RealMojis, newRealMojiResponse(reaction.RealMoji, reaction.Reactor))
+		}
 	}
 	for _, comment := range comments {
 		item := itemByPostID[comment.PostID]

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -450,7 +451,14 @@ func memWriteBarrier(p *memPump) echo.MiddlewareFunc {
 			c.SetResponse(bw)
 			err := next(c)
 			c.SetResponse(orig)
-			p.barrier()
+			// a 4xx means the handler rolled back (no handler commits and then
+			// returns 4xx), so there is nothing new for later reads to observe.
+			var apiErr *APIError
+			clientErr := (bw.code >= 400 && bw.code < 500) ||
+				(err != nil && errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500)
+			if !clientErr {
+				p.barrier()
+			}
 			if bw.code != 0 {
 				orig.WriteHeader(bw.code)
 				_, _ = orig.Write(bw.buf.Bytes())

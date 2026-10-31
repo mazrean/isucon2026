@@ -63,3 +63,30 @@ func TestMemImageValid(t *testing.T) {
 	m.ready.Store(false)
 	check("img-prof", "u1", false)
 }
+
+// ISUREAL_IMG_MEM_ONLY: a known non-active owner is answered found=false by
+// memory, matching queryImageValidity (no row for status = 'active').
+func TestMemImageValidMemOnlyInactiveOwner(t *testing.T) {
+	old := imgMemOnly
+	imgMemOnly = true
+	defer func() { imgMemOnly = old }()
+	m := &memStore{d: newMemData()}
+	m.ready.Store(true)
+	h := &HandlerContext{Mem: m}
+	prof := "img-prof"
+	m.d.applyUser(memUserRow{ID: "u1", Username: "u1", SecretKeyHash: "k1", ProfileImageID: &prof, Status: "active"})
+	if v, ok := memImageValid(h, "img-prof", "u1"); !ok || !v.found || !v.valid {
+		t.Fatalf("active: ok=%v v=%+v", ok, v)
+	}
+	if _, ok := memImageValid(h, "img-x", "u-unknown"); ok {
+		t.Fatal("unknown owner must ask the DB")
+	}
+	m.d.applyUser(memUserRow{ID: "u1", Username: "u1", SecretKeyHash: "k1", ProfileImageID: &prof, Status: "deleted"})
+	if v, ok := memImageValid(h, "img-prof", "u1"); !ok || v.found {
+		t.Fatalf("deleted: ok=%v v=%+v", ok, v)
+	}
+	imgMemOnly = false
+	if _, ok := memImageValid(h, "img-prof", "u1"); ok {
+		t.Fatal("knob off: deleted owner must ask the DB")
+	}
+}

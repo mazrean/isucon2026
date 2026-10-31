@@ -40,6 +40,13 @@ var imgvMemOn = os.Getenv("ISUREAL_IMGV_MEM") != "0"
 // fed in place by the pump's pushes (applyBatch); a resync swaps the pointer.
 var imgvPeerIndex = os.Getenv("ISUREAL_IMGV_PEER_INDEX") == "1"
 
+// ISUREAL_IMG_MEM_ONLY=1 (default 0): the read model also answers "owner not
+// active" (found=false -> 403) when it holds the owner row with a non-active
+// status. users rows are never reactivated and the model is fed before PG
+// (STORE) or from the same changelog, so this equals the PG answer
+// (no row for u.status = 'active'). Unknown owners still ask the DB.
+var imgMemOnly = os.Getenv("ISUREAL_IMG_MEM_ONLY") == "1"
+
 type imgPostRef struct {
 	postID   string
 	authorID string
@@ -67,6 +74,9 @@ func memImageValid(h *HandlerContext, imageID, owner string) (imageValidity, boo
 	}
 	d := m.d
 	u := d.users[owner]
+	if imgMemOnly && u != nil && !u.active() {
+		return imageValidity{found: false}, true
+	}
 	if !u.active() || u.SecretKeyHash == "" {
 		return imageValidity{}, false
 	}

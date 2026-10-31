@@ -17,7 +17,11 @@ func withColdOrigin(t *testing.T, addr string) {
 	oldO, oldS, oldSeq, oldWM := coldOrigin, forwardSecret, coldPumpSeqFn, coldPumpWM
 	coldOrigin, forwardSecret = addr, "s3cret"
 	coldPumpWM = newPeerPGState()
-	t.Cleanup(func() { coldOrigin, forwardSecret, coldPumpSeqFn, coldPumpWM = oldO, oldS, oldSeq, oldWM })
+	oldGate := coldOriginGate
+	coldOriginGate = func() bool { return true } // 偽の origin は状態を答えない (状態の確認は mem_full_gate_test.go)
+	t.Cleanup(func() {
+		coldOrigin, forwardSecret, coldPumpSeqFn, coldPumpWM, coldOriginGate = oldO, oldS, oldSeq, oldWM, oldGate
+	})
 }
 
 // handler: pg=true なら「PG の最初の文」(= QueryTracer の coldOnPG) を踏み、取り消された ctx のエラーを返す。

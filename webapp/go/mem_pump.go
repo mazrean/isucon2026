@@ -100,6 +100,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		if coldOrigin != "" {
 			if ps := p.peers; ps != nil {
 				coldPumpSeqFn = func() int64 { ps.mu.Lock(); defer ps.mu.Unlock(); return ps.seq }
+				coldPumpEpochFn = func() string { ps.mu.Lock(); defer ps.mu.Unlock(); return ps.epoch }
 			}
 			e.Use(coldMiddleware(false)) // cold_origin.go
 		}
@@ -132,6 +133,7 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 		rcv := newMemReceiver(m)
 		if memFull {
 			e.Use(memColdWaitMiddleware(rcv))
+			registerMemFullStatus(e, rcv)
 		}
 		registerMemPeerRoutes(e, rcv)
 	}

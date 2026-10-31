@@ -238,6 +238,10 @@ func coldMiddleware(peer bool) echo.MiddlewareFunc {
 				return err
 			}
 			coldStats.fell.Add(1)
+			if !coldOriginGate() { // 冷たい読みのノードが未準備 / 遅れている: 待たず・送らず自分の経路へ (mem_full.go)
+				coldStats.fallback.Add(1)
+				return next(c)
+			}
 			seq, space, ok := coldResolve(in.Context(), st)
 			if !ok {
 				coldStats.noSample.Add(1)
@@ -270,6 +274,6 @@ func coldStatsLoop() {
 			avg = time.Duration(coldStats.waitNs.Swap(0) / fw)
 		}
 		slog.Info("cold-origin", "fell", fell, "forwarded", fw, "avg_forward", avg,
-			"fallback", coldStats.fallback.Swap(0), "no_sample", coldStats.noSample.Swap(0))
+			"fallback", coldStats.fallback.Swap(0), "no_sample", coldStats.noSample.Swap(0), "origin_not_usable", coldOriginSkipped.Swap(0))
 	}
 }

@@ -1,0 +1,17 @@
+[Unit]
+Description=PostgreSQL synchronous_standby_names watchdog (isucon)
+# PG 起動前に sync を空にしてから PG を起動させる (起動直後に書き込みがブロックされないように)
+Before=postgresql@16-main.service
+After=network.target
+
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+ExecStartPre=/usr/local/bin/pg-sync-watchdog reset
+ExecStart=/usr/local/bin/pg-sync-watchdog run
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

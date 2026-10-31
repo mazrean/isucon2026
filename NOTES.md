@@ -285,3 +285,4 @@ END: 2026-10-31 18:00 JST
 - 最終の既定に full_page_writes=off (PGFPW=1) は入れない (追試の再起動でページが壊れると PG が起動しない)。
 - PGCPU=1 (max_wal_size 12GB、checkpoint_timeout 20min) を採るなら、再起動試験で asia2 の再起動から PG が接続を受けるまでの秒数と、アプリの初回応答までを測る。
 - ASIA_LOCALIMG=1 を最終で使うなら、再起動試験に追加: (a) 再起動前に投稿した asia の画像が asia1 から 200、(b) eu/am からの同じ画像の GET も 200 (asia1 から取り寄せ)、(c) asia1 が最後に上がる順番でも eu/am がエラーを返し続けない。永続性が崩れたら ASIA_LOCALIMG=0 に戻す (点より優先)。採用は同じ版で 2 本確かめてから。
+- 16572 の eu/am 崩れ: 軽い GET の WM の待ちが eu p50 0.274 / p90 1.568、am 0.280 / 1.163 (前の回は 0.13 / 0.25)。1 要求あたり 2 往復待っている形。最有力の疑いは MEM_WM_HB=1 + MEM_PULL_UNLOCKED=1。PREEXTEND は asia の d1→d2 (2.39 倍) を落とした疑い。3 つとも既定 off のまま。

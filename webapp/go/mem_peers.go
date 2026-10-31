@@ -226,6 +226,12 @@ func (ps *memPeers) waitAcked() {
 			timer.Stop()
 		}
 	}()
+	skipped := false
+	defer func() {
+		if skipped {
+			memRecordLeaseSkip()
+		}
+	}()
 	for {
 		now := time.Now()
 		var wakeAt time.Time
@@ -239,6 +245,7 @@ func (ps *memPeers) waitAcked() {
 			}
 			leaseEnd := peer.lastGrantAt.Add(memLease + memClockSkew)
 			if !now.Before(leaseEnd) {
+				skipped = true
 				continue
 			}
 			ok = false

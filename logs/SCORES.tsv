@@ -56,3 +56,4 @@
 14:03	65f0931	job=15345 state=4 pass=true スコア=144584 種別エラー数=map[]	前の回と同じ構成 + JC=1 (Rust jpegcheckd) + JPEG_LOCAL_SLOTS=2 (GP 中 asia1 CPU 38% でローカル枠 1 待ち)
 14:05	13e69a7	job=15544 state=4 pass=true スコア=148713 種別エラー数=map[]	ea1ffec を revert + POST_SLOT_EXEMPT=0 + JC=1 + JPEG_LOCAL_SLOTS=2 + HEAVY_TARGET=127.0.0.1 + MEMORIES_CACHE=1
 14:08	ab21c76	job=15806 state=4 pass=true スコア=123052 種別エラー数=map[]	STORE=1 (適用役 1 本のパイプライン a449f26) on 新既定 (JC=1、JPEG 枠 2、HEAVY asia1、MEMORIES_CACHE)
+14:11	3c47bcb	job=15950 state=4 pass=true スコア=154644 種別エラー数=map[]	新既定 + MEMORIES_CACHE_ORIGIN=192.168.4.10:8080 (キャッシュの外れは asia2 で計算、asia1 の CPU を書き込みに)

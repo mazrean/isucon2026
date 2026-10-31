@@ -106,7 +106,7 @@ for h in "${HOSTS[@]}"; do
       setenv ISUREAL_IMG_DEDUP '"$IMG_DEDUP"'
       setenv ISUREAL_MEMORIES_MEM '"$MEMORIES_MEM"'
       setenv ISUREAL_MEMORIES_CACHE '"$MEMORIES_CACHE"'
-      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN ""; fi
+      if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_MEMORIES_CACHE_ORIGIN '"${MEMORIES_CACHE_ORIGIN-192.168.4.10:8080}"'; else setenv ISUREAL_MEMORIES_CACHE_ORIGIN ""; fi
       setenv ISUREAL_HEAVY_LIMIT '"$HEAVY_LIMIT"'
       if [ "'"$h"'" = asia1 ]; then setenv ISUREAL_DB_MAX_OPEN 60; else setenv ISUREAL_DB_MAX_OPEN 25; fi
       setenv ISUREAL_JPEG_LOCAL_SLOTS '"${JPEG_LOCAL_SLOTS:-2}"'

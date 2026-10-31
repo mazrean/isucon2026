@@ -1,0 +1,39 @@
+
+��|��� *������c2�������:����ُuB�������H��	�<
+i-0a14610ce8f88e97c��"54.250.87.84*192.168.1.1008�����	"��	*�
+実行終了�time=2026-10-31T05:08:58.585Z level=INFO msg="asia 1 日目: 18 人"
+time=2026-10-31T05:09:01.578Z level=INFO msg="europe 1 日目: 7 人"
+time=2026-10-31T05:09:04.575Z level=INFO msg="america 1 日目: 6 人"
+time=2026-10-31T05:09:07.755Z level=INFO msg="asia 2 日目: 54 人"
+time=2026-10-31T05:09:09.966Z level=INFO msg="user moved" user=marfuna-5271 from=asia to=america
+time=2026-10-31T05:09:10.738Z level=INFO msg="europe 2 日目: 19 人"
+time=2026-10-31T05:09:13.650Z level=INFO msg="america 2 日目: 17 人"
+time=2026-10-31T05:09:14.103Z level=INFO msg="user moved" user=marfuna-5271 from=america to=europe
+time=2026-10-31T05:09:16.826Z level=INFO msg="asia 3 日目: 159 人"
+time=2026-10-31T05:09:19.610Z level=INFO msg="europe 3 日目: 53 人"
+time=2026-10-31T05:09:21.950Z level=INFO msg="user moved" user=miri-5817 from=asia to=europe
+time=2026-10-31T05:09:22.196Z level=INFO msg="user moved" user=noseke-6222 from=asia to=europe
+time=2026-10-31T05:09:22.605Z level=INFO msg="america 3 日目: 44 人"
+time=2026-10-31T05:09:25.590Z level=INFO msg="asia 4 日目: 386 人"
+time=2026-10-31T05:09:28.644Z level=INFO msg="europe 4 日目: 137 人"
+time=2026-10-31T05:09:31.618Z level=INFO msg="america 4 日目: 116 人"
+time=2026-10-31T05:09:34.648Z level=INFO msg="asia 5 日目: 386 人"
+time=2026-10-31T05:09:37.620Z level=INFO msg="europe 5 日目: 338 人"
+time=2026-10-31T05:09:39.945Z level=INFO msg="user moved" user=ivynoso8999 from=america to=asia
+time=2026-10-31T05:09:40.673Z level=INFO msg="america 5 日目: 301 人"
+time=2026-10-31T05:09:49.611Z level=INFO msg="america 最終日（グランプリ）: 300 人"
+time=2026-10-31T05:09:50.050Z level=INFO msg="asia 最終日（グランプリ）: 387 人"
+time=2026-10-31T05:09:50.050Z level=INFO msg="europe 最終日（グランプリ）: 338 人"
+time=2026-10-31T05:09:58.593Z level=INFO msg="グランプリ: アジア 239 人, ヨーロッパ 328 人, アメリカ 293 人"
+{
+  "pass": true,
+  "score": 154644,
+  "messages": [
+    "roma7135: 投稿できません: POST /api/posts: 応答がタイムアウトしました",
+    "roma7135: 投稿できるはずの投稿期間で投稿が拒否されました: POST /api/posts: ステータスコード 409 が返りました（期待値 201、post_slot_unavailable）",
+    "ivyhaka_7269: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）",
+    "solante_10027: 通知を購読できません: GET /api/notifications: ステータスコード 503 が返りました（期待値 200、unknown）"
+  ]
+}
+ ���������(���������2���������
+mazrean�https://portal-production-avatars-124502390568.s3.ap-northeast-1.amazonaws.com/avatars/aa1a9219becb60027f9ee4f0bc3c99e2dd26040569d4d02cc14db1946ad76201.png

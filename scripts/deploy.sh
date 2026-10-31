@@ -24,8 +24,8 @@ for h in "${HOSTS[@]}"; do
     scp -q etc/app/nginx.conf "$h:/tmp/nginx.conf"
     scp -q etc/systemd/isureal-go.service.d/20-stop.conf "$h:/tmp/20-stop.conf"
     scp -q etc/systemd/isureal-go.service.d/10-tune.conf "$h:/tmp/10-tune.conf"
-    r=$(region_of "$h"); f=$FWD; g=$FWD_GET; [[ $h == asia1 ]] && f=0 && g=0
-    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
+    r=$(region_of "$h"); f=$FWD; g=$FWD_GET; ht=127.0.0.1; [[ $h == asia1 ]] && f=0 && g=0 && ht=${HEAVY_TARGET-192.168.4.10}
+    sed -e "s/__REGION__/$r/" -e "s/__FWD__/$f/" -e "s/__FWD_GET__/$g/" -e "s/__FWD_SECRET__/$SECRET/" -e "s/__FWD_TARGET__/$FWD_TARGET/" -e "s/__HEAVY_TARGET__/$ht/" etc/app/isureal.conf >"$OUT/isureal.$h.conf"
     scp -q "$OUT/isureal.$h.conf" "$h:/tmp/isureal.conf"
     "${SSH[@]}" "$h" 'set -e
       sudo install -m 644 /tmp/nginx.conf /etc/nginx/nginx.conf

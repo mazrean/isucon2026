@@ -157,3 +157,4 @@ END: 2026-10-31 18:00 JST
 | 4513 | 1cd1f59 | 49892 | GOMEMLIMIT 2600 / GOGC 400。GP asia 51 |
 | 4692 | 2b1c03c | **68277** | JPEG オフロード待ち合わせ + push バイト上限 + GOMEMLIMIT 2200。GP 322/54/44。asia1 CPU: HMAC 35% / Memories 19% / export 15% / JPEG 14% |
 | 4952 | f55196e | **70862** | 4xx はバリアを飛ばす。GP 376/55/33 |
+| 5168 | 6cb20bc | 69730 | A/B: 画像 push 停止 → 差なし (eu/am 減, asia 増)。push は維持 |

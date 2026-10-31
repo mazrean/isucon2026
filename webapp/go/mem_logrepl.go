@@ -657,6 +657,7 @@ func (r *memLogRepl) updateReady() {
 	if r.insync.Load() && r.applied.Load() >= r.target.Load() {
 		if !r.m.ready.Load() {
 			r.m.ready.Store(true)
+			go memPrebuildLoaded(r.m)
 			slog.Info("mem-logrepl: ready", "slot", r.slot, "lsn", pglogrepl.LSN(r.applied.Load()))
 		}
 	}

@@ -679,6 +679,7 @@ func (r *memReceiver) resyncOnce(g uint64) error {
 	r.m.w.set(dump.WM)
 	// lease は次の push/heartbeat (probe 以外) でだけ延長する (pump が lastGrantAt で上界を把握するため)
 	r.m.ready.Store(true)
+	go memPrebuildLoaded(r.m)
 	slog.Info("mem: synced from pump", "seq", dump.Seq, "users", len(d.users), "posts", len(d.posts), "elapsed", time.Since(start))
 	return nil
 }

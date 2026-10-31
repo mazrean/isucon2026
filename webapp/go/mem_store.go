@@ -109,6 +109,8 @@ type memData struct {
 	hotKnown bool
 	// rc: Memories / export response cache (mem_respcache.go), dropped with this memData
 	rc memRespCache
+	// pb: ISUREAL_MEMORIES_PREBUILD state for this load (mem_memories_prebuild.go)
+	pb memPrebuildState
 }
 
 type memSearchEnt struct{ off, ulen, dlen uint32 }

@@ -33,3 +33,4 @@
 12:40	32fb316	job=8957 state=4 pass=true スコア=111710 種別エラー数=map[]	既定 (WM + LOCALIMG + MEMORIES_PAR) + JC=1 (Rust JPEG)
 12:45	4d57d94	job=9384 state=4 pass=true スコア=113234 種別エラー数=map[]	既定 + 画像の有効性をメモリで判定 (IMGV_MEM)、STORE/LOGREPL は off で取り込み
 12:55	6e76fcd	job=10125 state=4 pass=true スコア=113557 種別エラー数=map[]	窓の修正 (画像 INSERT をロック前へ) + JPEG 委譲を asia2 のみ + JC=1
+12:57	9a4def2	job=10322 state=4 pass=true スコア=104859 種別エラー数=map[]	STORE=1 (asia1 の書き込みをメモリで検証・反映) + 窓の修正 + JPEG 委譲 asia2 のみ + JC=1

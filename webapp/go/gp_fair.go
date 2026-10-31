@@ -197,6 +197,9 @@ func gpFairEnter(h *HandlerContext, c *echo.Context) func() {
 	}
 	rel, got := gpFairGateG.acquire(c.Request().Context(), key.UnixNano(), gpFairMaxWait)
 	gpFairRecord(gpRegionIdx(region), time.Since(start), !got)
+	if opsTraceOn {
+		opsAdd(c.Request().Context(), opsSlot, time.Since(start))
+	}
 	return rel
 }
 

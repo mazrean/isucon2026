@@ -276,6 +276,7 @@ type storeReq struct {
 
 type storeRes struct {
 	seqs storeSeqs
+	ack  memAckTarget // ISUREAL_MEM_ACK_OWN: この書き込みが待つ peer の (epoch, seq)
 	err  error
 }
 
@@ -285,12 +286,12 @@ const storeMaxBatch = 512
 // (store.mu → pump.cycleMu → memData.mu) の中で順に実行し、publish と書き戻しの積み込みも 1 回にする
 // (書き込みごとに memData.mu を排他で取ると、重い読みと交互に待ち合って両方遅くなる)。
 // fn はエラーを返すなら変更を emit する前に返すこと。errStoreFallback なら元の DB 経路へ。
-func (e *storeEngine) write(fn func(t *storeTx) error) (storeSeqs, error) {
+func (e *storeEngine) write(fn func(t *storeTx) error) (storeSeqs, memAckTarget, error) {
 	return e.writePrio(fn, false)
 }
 
 // writePrio: hi なら ISUREAL_STORE_PRIO の優先列 (reqsHi) に並べる (off なら write と同じ)。
-func (e *storeEngine) writePrio(fn func(t *storeTx) error, hi bool) (storeSeqs, error) {
+func (e *storeEngine) writePrio(fn func(t *storeTx) error, hi bool) (storeSeqs, memAckTarget, error) {
 	r := &storeReq{fn: fn, done: make(chan storeRes, 1)}
 	if hi && e.reqsHi != nil {
 		e.reqsHi <- r
@@ -298,7 +299,7 @@ func (e *storeEngine) writePrio(fn func(t *storeTx) error, hi bool) (storeSeqs, 
 		e.reqs <- r
 	}
 	res := <-r.done
-	return res.seqs, res.err
+	return res.seqs, res.ack, res.err
 }
 
 func (e *storeEngine) applier() {
@@ -410,10 +411,15 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 	}
 	m.mu.Unlock()
 	var seqs storeSeqs
+	var ack memAckTarget
 	walWait := false
 	if len(changes) > 0 || len(ops) > 0 {
 		if p.peers != nil && len(changes) > 0 {
 			p.peers.publish(changes)
+		}
+		if memAckOwn && p.peers != nil {
+			// cycleMu 保持中: このバッチ (と、バッチが読んだそれ以前の状態) を含む最小の seq
+			ack = p.peers.current()
 		}
 		seqs = e.enqueue(ops)
 		if e.wal != nil {
@@ -437,6 +443,7 @@ func (e *storeEngine) applyBatch(batch []*storeReq) {
 			res := storeRes{err: errs[i]}
 			if work[i] {
 				res.seqs = seqs
+				res.ack = ack
 			}
 			r.done <- res
 		}
@@ -511,12 +518,31 @@ func (e *storeEngine) syncPG() {
 }
 
 // commitWait: 書き込み seq が全ホストで読めるようになるまで待つ。memWriteBarrier の pump バリアは省略させる。
-func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
+func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs, ack memAckTarget) {
 	c.Set(storeHandledKey, true)
 	if seqs == nil {
 		return
 	}
+	// FWD_YIELD: PG・ack (ACK_OWN の並行の待ちも含む) を待つ前に枠を返す
 	fwdSlotYield(c.Request().Context())
+	var t0 time.Time
+	if opsTraceOn {
+		t0 = time.Now()
+	}
+	var acked chan struct{}
+	var ackDur time.Duration // ACK_OWN の並行の待ち: 開始から自分の ack までの時間 (close の前に書く)
+	if memAckOwn && ack.ok && e.p.peers != nil && !localOnlyWrite(c.Request()) {
+		// 自分の (epoch, seq) の ack を PG の待ちと並行に待つ
+		acked = make(chan struct{})
+		ackStart := t0 // t0 は下で書き換えるので写す
+		go func() {
+			e.p.peers.waitAckedFor(ack)
+			if opsTraceOn {
+				ackDur = time.Since(ackStart)
+			}
+			close(acked)
+		}()
+	}
 	if storeAwaitPG || len(seqs) > len(e.lanes) {
 		e.waitFlushed(seqs)
 	} else {
@@ -529,8 +555,21 @@ func (e *storeEngine) commitWait(c *echo.Context, seqs storeSeqs) {
 		}
 		e.waitFlushed(img)
 	}
-	if e.p.peers != nil && !localOnlyWrite(c.Request()) {
+	if opsTraceOn {
+		t1 := time.Now()
+		opsAdd(c.Request().Context(), opsPersist, t1.Sub(t0))
+		t0 = t1
+	}
+	if acked != nil {
+		<-acked
+		if opsTraceOn {
+			opsAdd(c.Request().Context(), opsRepl, ackDur)
+		}
+	} else if e.p.peers != nil && !localOnlyWrite(c.Request()) {
 		e.p.peers.waitAcked()
+		if opsTraceOn {
+			opsAdd(c.Request().Context(), opsRepl, time.Since(t0))
+		}
 	}
 }
 

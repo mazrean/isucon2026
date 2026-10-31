@@ -41,6 +41,7 @@ type groupSyncer struct {
 	cur     *syncGroup
 	kick    chan struct{}
 	dir     func() string
+	syncFn  func() error // nil = syncfs(dir) (ASIA_LOCALIMG)。store の WAL は自分のファイルだけ fdatasync する
 	batches atomic.Int64
 	members atomic.Int64
 }
@@ -85,7 +86,11 @@ func (g *groupSyncer) loop() {
 		if grp == nil {
 			continue
 		}
-		grp.err = syncStoreDir(g.dir(), grp.paths)
+		if g.syncFn != nil {
+			grp.err = g.syncFn()
+		} else {
+			grp.err = syncStoreDir(g.dir(), grp.paths)
+		}
 		g.batches.Add(1)
 		g.members.Add(int64(grp.n))
 		close(grp.done)

@@ -237,6 +237,9 @@ END: 2026-10-31 18:00 JST
 | 26073 | - | **FAIL** | STORE_WAL。初期データの検証で GET /api/memories が 401 invalid_session: asia1 の Memories の miss を asia2 (MEMORIES_CACHE_ORIGIN) が PG で計算し、まだ PG に無いセッションを無効と判定。STORE_WAL のときは MEMORIES_CACHE_ORIGIN を空にするガードを足した |
 | 26281 | - | 184132 | 新既定 + ASIA_LOCALIMG_FSYNC=gp。GP 642/284/275 (計 1201、STORE 系で最多)、am の崩れなし。gp を既定にした |
 | 26530 | - | **199880** | 新既定 (FSYNC はまだ旧既定の syncfs) + NGX_BODYBUF=512k。d5 1177/390/362、GP 723/192/196。**新最高**。BODYBUF を既定に |
+| 26843 | - | 121444 | STORE_WAL 再挑戦 (ORIGIN 空、peer barrier)。pass だが d5 749/208/187、GP 328/177/170 と大きく下がる。重い読みが asia1 に戻った損と barrier の待ちが WAL の利得を上回る。不採用 |
+| 27110 | - | **FAIL** | 既定 (FSYNC=gp + BODYBUF=512k)。post-validation で asia の画像 (…a0a0a0) が 403。25833 と同じ型。BODYBUF 単独 (26530) と gp 単独 (26281) は pass。既定の FSYNC を 0 に戻した (= 26530 の構成) |
+| 27389 | - | 173589 | 既定 (FSYNC=gp+BODYBUF) + MEM_SYNC_VISIBLE=1。pass。d5 954/410/305、GP 516/344/154。eu の d5 と GP は最多、asia は下がる (ack 待ち +1 RTT)。総合は 26530 を下回るので不採用 |
 | - | - | - | 14:22〜14:33 asia2 PG 停止: OOM kill (14:21:57) → systemd の OOMPolicy=stop で停止 → 停止が進まず immediate → クラッシュ回復 2 分 15 秒。app 3 台は PG 停止中の起動で panic×5 → StartLimit で failed のまま。対策: PG OOMPolicy=continue、asia2 app OOMScoreAdjust=500、isureal-go StartLimitIntervalSec=0、PGCPU 既定 0、DB_KEEP_IDLE 既定 0 |
 
 - 13:00 asia2 PG: synchronous_commit=off (etc/pg/zz-sync.conf)。コミットは即可視。正常な shutdown/reboot は WAL を flush するので、再起動後のデータ保持は維持 |

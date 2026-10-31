@@ -91,6 +91,9 @@ func setupMem(h *HandlerContext, e *echo.Echo) {
 			return
 		}
 		e.Use(memWriteBarrier(p))
+		if asiaPostCapN > 0 {
+			e.Use(asiaPostCapMiddleware(h)) // barrier の内側 (gp_postcap.go)
+		}
 		registerMemPumpRoutes(e, p)
 		registerSessMarkRoute(e, h, p)
 		go p.ticker()
@@ -267,6 +270,9 @@ func (p *memPump) poll() error {
 	if err != nil {
 		return err
 	}
+	if memWMEarly && p.peers != nil {
+		return p.pollEarly(changes, cur, x)
+	}
 	if err := p.m.applyBatch(changes); err != nil {
 		return err
 	}
@@ -280,6 +286,24 @@ func (p *memPump) poll() error {
 	}
 	if memWatermark && p.peers != nil {
 		p.peers.setWM(x)
+	}
+	return nil
+}
+
+// pollEarly (ISUREAL_MEM_WM_EARLY): peer への配信 (と wm) を asia1 のメモリ反映より先に行う。cycleMu 保持中。
+func (p *memPump) pollEarly(changes []memChange, cur string, x int64) error {
+	if len(changes) > 0 {
+		p.peers.publishWM(changes, x)
+	}
+	if memWatermark {
+		p.peers.setWM(x)
+	}
+	// 配信済みなので、失敗しても同じ変更を取り直して再送しない (peer で二重適用になる)。
+	p.snap = cur
+	if err := p.m.applyBatch(changes); err != nil {
+		slog.Error("mem: apply failed after early publish; reloading", "error", err)
+		p.invalidate()
+		return err // 待っている書き込みは離さない。ready=false なので次のサイクルが reload する
 	}
 	return nil
 }
